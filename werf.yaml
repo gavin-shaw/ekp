@@ -1,0 +1,6 @@
+configVersion: 1
+project: ekp-farms
+---
+image: app
+dockerfile: Dockerfile
+context: app

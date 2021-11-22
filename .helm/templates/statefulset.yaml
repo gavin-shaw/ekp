@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nocodb
+spec:
+  selector:
+    matchLabels:
+      app: nocodb
+  serviceName: nocodb
+  template:
+    metadata:
+      labels:
+        app: nocodb
+    spec:
+      containers:
+        - image: nocodb/nocodb:latest
+          name: nocodb
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - mountPath: /usr/app/data
+              name: data
+  volumeClaimTemplates:
+    - apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 4Gi
+        volumeMode: Filesystem

@@ -1,0 +1,9 @@
+apiVersion: v2
+dependencies:
+  - name: loki-stack
+    version: "2.5.0"
+    repository: "https://grafana.github.io/helm-charts"
+
+  - name: postgresql 
+    version: "10.13.8"
+    repository: "https://charts.bitnami.com/bitnami"
