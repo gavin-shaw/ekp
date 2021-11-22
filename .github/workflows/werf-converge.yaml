@@ -27,7 +27,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ github.token }}
 
       - name: Run werf commands
         run: |
@@ -38,6 +38,6 @@ jobs:
           werf render
           werf converge
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           WERF_PLATFORM: linux/amd64
           WERF_SECRET_KEY: ${{ secrets.WERF_SECRET_KEY }}
