@@ -2,6 +2,8 @@
 
 `ekp` is the plugin system for [earnkeeper.io](https://earnkeeper.io). It allows you to scrape the blockchain for the information you want to see and display it in tables and graphs for everyone.
 
+![screenshot of earnkeeper plugins page](https://raw.githubusercontent.com/EarnKeeper/ekp/feat/docs/docs/images/plugins-page.jpeg)
+
 ## Why?
 
 We started [earnkeeper.io](https://earnkeeper.io) to provide unbiased, detailed and honest analysis of projects in the cryptocurrency [Play 2 Earn](https://wiki.rugdoc.io/docs/play-to-earn-games-p2e/) space.
