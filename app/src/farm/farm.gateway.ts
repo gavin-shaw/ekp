@@ -1,4 +1,3 @@
-import { formatEther, formatUnits } from '@ethersproject/units';
 import { Inject, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,14 +13,16 @@ import { Server, Socket } from 'socket.io';
 import { IsNull, Not, Repository } from 'typeorm';
 import bep20Abi from '../abi/bep20.json';
 import { CurrencyService } from './currency.service';
-import { FarmDto } from './dto/farm.dto';
+import { FarmDto, farmsEntitySchema } from './dto/farm.dto';
 import { Farm } from './entity/farm.entity';
+import { ServerStateDto } from '../gateway/dto/server-state.dto';
+
 @WebSocketGateway()
 export class FarmGateway {
   constructor(
     @InjectRepository(Farm) private farmRepository: Repository<Farm>,
     @Inject(CurrencyService) private currencyService: CurrencyService,
-  ) {}
+  ) { }
 
   @WebSocketServer()
   server: Server;
@@ -43,7 +44,11 @@ export class FarmGateway {
       },
     });
 
-    const farmDtos: FarmDto[] = [];
+    const serverState: ServerStateDto = {};
+
+    serverState.entities = {
+      farms: []
+    }
 
     for (const farm of farms) {
       const farmDto: FarmDto = {};
@@ -64,137 +69,32 @@ export class FarmGateway {
         continue;
       }
 
-      farmDtos.push(farmDto);
+      serverState.entities.farms.push(farmDto);
     }
 
-    const currencyAddresses = _.uniq(
-      farms.map((farm) => farm.currencyAddress).filter((symbol) => !!symbol),
-    );
+    // const currencyAddresses = _.uniq(
+    //   farms.map((farm) => farm.currencyAddress).filter((symbol) => !!symbol),
+    // );
 
-    const currencies = await this.currencyService.updateCurrencies(
-      currencyAddresses,
-      clientState.currency.id,
-    );
-
-    client.emit('ui-schema', JSON.stringify(this.createUiSchema()));
+    // const currencies = await this.currencyService.updateCurrencies(
+    //   currencyAddresses,
+    //   clientState.currency?.id ?? 'USD',
+    // );
 
     client.emit(
-      'entities',
-      JSON.stringify({
-        farms: farmDtos,
-      }),
+      'server-state',
+      JSON.stringify(serverState),
     );
-
-    client.emit('json-rpc', this.getFarmBalanceRequests(farms), (payload) => {
-      const results = JSON.parse(payload);
-      for (const result of results) {
-        const farmDto = farmDtos.find(
-          (farm) => farm.contractAddress === result.id,
-        );
-        const farm = farms.find((farm) => farm.contractAddress === result.id);
-
-        if (!farm || !farmDto) {
-          continue;
-        }
-
-        try {
-          if (result.method === 'eth_call') {
-            if (!!farm.currencyDecimals) {
-              farmDto.balance = Number(
-                formatUnits(result.result, farm.currencyDecimals),
-              );
-              const currency = currencies.find(
-                (it) => it.coinAddress === farm.currencyAddress?.toLowerCase(),
-              );
-              if (!!currency) {
-                farmDto.balanceFiat = `${
-                  clientState.currency.symbol
-                } ${Math.floor(farmDto.balance * currency.rate)}`;
-              } else {
-                this.logger.warn(
-                  `Could not find a currency rate for farm ${farm.contractAddress}`,
-                );
-              }
-              this.logger.debug(
-                `Updated balance for farm ${farm.contractAddress} to ${farmDto.balance}`,
-              );
-            } else {
-              this.logger.warn(
-                `Could not set contract balance on farm ${farm.contractAddress}, undefined currencyDecimals`,
-              );
-            }
-          } else if (result.method === 'eth_getBalance') {
-            farmDto.balance = Number(formatEther(result.result));
-            const currency = currencies.find(
-              (it) => it.coinAddress === CurrencyService.WBNB_ADDRESS,
-            );
-            if (!!currency) {
-              farmDto.balanceFiat = `${
-                clientState.currency.symbol
-              } ${Math.floor(farmDto.balance * currency.rate)}`;
-            } else {
-              this.logger.warn(
-                `Could not find a currency rate for farm ${farm.contractAddress}`,
-              );
-            }
-
-            this.logger.debug(
-              `Updated balance for farm ${farm.contractAddress} to ${farmDto.balance}`,
-            );
-          }
-        } catch (error) {
-          this.logger.error(
-            `An error occurred while parsing contract balance ${result.result} for farm ${farm.contractAddress}`,
-            error.stack,
-          );
-        }
-      }
-
-      client.emit('entities', JSON.stringify({ farms: farmDtos }));
-    });
 
     return payload;
   }
 
-  getFarmBalanceRequests(farms: Farm[]) {
-    const requests = [];
 
-    const iface = new ethers.utils.Interface(bep20Abi);
-
-    for (const farm of farms) {
-      if (!!farm.currencyAddress && !!farm.currencyDecimals) {
-        requests.push({
-          id: farm.contractAddress,
-          method: 'eth_call',
-          params: [
-            {
-              to: farm.currencyAddress,
-              data: iface.encodeFunctionData('balanceOf', [
-                farm.contractAddress,
-              ]),
-            },
-            'latest',
-          ],
-        });
-      } else {
-        requests.push({
-          id: farm.contractAddress,
-          method: 'eth_getBalance',
-          params: [farm.contractAddress, 'latest'],
-        });
-      }
-    }
-
-    return JSON.stringify(requests);
-  }
-
-  createDataSchema() {
+  createEntitiesSchema() {
     return {
       type: 'object',
       properties: {
-        farms: {
-          type: 'array',
-        },
+        farms: farmsEntitySchema,
       },
     };
   }
@@ -205,9 +105,23 @@ export class FarmGateway {
       scope: '#/properties/farms',
       options: {
         columns: {
-          name: {},
-          age: { format: 'duration' },
-          balance: { displayProperty: 'balanceFiat' },
+          name: {
+            cell: {
+              type: 'VerticalLayout',
+              elements: [
+                {
+                  type: 'Control',
+                  scope: '#/properties/link',
+                },
+                {
+                  type: 'Control',
+                  scope: '#/properties/subTitle'
+                }
+              ]
+            }
+          },
+          age: {},
+          balance: {},
         },
       },
     };
