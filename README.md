@@ -85,6 +85,8 @@ Talk to us in Discord about bundling your plugin with the official earnkeeper si
 
 This repository uses kubernetes to host its containers. I use digital ocean, you are free to use any provider you prefer, but I will provide instructions for digital ocean here.
 
+Install the kubectl CLI, [Instructions per platform are here.](https://kubernetes.io/docs/tasks/tools/).
+
 Install the digital ocean `doctl` command line tool and authenticate it with digital ocean. [Instructions per platform are here.](https://docs.digitalocean.com/reference/doctl/how-to/install/).
 
 Run the following command to create your kubernetes cluster and save the authentication details to your machine.
@@ -99,6 +101,12 @@ Once the command completes, run the following command to get the public host nam
 
 ```
 doctl kubernetes cluster get ekp --format=Endpoint
+```
+
+Unfortunately there is not a good way to automate the install of cert-manager, and you will need it for TLS. So you need to run this command once after your cluster has been created:
+
+```
+kubtctl apply -f https://github.com/jetstack/cert-manager/releases/download/v1.6.1/cert-manager.yaml
 ```
 
 You need your own werf secret key to encrypt any private secrets you keep in your public repository. Generate one with this command:
