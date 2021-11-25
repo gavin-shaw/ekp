@@ -122,8 +122,6 @@ export class FarmGateway {
         continue;
       }
 
-      console.log(farm.balance, balance);
-
       farmDtos.push({
         audit,
         name,
