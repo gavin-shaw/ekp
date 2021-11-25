@@ -4,6 +4,7 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: "nginx"
     cert-manager.io/issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
   name: ekp-public
 spec:
   tls:
@@ -14,7 +15,7 @@ spec:
     - host: "{{ .Values.ingress.hostname }}"
       http:
         paths:
-          - path: /farms
+          - path: /farms(/|$)(.*)
             pathType: Prefix
             backend:
               service:
