@@ -15,7 +15,7 @@ import { CurrencyService } from './currency.service';
 import { farmsEntitySchema } from './dto/farm.dto';
 import { Farm } from './entity/farm.entity';
 
-@WebSocketGateway()
+@WebSocketGateway({ cors: true })
 export class FarmGateway {
   constructor(
     @InjectRepository(Farm) private farmRepository: Repository<Farm>,

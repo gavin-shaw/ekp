@@ -146,10 +146,10 @@ export class FarmConfigService {
             );
 
             try {
-              farm.currencyDecimals = await tokenContract.decimals();
+              farm.currencyDecimals = (await tokenContract.decimals()).toNumber();
             } catch (error) {
               try {
-                farm.currencyDecimals = await tokenContract._decimals();
+                farm.currencyDecimals = (await tokenContract._decimals()).toNumber();
               } catch {
                 farm.currencyDecimals = 18;
               }
