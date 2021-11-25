@@ -16,6 +16,12 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       url: process.env.DATABASE_URL,
       entities: ['dist/**/**.entity{.ts,.js}'],
       synchronize: true,
+      ssl: true,
+      extra: {
+        ssl: {
+          rejectUnauthorized: false,
+        },
+      },
     }),
     EventEmitterModule.forRoot(),
     GlobalModule,
