@@ -6,7 +6,7 @@ dependencies:
   repository: https://charts.bitnami.com/bitnami
   version: 10.13.8
 - name: cert-manager
-  repository: https://charts.bitnami.com/bitnami
-  version: 0.1.25
-digest: sha256:1f31ebd9df642aa56f3349eb718990f8e00ead1b1a0ff5bafc20c1c258b12ec3
-generated: "2021-11-25T15:33:29.948746+02:00"
+  repository: https://charts.jetstack.io
+  version: v1.3.1
+digest: sha256:87125f7529bd5a99d6a86a06d5391cc87472b174da8ff36eda1d3e1e09c7e928
+generated: "2021-11-25T15:50:55.318353+02:00"
