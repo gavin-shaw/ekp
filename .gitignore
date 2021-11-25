@@ -76,3 +76,4 @@ typings/
 .fusebox/
 .werf_secret_key
 .secrets
+clear-values.yaml

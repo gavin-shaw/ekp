@@ -7,3 +7,8 @@ dependencies:
   - name: postgresql 
     version: "10.13.8"
     repository: "https://charts.bitnami.com/bitnami"
+
+  - name: cert-manager
+    version: "0.1.25"
+    repository: "https://charts.bitnami.com/bitnami"
+    

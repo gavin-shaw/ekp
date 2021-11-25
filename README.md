@@ -112,7 +112,7 @@ werf helm secret generate-secret-key > .werf_secret_key
 There are some already encrypted values in this file `.helm/secret-values`. Edit the file and input your own plain text values, the comments will guide you on what to enter. Save the file and then run:
 
 ```sh
-werf helm secret values encrypt .helm/secret-values.yaml -o .helm/secret-values.yaml
+werf helm secret values encrypt clear-values.yaml -o .helm/secret-values.yaml
 ```
 
 Your values are now encrypted and safe to commit to git.
