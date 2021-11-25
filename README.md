@@ -1,5 +1,7 @@
 # EKP - Earnkeeper Plugins
 
+![Werf Status](https://github.com/EarnKeeper/ekp/actions/workflows/werf-converge/badge.svg)
+
 `ekp` is the plugin system for [earnkeeper.io](https://earnkeeper.io). It allows you to scrape the blockchain for the information you want to see and display it in tables and graphs for everyone.
 
 ![screenshot of earnkeeper plugins page](https://raw.githubusercontent.com/EarnKeeper/ekp/feat/docs/docs/images/plugins-page.jpeg)
