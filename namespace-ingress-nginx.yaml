@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  annotations:
+
+    kubectl.kubernetes.io/last-applied-configuration: |
+      {"apiVersion":"v1","kind":"Namespace","metadata":{"annotations":{},"labels":{"app.kubernetes.io/instance":"ingress-nginx","app.kubernetes.io/name":"ingress-nginx"},"name":"ingress-nginx"}}
+  creationTimestamp: "2021-11-25T13:18:16Z"
+  labels:
+    app.kubernetes.io/instance: ingress-nginx
+    app.kubernetes.io/name: ingress-nginx
+    kubernetes.io/metadata.name: ingress-nginx
+  name: ingress-nginx
+  resourceVersion: "938"
+  uid: ea591aad-d456-4cec-9710-b20d9e959dfb
+spec:
+  finalizers:
+  - kubernetes
+status:
+  phase: Active
