@@ -13,7 +13,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      url: process.env.PG_URL,
+      url: process.env.DATABASE_URL,
       entities: ['dist/**/**.entity{.ts,.js}'],
       synchronize: true,
     }),
