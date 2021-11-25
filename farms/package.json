@@ -1,10 +1,18 @@
 {
-  "name": "app",
+  "name": "ekp-farms",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "Farms plugin for earnkeeper.io, built with NestJs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/earnkeeper/ekp.git"
+  },
+  "author": "Gavin Shaw",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/earnkeeper/ekp/issues"
+  },
+  "homepage": "https://github.com/earnkeeper/ekp#readme",
   "private": true,
-  "license": "UNLICENSED",
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "nest build",

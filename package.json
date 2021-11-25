@@ -1,0 +1,19 @@
+{
+  "name": "ekp",
+  "version": "0.1.0",
+  "description": "Templates, examples and tools to develop plugins for earnkeeper.io",
+  "private": true,
+  "scripts": {
+    "k:encrypt-secrets": "werf helm secret values encrypt clear-values.yaml -o .helm/secret-values.yaml"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/earnkeeper/ekp.git"
+  },
+  "author": "Gavin Shaw",
+  "license": "GPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/earnkeeper/ekp/issues"
+  },
+  "homepage": "https://github.com/earnkeeper/ekp#readme"
+}
