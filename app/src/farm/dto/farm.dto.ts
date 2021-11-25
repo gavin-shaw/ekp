@@ -26,13 +26,9 @@ export const farmsEntitySchema: JsonSchema7 = {
       },
       age: {
         type: 'integer',
-        // format: 'duration',
       },
       balance: {
         type: 'number',
-      },
-      $balance: {
-        type: 'string',
       },
       contractAddress: {
         type: 'string',

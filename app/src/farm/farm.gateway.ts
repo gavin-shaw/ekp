@@ -44,6 +44,17 @@ export class FarmGateway {
 
     const farmDtos = [];
 
+    const fiatSymbol = clientState.currency?.id ?? 'usd';
+
+    // const currencyAddresses = _.uniq(
+    //   farms.map((farm) => farm.currencyAddress).filter((symbol) => !!symbol),
+    // );
+
+    // const currencies = await this.currencyService.updateCurrencies(
+    //   currencyAddresses,
+    //   fiatSymbol,
+    // );
+
     for (const farm of farms) {
       let name;
       if (farm.name === undefined || farm.name === '' || farm.name === null) {
@@ -101,25 +112,28 @@ export class FarmGateway {
         tooltip: reason,
       };
 
+      const balance = await this.currencyService.convertCurrency(
+        farm.balance,
+        farm.currencyAddress,
+        fiatSymbol,
+      );
+
+      if (balance === undefined) {
+        continue;
+      }
+
+      console.log(farm.balance, balance);
+
       farmDtos.push({
         audit,
         name,
         age,
-        balance: farm.balance,
+        balance,
         contractAddress,
         link,
         subTitle,
       });
     }
-
-    // const currencyAddresses = _.uniq(
-    //   farms.map((farm) => farm.currencyAddress).filter((symbol) => !!symbol),
-    // );
-
-    // const currencies = await this.currencyService.updateCurrencies(
-    //   currencyAddresses,
-    //   clientState.currency?.id ?? 'USD',
-    // );
 
     const serverState: ServerStateDto = {
       entities: {
@@ -161,6 +175,7 @@ export class FarmGateway {
           },
           name: {
             center: false,
+            filter: true,
             cell: {
               type: 'VerticalLayout',
               elements: [
@@ -183,11 +198,12 @@ export class FarmGateway {
               ],
             },
           },
-
           age: {
             format: 'duration',
           },
-          balance: {},
+          balance: {
+            format: 'currency',
+          },
         },
       },
     };

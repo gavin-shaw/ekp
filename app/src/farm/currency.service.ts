@@ -86,14 +86,32 @@ export class CurrencyService {
       currency.fiatSymbol = fiatSymbol;
       currency.created = moment().unix();
       currency.updated = moment().unix();
-      currency.rate = response.data[id][fiatSymbol];
-      console.log(response.data[id]);
+      currency.rate = response.data[id][fiatSymbol.toLowerCase()];
       return currency;
     });
 
     await this.currencyRepository.save(currencies);
 
-    console.log(currencies);
     return currencies;
+  }
+
+  async convertCurrency(
+    value: number,
+    coinAddress: string,
+    fiatSymbol: string,
+  ): Promise<number> {
+    const currencies = await this.currencyRepository.find();
+
+    const currency = currencies.find(
+      (c) =>
+        c.coinAddress.toLowerCase() === coinAddress.toLowerCase() &&
+        c.fiatSymbol === fiatSymbol,
+    );
+
+    if (!currency?.rate) {
+      return undefined;
+    }
+
+    return value * currency.rate;
   }
 }
