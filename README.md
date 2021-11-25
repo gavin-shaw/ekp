@@ -57,6 +57,7 @@ Create a .env file in the root of the ekp directory:
 ```
 BSCSCAN_API_KEY=
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/ekp
+DATABASE_SSL=disable
 ```
 
 Append your BSC SCAN api key to the end of the first line, [you can create one here.](https://bscscan.com/myapikey). You will use this key to pull logs from the blockchain.

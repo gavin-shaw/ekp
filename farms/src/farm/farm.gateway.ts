@@ -10,7 +10,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import { Server, Socket } from 'socket.io';
 import { IsNull, Not, Repository } from 'typeorm';
-import { ServerStateDto } from '../gateway/dto/server-state.dto';
+import { ServerStateDto } from '../../libs/sdk/src/gateway/dto/server-state.dto';
 import { CurrencyService } from './currency.service';
 import { farmsEntitySchema } from './dto/farm.dto';
 import { Farm } from './entity/farm.entity';

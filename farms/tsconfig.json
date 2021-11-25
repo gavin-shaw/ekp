@@ -18,6 +18,14 @@
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": {
+      "@sdk/sdk": [
+        "libs/sdk/src"
+      ],
+      "@sdk/sdk/*": [
+        "libs/sdk/src/*"
+      ]
+    }
   }
 }
