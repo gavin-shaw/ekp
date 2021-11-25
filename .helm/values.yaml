@@ -6,3 +6,5 @@ loki-stack:
 postgresql:
   postgresqlPassword: postgres
   postgresqlDatabase: ekp
+cert-manager:
+  installCRDs: true
