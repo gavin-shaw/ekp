@@ -6,23 +6,21 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
 import { Server, Socket } from 'socket.io';
 import { IsNull, Not, Repository } from 'typeorm';
-import bep20Abi from '../abi/bep20.json';
-import { CurrencyService } from './currency.service';
-import { FarmDto, farmsEntitySchema } from './dto/farm.dto';
-import { Farm } from './entity/farm.entity';
 import { ServerStateDto } from '../gateway/dto/server-state.dto';
+import { CurrencyService } from './currency.service';
+import { farmsEntitySchema } from './dto/farm.dto';
+import { Farm } from './entity/farm.entity';
 
 @WebSocketGateway()
 export class FarmGateway {
   constructor(
     @InjectRepository(Farm) private farmRepository: Repository<Farm>,
     @Inject(CurrencyService) private currencyService: CurrencyService,
-  ) { }
+  ) {}
 
   @WebSocketServer()
   server: Server;
@@ -44,32 +42,74 @@ export class FarmGateway {
       },
     });
 
-    const serverState: ServerStateDto = {};
-
-    serverState.entities = {
-      farms: []
-    }
+    const farmDtos = [];
 
     for (const farm of farms) {
-      const farmDto: FarmDto = {};
-
+      let name;
       if (farm.name === undefined || farm.name === '' || farm.name === null) {
-        farmDto.name = _.startCase(farm.contractName);
+        name = _.startCase(farm.contractName);
       } else {
-        farmDto.name = farm.name;
+        name = farm.name;
       }
 
+      let age;
       if (!!farm.seedTimestamp) {
-        farmDto.age = moment().unix() - farm.seedTimestamp;
+        age = moment().unix() - farm.seedTimestamp;
       }
 
-      farmDto.contractAddress = farm.contractAddress;
-
-      if (!farmDto.age) {
+      if (!age) {
         continue;
       }
 
-      serverState.entities.farms.push(farmDto);
+      const link = !!farm.websiteUrl
+        ? `[${name}](${farm.websiteUrl})`
+        : `[${name}](https://bscscan.com/address/${farm.contractAddress})`;
+
+      const subTitle = `${farm.currencyName ?? 'Unknown'} - ${(
+        farm.dailyRoi * 100
+      ).toFixed(0)} %`;
+
+      const contractAddress = farm.contractAddress;
+
+      let icon: string, color: string, reason: string;
+
+      switch (farm.audit) {
+        case 'approved':
+          icon = 'Check';
+          color = 'success';
+          reason = 'Contract looks safe.';
+          break;
+        case 'danger':
+          icon = 'XOctagon';
+          color = 'danger';
+          reason = 'Unsafe contract, use at your own risk.';
+          break;
+        default:
+          icon = 'AlertTriangle';
+          color = 'warning';
+          reason = 'Not audited yet.';
+          break;
+      }
+
+      if (!!farm.auditReason) {
+        reason = farm.auditReason;
+      }
+
+      const audit = {
+        icon,
+        color,
+        tooltip: reason,
+      };
+
+      farmDtos.push({
+        audit,
+        name,
+        age,
+        balance: farm.balance,
+        contractAddress,
+        link,
+        subTitle,
+      });
     }
 
     // const currencyAddresses = _.uniq(
@@ -81,22 +121,23 @@ export class FarmGateway {
     //   clientState.currency?.id ?? 'USD',
     // );
 
-    client.emit(
-      'server-state',
-      JSON.stringify(serverState),
-    );
-
-    return payload;
-  }
-
-
-  createEntitiesSchema() {
-    return {
-      type: 'object',
-      properties: {
-        farms: farmsEntitySchema,
+    const serverState: ServerStateDto = {
+      entities: {
+        farms: farmDtos,
       },
+      entitySchema: {
+        type: 'object',
+        properties: {
+          farms: farmsEntitySchema,
+        },
+      },
+      uiSchema: this.createUiSchema(),
+      meta: { pluginName: 'Farms' },
     };
+
+    client.emit('server-state', JSON.stringify(serverState));
+
+    return JSON.stringify(serverState);
   }
 
   createUiSchema() {
@@ -105,22 +146,47 @@ export class FarmGateway {
       scope: '#/properties/farms',
       options: {
         columns: {
+          audit: {
+            name: '',
+            width: '50px',
+            sortable: false,
+            cell: {
+              type: 'Control',
+              scope: '#/properties/audit',
+              label: '',
+              options: {
+                renderIcon: true,
+              },
+            },
+          },
           name: {
+            center: false,
             cell: {
               type: 'VerticalLayout',
               elements: [
                 {
                   type: 'Control',
                   scope: '#/properties/link',
+                  label: '',
+                  options: {
+                    renderMarkdownLink: true,
+                  },
                 },
                 {
                   type: 'Control',
-                  scope: '#/properties/subTitle'
-                }
-              ]
-            }
+                  scope: '#/properties/subTitle',
+                  label: '',
+                  options: {
+                    displayOnly: true,
+                  },
+                },
+              ],
+            },
           },
-          age: {},
+
+          age: {
+            format: 'duration',
+          },
           balance: {},
         },
       },

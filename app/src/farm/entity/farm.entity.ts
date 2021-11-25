@@ -11,6 +11,12 @@ export class Farm {
   @Column({ nullable: true })
   updated?: number;
 
+  @Column({ nullable: true })
+  audit?: string;
+
+  @Column({ nullable: true })
+  auditReason?: string;
+
   @Column({ nullable: true, type: 'decimal', scale: 18, precision: 36 })
   balance?: number;
 

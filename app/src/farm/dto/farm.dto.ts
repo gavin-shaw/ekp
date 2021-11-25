@@ -1,4 +1,4 @@
-import { JsonSchema } from '@jsonforms/core';
+import { JsonSchema, JsonSchema7 } from '@jsonforms/core';
 
 export interface FarmDto {
   name: string;
@@ -10,38 +10,39 @@ export interface FarmDto {
   contractAddress: string;
 }
 
-export const farmsEntitySchema: JsonSchema = {
-  type: "array",
+export const farmsEntitySchema: JsonSchema7 = {
+  type: 'array',
   items: {
-    type: "object",
-    required: ['name', 'age', 'balance', 'contractAddress', 'link', 'details'],
+    type: 'object',
     properties: {
+      audit: {
+        type: 'object',
+      },
       name: {
-        type: 'string'
+        type: 'string',
       },
       link: {
         type: 'string',
-        format: 'uri'
       },
       age: {
         type: 'integer',
-        format: 'duration'
+        // format: 'duration',
       },
       balance: {
         type: 'number',
       },
       $balance: {
-        type: 'string'
+        type: 'string',
       },
       contractAddress: {
-        type: 'string'
+        type: 'string',
       },
       subTitle: {
-        type: 'string'
+        type: 'string',
       },
       currency: {
-        type: 'string'
-      }
-    }
-  }
-}
+        type: 'string',
+      },
+    },
+  },
+};
