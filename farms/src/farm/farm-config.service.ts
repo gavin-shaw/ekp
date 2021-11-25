@@ -9,6 +9,7 @@ import bep20Abi from '../abi/bep20.json';
 import { Farm } from './entity/farm.entity';
 import { Transaction } from './entity/transaction.entity';
 import Bottleneck from 'bottleneck';
+import starterFarms from './entity/starter-farms';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const deepEqual = require('deep-equal');
@@ -35,7 +36,25 @@ export class FarmConfigService {
   private logger: Logger = new Logger('AppGateway');
 
   async onApplicationBootstrap() {
-    // this.loadFarms();
+    await this.loadStarterFarms();
+    this.loadFarms();
+  }
+
+  async loadStarterFarms() {
+    const farms = await this.farmRepository.find();
+    const farmAddresses = farms.map((farm) => farm.contractAddress);
+
+    const newStarterFarms = starterFarms.filter(
+      (starterFarm) => !farmAddresses.includes(starterFarm),
+    );
+
+    if (newStarterFarms.length > 0) {
+      await this.farmRepository.save(
+        newStarterFarms.map((contractAddress) => ({
+          contractAddress,
+        })),
+      );
+    }
   }
 
   async loadFarms() {

@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app
+  name: farms
 spec:
   selector:
     matchLabels:
-      app: app
+      app: farms
   revisionHistoryLimit: 3
   strategy:
     type: RollingUpdate
@@ -13,23 +13,17 @@ spec:
   template:
     metadata:
       labels:
-        app: app
+        app: farms
     spec:
       containers:
-        - name: app
-          image: "{{ .Values.werf.image.app }}"
+        - name: farms
+          image: "{{ .Values.werf.image.farms }}"
           workingDir: /app
           env:
-            - name: TYPEORM_URL
-              value: postgres://postgres:postgres@ekp-farms-postgresql:5432/ekp_farms
-            - name: BSCSCAN_URL
-              value: https://api.bscscan.com
+            - name: PG_URL
+              value: postgres://postgres:postgres@ekp-postgresql:5432/ekp
             - name: BSCSCAN_API_KEY
               value: "{{ .Values.bscscan.apiKey }}"
-            - name: BSC_PROVIDER_TYPE
-              value: JsonRpc
-            - name: BSC_PROVIDER_URL
-              value: https://bsc-dataseed1.ninicoin.io/
 
           ports:
             - containerPort: 3001

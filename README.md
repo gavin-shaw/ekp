@@ -8,7 +8,7 @@
 
 We started [earnkeeper.io](https://earnkeeper.io) to provide unbiased, detailed and honest analysis of projects in the cryptocurrency [Play 2 Earn](https://wiki.rugdoc.io/docs/play-to-earn-games-p2e/) space.
 
-Games are being released in this space very quickly, and we can cover only a very small portion of them. Our community on [Discord](https://discord.gg/XXcuUyehvY) is already brimming with users who love the site and want to help. 
+Games are being released in this space very quickly, and we can cover only a very small portion of them. Our community on [Discord](https://discord.gg/XXcuUyehvY) is already brimming with users who love the site and want to help.
 
 We don't want to open source the site itself, as it would be impossible to provide a secure experience to those who trust https://earnkeeper.io showing at the top of their browser.
 
@@ -42,22 +42,34 @@ We don't want to re-invent the wheel, so we use the following open source librar
 - Grafana Loki
 - NocoDB
 
-
-You are free to use any you like, its your microservice after all! You don't even have to use javascript, it can be python, go, whatever you like behind the scenes. All we specify is a protocol that earnkeeper.io understands. 
+You are free to use any you like, its your microservice after all! You don't even have to use javascript, it can be python, go, whatever you like behind the scenes. All we specify is a protocol that earnkeeper.io understands.
 
 This project is only intended to get you a start in the language and frameworks that we use ourselves.
 
 We use github to host our code, and github actions to automate our deploys.
 
-To run the example plugin locally:
+To run the example plugin locally...
+
+Create a .env file in the root of the ekp directory:
+
+```
+BSCSCAN_API_KEY=
+PG_URL=postgres://postgres:postgres@localhost:5432/ekp
+```
+
+Append your BSC SCAN api key to the end of the first line, [you can create one here.](https://bscscan.com/myapikey). You will use this key to pull logs from the blockchain.
+
+You will need a postgres database running on your local machine, if your connection details are different for your local instance, you can change them on the second line.
+
+Then run the following to start the app locally.
 
 ```sh
-cd ekp-farms
+cd farms
 npm install
 npm run start:dev
 ```
 
-Go to https://playground.earnkeeper.io/plugins, add a new plugin with url: http://localhost:3000.
+Go to https://playground.earnkeeper.io/plugins, add a new plugin with url: http://localhost:3001.
 
 After clicking save, you should see the same list of farms that you see on the main site!
 
@@ -100,7 +112,7 @@ werf helm secret generate-secret-key > .werf_secret_key
 There are some already encrypted values in this file `.helm/secret-values`. Edit the file and input your own plain text values, the comments will guide you on what to enter. Save the file and then run:
 
 ```sh
-werf helm secret values encrypt
+werf helm secret values encrypt .helm/secret-values.yaml -o .helm/secret-values.yaml
 ```
 
 Your values are now encrypted and safe to commit to git.
@@ -124,4 +136,3 @@ gh secret set KUBE_CONFIG_BASE64_DATA --repos="ekp" -b$(doctl kubernetes cluster
 You are all set, go ahead and push your changes to your repository. Once the build is complete, your plugin is available on websockets at your EndPoint address you received above!
 
 This is the url you will enter into the EarnKeeper website to enable your plugin.
-

@@ -13,7 +13,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      url: process.env.TYPEORM_URL,
+      url: process.env.PG_URL,
       entities: ['dist/**/**.entity{.ts,.js}'],
       synchronize: true,
     }),
@@ -26,7 +26,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 })
 export class AppModule {
   onModuleInit() {
-    bscscan.setUrl(process.env.BSCSCAN_URL);
+    bscscan.setUrl('https://api.bscscan.com');
     bscscan.setApiKey(process.env.BSCSCAN_API_KEY);
   }
 }

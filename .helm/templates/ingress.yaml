@@ -12,6 +12,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: app
+                name: farms
                 port:
                   number: 3001
