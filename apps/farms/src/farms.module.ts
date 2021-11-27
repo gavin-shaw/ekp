@@ -3,7 +3,7 @@ import { CacheModule, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Farm } from './entity/farm.entity';
-import { ContractService } from './farm-contract.service';
+import { FarmContractService } from './farm-contract.service';
 import { FarmGateway } from './farm.gateway';
 import { FarmService } from './service/farm.service';
 import { SchedulerService } from './service/scheduler.service';
@@ -18,7 +18,7 @@ import { UiService } from './service/ui.service';
     TypeOrmModule.forFeature([Farm]),
   ],
   providers: [
-    ContractService,
+    FarmContractService,
     FarmGateway,
     FarmService,
     SchedulerService,

@@ -1,15 +1,29 @@
+import { BlockchainTransactionService, EtherscanService } from '@app/sdk';
+import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { ContractService } from './farm-contract.service';
+import { FarmContractService } from './farm-contract.service';
 
 describe('ContractService', () => {
-  let service: ContractService;
+  let service: FarmContractService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ContractService],
-    }).compile();
+      providers: [FarmContractService],
+    })
+      .useMocker((token) => {
+        if (token === Logger) {
+          return {};
+        }
+        if (token === BlockchainTransactionService) {
+          return {};
+        }
+        if (token === EtherscanService) {
+          return {};
+        }
+      })
+      .compile();
 
-    service = module.get<ContractService>(ContractService);
+    service = module.get<FarmContractService>(FarmContractService);
   });
 
   it('should be defined', () => {

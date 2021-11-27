@@ -1,9 +1,8 @@
-import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import axios from 'axios';
-import { Cache } from 'cache-manager';
 import _ from 'lodash';
+import { cacheable } from '../cache.decorator';
 import { CurrencyRate } from './model/currency-rate';
-
 const BASE_URL = 'https://api.coingecko.com/api/v3';
 
 interface GeckoCoin {
@@ -14,17 +13,8 @@ interface GeckoCoin {
 
 @Injectable()
 export class CurrencyService {
-  constructor(@Inject(CACHE_MANAGER) private cache: Cache) {}
-
-  private async fetchGeckoCoins(): Promise<GeckoCoin[]> {
-    const cacheKey = `CurrencyService.fetchGeckoCoins()`;
-
-    const cacheResult = await this.cache.get<GeckoCoin[]>(cacheKey);
-
-    if (cacheResult !== null) {
-      return cacheResult;
-    }
-
+  @cacheable(3600)
+  async fetchGeckoCoins(): Promise<GeckoCoin[]> {
     const url = `${BASE_URL}/coins/list?include_platform=true`;
     const response = await axios.get(url);
 
@@ -38,28 +28,17 @@ export class CurrencyService {
       platforms: it.platforms,
     }));
 
-    await this.cache.set(cacheKey, geckoCoins, { ttl: 3600 });
-
     return geckoCoins;
   }
 
   static WBNB_ADDRESS = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
 
+  @cacheable(300)
   async fetchRates(
     coinAddresses: string[],
     fiatSymbol: string,
     platform = 'binance-smart-chain',
   ): Promise<CurrencyRate[]> {
-    const cacheKey = `CurrencyService.fetchRates("${coinAddresses.join(
-      ',',
-    )}","${fiatSymbol}","${platform}")`;
-
-    const cacheResult = await this.cache.get<CurrencyRate[]>(cacheKey);
-
-    if (cacheResult !== null) {
-      return cacheResult;
-    }
-
     const geckoCoins = await this.fetchGeckoCoins();
 
     coinAddresses.push(CurrencyService.WBNB_ADDRESS);
@@ -98,8 +77,6 @@ export class CurrencyService {
         rate: response.data[id][fiatSymbol.toLowerCase()],
       };
     });
-
-    await this.cache.set(cacheKey, currencies, { ttl: 300 });
 
     return currencies;
   }

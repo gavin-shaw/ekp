@@ -1,4 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Farm } from '../entity/farm.entity';
 import { FarmService } from './farm.service';
 
 describe('FarmService', () => {
@@ -7,7 +9,13 @@ describe('FarmService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [FarmService],
-    }).compile();
+    })
+      .useMocker((token) => {
+        if (token === getRepositoryToken(Farm)) {
+          return {};
+        }
+      })
+      .compile();
 
     service = module.get<FarmService>(FarmService);
   });

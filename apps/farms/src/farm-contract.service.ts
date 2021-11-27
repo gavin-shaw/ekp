@@ -1,14 +1,13 @@
 import * as etherscan from '@app/etherscan';
 import { BlockchainTransactionService, EtherscanService } from '@app/sdk';
 import { Transaction } from '@app/sdk/blockchain/entity/transaction.entity';
-import { Logger } from '@ethersproject/logger';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import Bottleneck from 'bottleneck';
 import moment from 'moment';
 import { Farm } from './entity/farm.entity';
 
 @Injectable()
-export class ContractService {
+export class FarmContractService {
   constructor(
     private logger: Logger,
     private blockchainTransactionService: BlockchainTransactionService,
@@ -39,7 +38,7 @@ export class ContractService {
       return { ...farm, disabled: true };
     }
 
-    this.logger.info(`Checking for updates to contract: ${farm.contractName}`);
+    this.logger.log(`Checking for updates to contract: ${farm.contractName}`);
 
     const farmWithSourceDetails = await this.parseContractSource(farm);
 
