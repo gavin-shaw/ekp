@@ -2,5 +2,5 @@ configVersion: 1
 project: ekp
 ---
 image: farms
-dockerfile: Dockerfile
-context: farms
+dockerfile: Dockerfile.farms
+context: .

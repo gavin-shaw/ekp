@@ -74,6 +74,12 @@ typings/
 
 # FuseBox cache
 .fusebox/
+
+# Werf
 .werf_secret_key
 .secrets
 clear-values.yaml
+
+# Nest.js
+dist
+.env
