@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import moment from 'moment';
 import { IsNull, Not, Repository } from 'typeorm';
 import { Farm } from '../entity/farm.entity';
 import starterFarms from '../starter-farms';
-
 @Injectable()
 export class FarmService {
   constructor(
@@ -21,7 +21,14 @@ export class FarmService {
   }
 
   async save(farms: Farm[]) {
-    await this.farmRepository.save(farms);
+    const now = moment().unix();
+    await this.farmRepository.save(
+      farms.map((farm) => ({
+        ...farm,
+        created: farm.created || now,
+        updated: now,
+      })),
+    );
   }
 
   async loadStarterFarms() {

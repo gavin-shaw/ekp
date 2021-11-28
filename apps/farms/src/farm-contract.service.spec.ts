@@ -1,4 +1,8 @@
-import { BlockchainTransactionService, EtherscanService } from '@app/sdk';
+import {
+  BlockchainTokenService,
+  BlockchainTransactionService,
+  EtherscanService,
+} from '@app/sdk';
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FarmContractService } from './farm-contract.service';
@@ -18,6 +22,9 @@ describe('ContractService', () => {
           return {};
         }
         if (token === EtherscanService) {
+          return {};
+        }
+        if (token === BlockchainTokenService) {
           return {};
         }
       })

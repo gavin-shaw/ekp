@@ -1,4 +1,4 @@
-import { cache, cacheable } from './cache.decorator';
+import { cache, cacheable } from './cacheable.decorator';
 
 class TestService {
   @cacheable()

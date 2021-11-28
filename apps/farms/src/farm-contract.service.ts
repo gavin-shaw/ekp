@@ -1,29 +1,37 @@
 import * as etherscan from '@app/etherscan';
-import { BlockchainTransactionService, EtherscanService } from '@app/sdk';
+import {
+  BlockchainTokenService,
+  BlockchainTransactionService,
+  EtherscanService,
+} from '@app/sdk';
 import { Transaction } from '@app/sdk/blockchain/entity/transaction.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import Bottleneck from 'bottleneck';
 import moment from 'moment';
 import { Farm } from './entity/farm.entity';
+import { FarmService } from './service/farm.service';
 
 @Injectable()
 export class FarmContractService {
   constructor(
-    private logger: Logger,
+    private blockchainTokenService: BlockchainTokenService,
     private blockchainTransactionService: BlockchainTransactionService,
     private etherscanService: EtherscanService,
+    private farmService: FarmService,
+    private logger: Logger,
   ) {}
 
   private contractDetailsLimiter = new Bottleneck({
     maxConcurrent: 10,
   });
 
-  async getFarmsWithContractDetails(farms: Farm[]) {
+  async updateFarmContractDetails(farms: Farm[]) {
     return await Promise.all(
       farms.map((farm) => {
         return this.contractDetailsLimiter.schedule(async () => {
           try {
-            return await this.getFarmWithContractDetails(farm);
+            const updatedFarm = await this.getFarmWithContractDetails(farm);
+            await this.farmService.save([updatedFarm]);
           } catch (error) {
             this.logger.error(error);
             return farm;
@@ -34,28 +42,41 @@ export class FarmContractService {
   }
 
   async getFarmWithContractDetails(farm: Farm) {
-    if (farm.disabled) {
+    if (
+      farm.disabled ||
+      (farm.seedTransactionFetched && farm.contractFetched)
+    ) {
       return farm;
     }
 
     if (!farm.contractAddress) {
       this.logger.warn('Could not update farm, no contract address');
-      return { ...farm, disabled: true };
+      return {
+        ...farm,
+        disabled: true,
+        disabledReason: 'Missing contract address',
+      };
     }
 
-    this.logger.log(`Checking for updates to contract: ${farm.contractName}`);
+    this.logger.log(`Checking for updates to contract`, {
+      contractName: farm.contractName,
+      contractAddress: farm.contractAddress,
+    });
 
     const farmWithSourceDetails = await this.parseContractSource(farm);
 
-    const farmWithSeedDetails = await this.parseContractSeedTransaction(farm);
+    if (
+      !farmWithSourceDetails.contractFetched ||
+      farmWithSourceDetails.disabled
+    ) {
+      return farmWithSourceDetails;
+    }
 
-    return {
-      ...farm,
-      ...farmWithSourceDetails,
-      ...farmWithSeedDetails,
-      created: farm.created || moment().unix(),
-      updated: moment().unix(),
-    };
+    const farmWithSeedDetails = await this.parseContractSeedTransaction(
+      farmWithSourceDetails,
+    );
+
+    return farmWithSeedDetails;
   }
 
   private async parseContractSeedTransaction(farm: Farm): Promise<Farm> {
@@ -69,8 +90,29 @@ export class FarmContractService {
       this.logger.warn('Could not find seed transaction for farm', {
         contractAddress: farm.contractAddress,
       });
-      return farm;
+
+      const ageSeconds = moment().unix() - farm.created;
+
+      if (ageSeconds > 86400) {
+        this.logger.warn(
+          'Disabling farm after trying to find seed transaction for 24 hours',
+          { contractAddress: farm.contractAddress },
+        );
+        return {
+          ...farm,
+          disabled: true,
+          disabledReason:
+            'Could not find seed transaction after waiting 24 hours',
+        };
+      }
     }
+
+    const farmWithSeedTransaction = {
+      ...farm,
+      seedBlock: seedTransaction.blockNumber,
+      seedHash: seedTransaction.hash,
+      seedTimestamp: seedTransaction.timeStamp,
+    };
 
     const receipt = await this.blockchainTransactionService.getReceipt(
       seedTransaction,
@@ -78,39 +120,63 @@ export class FarmContractService {
 
     if (!receipt) {
       this.logger.warn('Could not fetch logs for seed transaction for farm', {
-        contractAddress: farm.contractAddress,
+        contractAddress: farmWithSeedTransaction.contractAddress,
         transactionHash: seedTransaction.hash,
       });
-      return farm;
+
+      return {
+        ...farmWithSeedTransaction,
+        disabled: true,
+        disabledReason: 'Failed to read logs for seed transaction',
+      };
     }
 
     if (!receipt.logs || receipt.logs.length === 0) {
       // No token transfer logs, the farm currency is BNB
       return {
-        ...farm,
-        seedTimestamp: seedTransaction.timeStamp,
-        seedBlock: seedTransaction.blockNumber,
+        ...farmWithSeedTransaction,
         currencyAddress: '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c',
         currencyName: 'BNB',
         currencyDecimals: 18,
         seedTransactionFetched: true,
       };
     } else {
-      const currencyAddress = receipt.logs[0]?.address;
+      const tokenAddress = receipt.logs[0]?.address;
 
-      const api = this.etherscanService.getApi();
+      if (!tokenAddress) {
+        this.logger.warn('Could not find token address in seed transcaction', {
+          contractAddress: farm.contractAddress,
+          transactionHash: receipt.transactionHash,
+        });
+        return {
+          ...farmWithSeedTransaction,
+          disabled: true,
+          disabledReason: 'No token address in seed transaction',
+        };
+      }
 
-      const tokenDetails = await api.token.getTokenInfoByContractAddress(
-        currencyAddress,
+      const tokenDetails = await this.blockchainTokenService.getTokenDetails(
+        tokenAddress,
       );
+
+      if (!tokenDetails) {
+        this.logger.warn('Could not fetch token details', {
+          contractAddress: farm.contractAddress,
+          tokenAddress: tokenAddress,
+        });
+        return {
+          ...farm,
+          currencyAddress: tokenAddress,
+          disabled: true,
+          disabledReason: 'Failed to fetch token details',
+        };
+      }
 
       return {
         ...farm,
-        seedTimestamp: seedTransaction.timeStamp,
-        seedBlock: seedTransaction.blockNumber,
-        currencyAddress: tokenDetails.contractAddress,
+        currencyAddress: tokenDetails.tokenAddress,
         currencyName: tokenDetails.symbol,
-        currencyDecimals: Number(tokenDetails.divisor),
+        currencyDecimals: Number(tokenDetails.decimals),
         seedTransactionFetched: true,
       };
     }
@@ -126,7 +192,7 @@ export class FarmContractService {
 
   private async parseContractSource(farm: Farm): Promise<Farm> {
     if (farm.contractFetched) {
-      return { ...farm };
+      return farm;
     }
 
     const api = this.etherscanService.getApi();
@@ -141,7 +207,12 @@ export class FarmContractService {
       this.logger.warn('Could not retrieve source code for farm', {
         contractAddress: farm.contractAddress,
       });
-      return { ...farm, contractFetched: true };
+
+      return {
+        ...farm,
+        disabled: true,
+        disabledReason: 'Failed to retrieve source code',
+      };
     }
 
     // TODO: there is a potential for a bug here if a contract has multiple source code responses from BSC scan
@@ -149,7 +220,7 @@ export class FarmContractService {
     // I don't know yet how to choose which source code index to use for parsing, or maybe I need to parse all of them
     const result = this.parseContractInfo(farm, sourceCodeWrappers[0]);
 
-    return { ...result, contractFetched: true };
+    return { ...farm, ...result, contractFetched: true };
   }
 
   private parseContractInfo(
@@ -170,7 +241,11 @@ export class FarmContractService {
         contractAddress: farm.contractAddress,
       });
 
-      return { ...farm, disabled: true };
+      return {
+        ...farm,
+        disabled: true,
+        disabledReason: 'Contract is unverified',
+      };
     }
 
     return {
@@ -262,7 +337,7 @@ export class FarmContractService {
   ): number | undefined {
     const regexResult = /uint256 PSN\=(\d+);/m.exec(contractSource);
 
-    if (!!regexResult && !!regexResult[1]) {
+    if (!regexResult || !regexResult[1]) {
       this.logger.warn('Could not find Psn in contract source.', {
         contractAddress,
       });
@@ -282,6 +357,7 @@ export class FarmContractService {
       this.logger.warn('Could not find Psnh in contract source', {
         contractAddress,
       });
+      return undefined;
     }
 
     return Number(regexResult[1]);

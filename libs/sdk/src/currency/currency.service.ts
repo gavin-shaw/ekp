@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
 import _ from 'lodash';
-import { cacheable } from '../cache.decorator';
+import { cacheable } from '../cacheable.decorator';
 import { CurrencyRate } from './model/currency-rate';
 const BASE_URL = 'https://api.coingecko.com/api/v3';
 

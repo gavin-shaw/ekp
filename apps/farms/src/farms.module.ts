@@ -1,4 +1,4 @@
-import { DatabaseModule, GlobalModule } from '@app/sdk';
+import { DatabaseModule, GlobalModule, LoggerModule } from '@app/sdk';
 import { CacheModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Farm } from './entity/farm.entity';
@@ -10,6 +10,7 @@ import { UiService } from './service/ui.service';
 
 @Module({
   imports: [
+    LoggerModule,
     CacheModule.register({ isGlobal: true }),
     GlobalModule,
     DatabaseModule,

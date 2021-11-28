@@ -14,9 +14,6 @@ export class SchedulerService {
 
     const farms = await this.farmService.getCurrentFarms();
 
-    const farmsWithContractDetails =
-      await this.farmContractService.getFarmsWithContractDetails(farms);
-
-    this.farmService.save(farmsWithContractDetails);
+    this.farmContractService.updateFarmContractDetails(farms);
   }
 }

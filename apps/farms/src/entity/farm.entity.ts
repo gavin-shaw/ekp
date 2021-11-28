@@ -47,6 +47,9 @@ export class Farm {
   @Column({ default: false })
   readonly disabled: boolean;
 
+  @Column({ nullable: true })
+  readonly disabledReason: string;
+
   @Column({ nullable: true, type: 'decimal', scale: 3, precision: 5 })
   readonly fee?: number;
 
@@ -70,6 +73,9 @@ export class Farm {
 
   @Column({ type: 'boolean', default: false })
   readonly seedTransactionFetched: boolean;
+
+  @Column({ nullable: true })
+  readonly seedHash: string;
 
   @Column({ nullable: true })
   readonly websiteUrl?: string;

@@ -37,7 +37,7 @@ export function cacheable(ttlSecs?: number) {
         return result;
       }
 
-      const computed = await Promise.resolve(originalFn(...args));
+      const computed = await Promise.resolve(originalFn.bind(target)(...args));
 
       await cache.set(key, computed, ttlSecs);
 

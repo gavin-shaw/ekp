@@ -1,15 +1,16 @@
 import { ClientStateEvent, ServerStateDto } from '@app/sdk';
-import { LoggerService } from '@nestjs/common';
-import { OnEvent, EventEmitter2 } from '@nestjs/event-emitter';
+import { Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { FarmDto, FarmsDtoSchema } from './dto/farm.dto';
 import { FarmService } from './service/farm.service';
 import { UiService } from './service/ui.service';
 import { FarmsListSchema } from './ui/farms-list.schema';
 
+@Injectable()
 export class FarmGateway {
   constructor(
     private farmService: FarmService,
-    private logger: LoggerService,
+    private logger: Logger,
     private uiService: UiService,
     private eventEmitter: EventEmitter2,
   ) {}

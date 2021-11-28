@@ -102,8 +102,6 @@ export class Query {
 
     const query = qs.stringify(queryParams);
 
-    console.log(this.limiter.counts());
-
     return await this.limiter.schedule(async () => {
       const response = await axios.get<Response<T>>(
         `${this.config.url}/api?${query}`,

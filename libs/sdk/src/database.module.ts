@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { LoggerModule } from './logger/logger.module';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
@@ -21,6 +22,7 @@ dotenv.config();
             }
           : undefined,
     }),
+    LoggerModule,
   ],
 })
 export class DatabaseModule {}
