@@ -20,11 +20,16 @@ export class FarmContractService {
 
   async getFarmsWithContractDetails(farms: Farm[]) {
     return await Promise.all(
-      farms.map((farm) =>
-        this.contractDetailsLimiter.schedule(() =>
-          this.getFarmWithContractDetails(farm),
-        ),
-      ),
+      farms.map((farm) => {
+        return this.contractDetailsLimiter.schedule(async () => {
+          try {
+            return await this.getFarmWithContractDetails(farm);
+          } catch (error) {
+            this.logger.error(error);
+            return farm;
+          }
+        });
+      }),
     );
   }
 

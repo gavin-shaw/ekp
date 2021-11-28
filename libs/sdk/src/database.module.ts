@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 @Module({
   imports: [
@@ -8,6 +10,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       url: process.env.DATABASE_URL,
       entities: ['dist/**/**.entity{.ts,.js}'],
       synchronize: true,
+      autoLoadEntities: true,
       ssl: process.env.DATABASE_SSL !== 'disable',
       extra:
         process.env.DATABASE_SSL !== 'disable'

@@ -1,6 +1,5 @@
 import { DatabaseModule, GlobalModule } from '@app/sdk';
 import { CacheModule, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Farm } from './entity/farm.entity';
 import { FarmContractService } from './farm-contract.service';
@@ -11,7 +10,6 @@ import { UiService } from './service/ui.service';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
     CacheModule.register({ isGlobal: true }),
     GlobalModule,
     DatabaseModule,

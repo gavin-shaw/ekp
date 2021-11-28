@@ -30,7 +30,10 @@ export class Contract {
     );
   }
 
-  getContractSourceCode(address: string, requestConfig?: RequestConfig) {
+  getContractSourceCode(
+    address: string,
+    requestConfig?: RequestConfig,
+  ): Promise<SourceCode[]> {
     return this.query.execute<SourceCode[]>(
       {
         address,

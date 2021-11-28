@@ -96,7 +96,7 @@ export class Token {
   getTokenInfoByContractAddress(
     contractAddress: string,
     requestConfig?: RequestConfig,
-  ) {
+  ): Promise<TokenInfo> {
     return this.query.execute<TokenInfo>(
       {
         contractAddress,

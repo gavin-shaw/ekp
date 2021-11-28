@@ -20,6 +20,10 @@ export class FarmService {
     return farms;
   }
 
+  async save(farms: Farm[]) {
+    await this.farmRepository.save(farms);
+  }
+
   async loadStarterFarms() {
     const farms = await this.farmRepository.find();
     const farmAddresses = farms.map((farm) => farm.contractAddress);

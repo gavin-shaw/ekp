@@ -4,3 +4,4 @@ export * from './database.module';
 export * from './gateway';
 export * from './global.module';
 export * from './cache.decorator';
+export * from './logger.service';

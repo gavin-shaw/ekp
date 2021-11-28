@@ -6,12 +6,17 @@ import { FarmContractService } from '../farm-contract.service';
 export class SchedulerService {
   constructor(
     private farmService: FarmService,
-    private contractService: FarmContractService,
+    private farmContractService: FarmContractService,
   ) {}
 
   async onApplicationBootstrap() {
     await this.farmService.loadStarterFarms();
+
     const farms = await this.farmService.getCurrentFarms();
-    this.contractService.getFarmsWithContractDetails(farms);
+
+    const farmsWithContractDetails =
+      await this.farmContractService.getFarmsWithContractDetails(farms);
+
+    this.farmService.save(farmsWithContractDetails);
   }
 }
