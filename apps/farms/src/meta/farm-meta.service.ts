@@ -3,35 +3,34 @@ import {
   BlockchainTokenService,
   BlockchainTransactionService,
   EtherscanService,
+  Transaction,
 } from '@app/sdk';
-import { Transaction } from '@app/sdk/blockchain/entity/transaction.entity';
 import { Injectable, Logger } from '@nestjs/common';
 import Bottleneck from 'bottleneck';
 import moment from 'moment';
-import { Farm } from './entity/farm.entity';
-import { FarmService } from './service/farm.service';
+import { FarmPersistService, Farm } from '../persist';
 
 @Injectable()
-export class FarmContractService {
+export class FarmMetaService {
   constructor(
     private blockchainTokenService: BlockchainTokenService,
     private blockchainTransactionService: BlockchainTransactionService,
     private etherscanService: EtherscanService,
-    private farmService: FarmService,
     private logger: Logger,
+    private farmPersistService: FarmPersistService,
   ) {}
 
   private contractDetailsLimiter = new Bottleneck({
     maxConcurrent: 10,
   });
 
-  async updateFarmContractDetails(farms: Farm[]) {
+  async updateMeta(farms: Farm[]) {
     return await Promise.all(
       farms.map((farm) => {
         return this.contractDetailsLimiter.schedule(async () => {
           try {
             const updatedFarm = await this.getFarmWithContractDetails(farm);
-            await this.farmService.save([updatedFarm]);
+            await this.farmPersistService.save([updatedFarm]);
           } catch (error) {
             this.logger.error(error);
             return farm;
@@ -42,10 +41,8 @@ export class FarmContractService {
   }
 
   async getFarmWithContractDetails(farm: Farm) {
-    if (
-      farm.disabled ||
-      (farm.seedTransactionFetched && farm.contractFetched)
-    ) {
+    if (farm.seedTransactionFetched && farm.contractFetched) {
+      // Nothing more to fetch, no need to reprocess
       return farm;
     }
 

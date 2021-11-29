@@ -1,14 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Farm } from '../entity/farm.entity';
-import { FarmService } from './farm.service';
+import { Farm, FarmPersistService } from '..';
 
 describe('FarmService', () => {
-  let service: FarmService;
+  let service: FarmPersistService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [FarmService],
+      providers: [FarmPersistService],
     })
       .useMocker((token) => {
         if (token === getRepositoryToken(Farm)) {
@@ -17,7 +16,7 @@ describe('FarmService', () => {
       })
       .compile();
 
-    service = module.get<FarmService>(FarmService);
+    service = module.get<FarmPersistService>(FarmPersistService);
   });
 
   it('should be defined', () => {

@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ethers } from 'ethers';
-import { TokenDetails } from '../model/token-details';
-import { BlockchainProviderService } from './blockchain-provider.service';
-import { EtherscanService } from './etherscan.service';
+import { TokenDetails } from './token-details';
+import { BlockchainProviderService } from '../provider/blockchain-provider.service';
+import { EtherscanService } from '../etherscan/etherscan.service';
+import { validate } from 'bycontract';
+import erc20abi from './erc20.json';
 
 @Injectable()
 export class BlockchainTokenService {
@@ -11,6 +13,31 @@ export class BlockchainTokenService {
     private etherscanService: EtherscanService,
     private logger: Logger,
   ) {}
+
+  async getBalanceOf(
+    tokenAddress: string,
+    address: string,
+  ): Promise<ethers.BigNumber> {
+    validate([tokenAddress, address], ['string', 'string']);
+
+    return await this.blockchainProviderService.scheduleRpc(
+      async (provider) => {
+        const tokenContract = new ethers.Contract(
+          tokenAddress,
+          erc20abi,
+          provider,
+        );
+
+        const balance = await tokenContract.balanceOf(address);
+
+        if (!balance || !(balance instanceof ethers.BigNumber)) {
+          return undefined;
+        }
+
+        return balance;
+      },
+    );
+  }
 
   async getTokenDetails(tokenAddress: string): Promise<TokenDetails> {
     const api = this.etherscanService.getApi();

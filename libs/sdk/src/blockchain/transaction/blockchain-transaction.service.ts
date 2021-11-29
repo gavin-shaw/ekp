@@ -3,9 +3,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ethers } from 'ethers';
 import { Repository } from 'typeorm';
-import { Transaction } from '../entity/transaction.entity';
-import { BlockchainProviderService } from './blockchain-provider.service';
-import { EtherscanService } from './etherscan.service';
+import { Transaction } from './transaction.entity';
+import { BlockchainProviderService } from '../provider/blockchain-provider.service';
+import { EtherscanService } from '../etherscan/etherscan.service';
 
 @Injectable()
 export class BlockchainTransactionService {

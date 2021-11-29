@@ -2,11 +2,11 @@ import { ClientStateDto, CurrencyService } from '@app/sdk';
 import { Injectable } from '@nestjs/common';
 import _ from 'lodash';
 import moment from 'moment';
-import { FarmDto } from '../dto/farm.dto';
-import { Farm } from '../entity/farm.entity';
+import { FarmDto } from '../gateway';
+import { Farm } from '../persist';
 
 @Injectable()
-export class UiService {
+export class FarmUiService {
   constructor(private currencyService: CurrencyService) {}
 
   async formatFarms(

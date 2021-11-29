@@ -1,13 +1,13 @@
 import { CurrencyService } from '@app/sdk';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UiService } from './ui.service';
+import { FarmUiService } from './farm-ui.service';
 
 describe('UiService', () => {
-  let service: UiService;
+  let service: FarmUiService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UiService],
+      providers: [FarmUiService],
     })
       .useMocker((token) => {
         if (token === CurrencyService) {
@@ -16,7 +16,7 @@ describe('UiService', () => {
       })
       .compile();
 
-    service = module.get<UiService>(UiService);
+    service = module.get<FarmUiService>(FarmUiService);
   });
 
   it('should be defined', () => {

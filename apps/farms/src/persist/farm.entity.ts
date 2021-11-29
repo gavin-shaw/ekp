@@ -20,6 +20,9 @@ export class Farm {
   @Column({ nullable: true, type: 'decimal', scale: 18, precision: 36 })
   readonly balance?: number;
 
+  @Column({ nullable: true })
+  readonly balanceTimestamp?: number;
+
   @Column({ nullable: true, type: 'text' })
   readonly contractAbi?: string;
 

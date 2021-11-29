@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from '../logger/logger.module';
-import { Transaction } from './entity/transaction.entity';
-import { BlockchainProviderService } from './service/blockchain-provider.service';
-import { BlockchainTokenService } from './service/blockchain-token.service';
-import { BlockchainTransactionService } from './service/blockchain-transaction.service';
-import { EtherscanService } from './service/etherscan.service';
+import { Transaction } from './transaction/transaction.entity';
+import { BlockchainProviderService } from './provider/blockchain-provider.service';
+import { BlockchainTokenService } from './token/blockchain-token.service';
+import { BlockchainTransactionService } from './transaction/blockchain-transaction.service';
+import { EtherscanService } from './etherscan/etherscan.service';
 @Module({
   imports: [TypeOrmModule.forFeature([Transaction]), LoggerModule],
 

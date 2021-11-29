@@ -1,26 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import moment from 'moment';
-import { IsNull, Not, Repository } from 'typeorm';
-import { Farm } from '../entity/farm.entity';
-import starterFarms from '../starter-farms';
+import { Repository } from 'typeorm';
+import { Farm } from './farm.entity';
+import starterFarms from './starter-farms';
+
 @Injectable()
-export class FarmService {
+export class FarmPersistService {
   constructor(
     @InjectRepository(Farm) private farmRepository: Repository<Farm>,
   ) {}
 
-  async getCurrentFarms(since?: number) {
+  async getEnabledFarms(since?: number) {
     const farms = await this.farmRepository.find({
       where: {
-        contractName: Not(IsNull()),
+        disabled: false,
       },
     });
 
     return farms;
   }
 
-  async save(farms: Farm[]) {
+  async save(farms: Farm[]): Promise<void> {
     const now = moment().unix();
     await this.farmRepository.save(
       farms.map((farm) => ({
@@ -31,7 +32,7 @@ export class FarmService {
     );
   }
 
-  async loadStarterFarms() {
+  async loadStarterFarms(): Promise<void> {
     const farms = await this.farmRepository.find();
     const farmAddresses = farms.map((farm) => farm.contractAddress);
 

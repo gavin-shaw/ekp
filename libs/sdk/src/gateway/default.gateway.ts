@@ -46,8 +46,11 @@ export class DefaultGateway
 
   @OnEvent('server-state')
   handleServerState(event: ServerStateEvent) {
+    this.logger.log('Emitting server state event', {
+      clientId: event.clientId,
+    });
     this.server
       .to(event.clientId)
-      .emit('server-sate', JSON.stringify(event.state));
+      .emit('server-state', JSON.stringify(event.state));
   }
 }

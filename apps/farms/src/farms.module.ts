@@ -1,27 +1,28 @@
 import { DatabaseModule, GlobalModule, LoggerModule } from '@app/sdk';
 import { CacheModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Farm } from './entity/farm.entity';
-import { FarmContractService } from './farm-contract.service';
-import { FarmGateway } from './farm.gateway';
-import { FarmService } from './service/farm.service';
-import { SchedulerService } from './service/scheduler.service';
-import { UiService } from './service/ui.service';
+import { FarmBalanceService } from './balance';
+import { FarmGateway } from './gateway';
+import { FarmMetaService } from './meta';
+import { Farm, FarmPersistService } from './persist';
+import { FarmSchedulerService } from './scheduler';
+import { FarmUiService } from './ui';
 
 @Module({
   imports: [
-    LoggerModule,
     CacheModule.register({ isGlobal: true }),
-    GlobalModule,
     DatabaseModule,
+    GlobalModule,
+    LoggerModule,
     TypeOrmModule.forFeature([Farm]),
   ],
   providers: [
-    FarmContractService,
     FarmGateway,
-    FarmService,
-    SchedulerService,
-    UiService,
+    FarmMetaService,
+    FarmPersistService,
+    FarmSchedulerService,
+    FarmUiService,
+    FarmBalanceService,
   ],
 })
 export class FarmsModule {}

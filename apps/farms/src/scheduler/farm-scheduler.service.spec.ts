@@ -1,26 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { FarmContractService } from '../farm-contract.service';
-import { FarmService } from './farm.service';
-import { SchedulerService } from './scheduler.service';
+import { FarmMetaService, FarmPersistService, FarmSchedulerService } from '..';
 
 describe('SchedulerService', () => {
-  let service: SchedulerService;
+  let service: FarmSchedulerService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [SchedulerService],
+      providers: [FarmSchedulerService],
     })
       .useMocker((token) => {
-        if (token === FarmService) {
+        if (token === FarmPersistService) {
           return {};
         }
-        if (token === FarmContractService) {
+        if (token === FarmMetaService) {
           return {};
         }
       })
       .compile();
 
-    service = module.get<SchedulerService>(SchedulerService);
+    service = module.get<FarmSchedulerService>(FarmSchedulerService);
   });
 
   it('should be defined', () => {
