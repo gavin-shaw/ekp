@@ -6,6 +6,7 @@ import { Moralis } from 'moralis/types';
 import { Repository } from 'typeorm';
 import { BlockchainProviderService } from '../provider/blockchain-provider.service';
 import { Transaction } from './transaction.entity';
+import * as moralis from '../moralis';
 
 @Injectable()
 export class BlockchainTransactionService {
@@ -30,7 +31,7 @@ export class BlockchainTransactionService {
     address: string,
     methodSig: string,
     limit?: number,
-    chain: Chain
+    chain: moralis.Chain
   }) {
     const existingTransaction = await this.transactionRepository.findOne({
       where: [
@@ -49,7 +50,7 @@ export class BlockchainTransactionService {
 
     // We don't have the transaction locally, so we need to scan the chain
     // options.limit will limit how many transactions we will scan for the method sig
-    const firstTransactionsCollection: TransactionCollection = await Moralis.Web3API.account.getTransactions({ chain, address, limit });
+    const firstTransactionsCollection: moralis.TransactionCollection = await Moralis.Web3API.account.getTransactions({ chain, address, limit });
 
     if (!firstTransactionsCollection?.total) {
       return undefined;
