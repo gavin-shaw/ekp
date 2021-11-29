@@ -6,6 +6,7 @@ import { BlockchainProviderService } from './provider/blockchain-provider.servic
 import { BlockchainTokenService } from './token/blockchain-token.service';
 import { BlockchainTransactionService } from './transaction/blockchain-transaction.service';
 import { EtherscanService } from './etherscan/etherscan.service';
+import Moralis from 'moralis/types';
 @Module({
   imports: [TypeOrmModule.forFeature([Transaction]), LoggerModule],
 
@@ -22,4 +23,10 @@ import { EtherscanService } from './etherscan/etherscan.service';
     BlockchainTokenService,
   ],
 })
-export class BlockchainModule {}
+export class BlockchainModule {
+  constructor() {
+    if (!!process.env.MORALIS_SERVER_URL && !!process.env.MORALIS_APP_ID) {
+      Moralis.start({ serverUrl: process.env.MORALIS_SERVER_URL, appId: process.env.MORALIS_APP_ID });
+    }
+  }
+}

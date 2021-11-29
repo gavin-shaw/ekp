@@ -2,19 +2,18 @@ import * as etherscan from '@app/etherscan';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ethers } from 'ethers';
+import { Moralis } from 'moralis/types';
 import { Repository } from 'typeorm';
-import { Transaction } from './transaction.entity';
 import { BlockchainProviderService } from '../provider/blockchain-provider.service';
-import { EtherscanService } from '../etherscan/etherscan.service';
+import { Transaction } from './transaction.entity';
 
 @Injectable()
 export class BlockchainTransactionService {
   constructor(
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
-    private blockchainProviderService: BlockchainProviderService,
-    private etherscanService: EtherscanService,
-  ) {}
+    private blockchainProviderService: BlockchainProviderService
+  ) { }
 
   async getReceipt(
     transaction: Transaction,
@@ -26,15 +25,17 @@ export class BlockchainTransactionService {
     );
   }
 
-  async findFirstWithMethodSig(options: {
-    address: string;
-    methodSig: string;
-    limit?: number;
+
+  async findFirstWithMethodSig({ address, methodSig, limit, chain }: {
+    address: string,
+    methodSig: string,
+    limit?: number,
+    chain: Chain
   }) {
     const existingTransaction = await this.transactionRepository.findOne({
       where: [
-        { to: options.address, methodSig: options.methodSig },
-        { from: options.address, methodSig: options.methodSig },
+        { to: address, methodSig: methodSig },
+        { from: address, methodSig: methodSig },
       ],
       order: {
         timeStamp: 'ASC',
@@ -45,20 +46,17 @@ export class BlockchainTransactionService {
       return existingTransaction;
     }
 
-    const api = this.etherscanService.getApi();
 
     // We don't have the transaction locally, so we need to scan the chain
     // options.limit will limit how many transactions we will scan for the method sig
-    const firstTransactions = await api.account
-      .getTransactions(options.address, {
-        sort: 'asc',
-        page: 1,
-        offset: options.limit || 1000,
-      })
-      .then((result) => result as etherscan.Transaction[]);
+    const firstTransactionsCollection: TransactionCollection = await Moralis.Web3API.account.getTransactions({ chain, address, limit });
+
+    if (!firstTransactionsCollection?.total) {
+      return undefined;
+    }
 
     // Search for the seed transaction
-    for (const transaction of firstTransactions) {
+    for (const transaction of firstTransactionsCollection.result) {
       const transactionEntity = this.mapToTransactionEntity(transaction);
 
       if (transactionEntity.methodSig === options.methodSig) {
@@ -75,7 +73,7 @@ export class BlockchainTransactionService {
   }
 
   private mapToTransactionEntity(
-    transaction: etherscan.Transaction,
+    transaction: ,
   ): Transaction {
     return {
       ...transaction,
