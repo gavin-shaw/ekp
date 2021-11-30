@@ -24,6 +24,10 @@ spec:
               value: postgres://postgres:postgres@ekp-postgresql:5432/ekp
             - name: BSCSCAN_API_KEY
               value: "{{ .Values.bscscan.apiKey }}"
+            - name: MORALIS_APP_ID
+              value: "{{ .Values.moralis.serverUrl }}"
+            - name: MORALIS_SERVER_URL
+              value: "{{ .Values.moralis.appId }}"
 
           ports:
             - containerPort: 3001
