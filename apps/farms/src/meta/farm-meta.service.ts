@@ -18,7 +18,7 @@ export class FarmMetaService {
     private etherscanService: EtherscanService,
     private logger: Logger,
     private farmPersistService: FarmPersistService,
-  ) { }
+  ) {}
 
   private contractDetailsLimiter = new Bottleneck({
     maxConcurrent: 10,
@@ -88,7 +88,8 @@ export class FarmMetaService {
         contractAddress: farm.contractAddress,
       });
 
-      const ageSeconds = moment().unix() - farm.created;
+      const now = moment().unix();
+      const ageSeconds = now - (farm.created || now);
 
       if (ageSeconds > 86400) {
         this.logger.warn(
@@ -102,6 +103,8 @@ export class FarmMetaService {
             'Could not find seed transaction after waiting 24 hours',
         };
       }
+
+      return farm;
     }
 
     const farmWithSeedTransaction = {
@@ -152,12 +155,10 @@ export class FarmMetaService {
         };
       }
 
-      const tokenDetails = await this.blockchainTokenService.getTokenMetaData(
-        {
-          address: tokenAddress,
-          chain: 'bsc'
-        }
-      );
+      const tokenDetails = await this.blockchainTokenService.getTokenMetaData({
+        address: tokenAddress,
+        chain: 'bsc',
+      });
 
       if (!tokenDetails) {
         this.logger.warn('Could not fetch token details', {
