@@ -17,17 +17,19 @@ spec:
     spec:
       containers:
         - name: farms
-          image: "{{ .Values.werf.image.farms }}"
+          image: '{{ .Values.werf.image.farms }}'
           workingDir: /app
           env:
             - name: DATABASE_URL
               value: postgres://postgres:postgres@ekp-postgresql:5432/ekp
             - name: BSCSCAN_API_KEY
-              value: "{{ .Values.bscscan.apiKey }}"
+              value: '{{ .Values.bscscan.apiKey }}'
             - name: MORALIS_APP_ID
-              value: "{{ .Values.moralis.appId }}"
+              value: '{{ .Values.moralis.appId }}'
             - name: MORALIS_SERVER_URL
-              value: "{{ .Values.moralis.serverUrl }}"
+              value: '{{ .Values.moralis.serverUrl }}'
+            - name: DATABASE_SSL
+              value: disable
 
           ports:
             - containerPort: 3001
