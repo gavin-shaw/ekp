@@ -1,4 +1,5 @@
 import { CurrencyService } from '@app/sdk';
+import { Logger } from '@ethersproject/logger';
 import { Test, TestingModule } from '@nestjs/testing';
 import { FarmUiService } from './farm-ui.service';
 
@@ -11,6 +12,9 @@ describe('UiService', () => {
     })
       .useMocker((token) => {
         if (token === CurrencyService) {
+          return {};
+        }
+        if (token === Logger) {
           return {};
         }
       })

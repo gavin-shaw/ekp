@@ -1,21 +1,20 @@
-import * as etherscan from '@app/etherscan';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ethers } from 'ethers';
+import moment from 'moment';
 import Moralis from 'moralis/node';
 import { Repository } from 'typeorm';
+import * as moralis from '../moralis';
 import { BlockchainProviderService } from '../provider/blockchain-provider.service';
 import { Transaction } from './transaction.entity';
-import * as moralis from '../moralis';
-import moment from 'moment';
 
 @Injectable()
 export class BlockchainTransactionService {
   constructor(
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
-    private blockchainProviderService: BlockchainProviderService
-  ) { }
+    private blockchainProviderService: BlockchainProviderService,
+  ) {}
 
   async getReceipt(
     transaction: Transaction,
@@ -27,12 +26,16 @@ export class BlockchainTransactionService {
     );
   }
 
-
-  async findFirstWithMethodSig({ address, methodSig, limit, chain }: {
-    address: string,
-    methodSig: string,
-    limit?: number,
-    chain: moralis.Chain
+  async findFirstWithMethodSig({
+    address,
+    methodSig,
+    limit,
+    chain,
+  }: {
+    address: string;
+    methodSig: string;
+    limit?: number;
+    chain: moralis.Chain;
   }) {
     const existingTransaction = await this.transactionRepository.findOne({
       where: [
@@ -48,10 +51,10 @@ export class BlockchainTransactionService {
       return existingTransaction;
     }
 
-
     // We don't have the transaction locally, so we need to scan the chain
     // options.limit will limit how many transactions we will scan for the method sig
-    const firstTransactionsCollection: moralis.TransactionCollection = await Moralis.Web3API.account.getTransactions({ chain, address, limit });
+    const firstTransactionsCollection: moralis.TransactionCollection =
+      await Moralis.Web3API.account.getTransactions({ chain, address, limit });
 
     if (!firstTransactionsCollection?.total) {
       return undefined;
@@ -80,16 +83,16 @@ export class BlockchainTransactionService {
     return {
       ...transaction,
       blockHash: transaction.block_hash,
+      blockNumber: Number(transaction.block_number),
       cumulativeGasUsed: transaction.receipt_cumulative_gas_used,
       from: transaction.from_address,
-      to: transaction.to_address,
       gasPrice: transaction.receipt_gas_used,
       gasUsed: transaction.receipt_gas_used,
-      receiptStatus: transaction.receipt_status,
-      transactionIndex: transaction.transaction_index,
-      blockNumber: Number(transaction.block_number),
-      timeStamp: moment(transaction.block_timestamp).unix(),
       methodSig: this.getMethodSig(transaction),
+      receiptStatus: transaction.receipt_status,
+      timeStamp: moment(transaction.block_timestamp).unix(),
+      to: transaction.to_address,
+      transactionIndex: transaction.transaction_index,
     };
   }
 

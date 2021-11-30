@@ -1,5 +1,5 @@
 import { ClientStateDto, CurrencyService } from '@app/sdk';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import _ from 'lodash';
 import moment from 'moment';
 import { FarmDto } from '../gateway';
@@ -7,7 +7,10 @@ import { Farm } from '../persist';
 
 @Injectable()
 export class FarmUiService {
-  constructor(private currencyService: CurrencyService) {}
+  constructor(
+    private currencyService: CurrencyService,
+    private logger: Logger,
+  ) {}
 
   async formatFarms(
     farms: Farm[],
@@ -15,7 +18,7 @@ export class FarmUiService {
   ): Promise<FarmDto[]> {
     const farmDtos: FarmDto[] = [];
 
-    const fiatSymbol = clientState.currency ?? 'usd';
+    const fiatId = clientState.currency?.id ?? 'usd';
 
     const currencyAddresses = _.uniq(
       farms.map((farm) => farm.currencyAddress).filter((symbol) => !!symbol),
@@ -23,7 +26,7 @@ export class FarmUiService {
 
     const currencies = await this.currencyService.fetchRates(
       currencyAddresses,
-      fiatSymbol,
+      fiatId,
     );
 
     for (const farm of farms) {
@@ -40,6 +43,13 @@ export class FarmUiService {
       }
 
       if (!age) {
+        this.logger.warn(
+          'Could not determine age for farm, not sending to client',
+          {
+            contractAddress: farm.contractAddress,
+            contractName: farm.contractName,
+          },
+        );
         continue;
       }
 
@@ -86,11 +96,18 @@ export class FarmUiService {
       const balance = await this.currencyService.convertCurrency(
         farm.balance,
         farm.currencyAddress,
-        fiatSymbol,
+        fiatId,
         currencies,
       );
 
       if (balance === undefined) {
+        this.logger.warn(
+          'Could not determine balance for farm, not sending to client',
+          {
+            contractAddress: farm.contractAddress,
+            contractName: farm.contractName,
+          },
+        );
         continue;
       }
 

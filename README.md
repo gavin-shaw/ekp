@@ -62,14 +62,15 @@ DATABASE_SSL=disable
 
 Append your BSC SCAN api key to the end of the first line, [you can create one here.](https://bscscan.com/myapikey). You will use this key to pull logs from the blockchain.
 
+Append your Moralis API details to the end of the last two lines, you can create a free Moralis server and get your details [here](https://docs.moralis.io/moralis-server/getting-started/create-a-moralis-server) and [here](https://docs.moralis.io/moralis-server/getting-started/connect-the-sdk#initialize-the-sdk).
+
 You will need a postgres database running on your local machine, if your connection details are different for your local instance, you can change them on the second line.
 
 Then run the following to start the app locally.
 
 ```sh
-cd farms
-npm install
-npm run start:dev
+yarn install
+nest start farms
 ```
 
 Go to https://playground.earnkeeper.io/plugins, add a new plugin with url: http://localhost:3001.

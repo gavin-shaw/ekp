@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
+import { validate } from 'bycontract';
 import _ from 'lodash';
 import { cacheable } from '../cacheable.decorator';
 import { CurrencyRate } from './model/currency-rate';
@@ -39,6 +40,10 @@ export class CurrencyService {
     fiatSymbol: string,
     platform = 'binance-smart-chain',
   ): Promise<CurrencyRate[]> {
+    validate(
+      [coinAddresses, fiatSymbol, platform],
+      ['Array.<string>', 'string', 'string'],
+    );
     const geckoCoins = await this.fetchGeckoCoins();
 
     coinAddresses.push(CurrencyService.WBNB_ADDRESS);

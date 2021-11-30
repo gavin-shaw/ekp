@@ -1,5 +1,7 @@
+import { CurrencyDto } from './currency.dto';
+
 export interface ClientStateDto {
-  currency?: string;
+  currency?: CurrencyDto;
   walletAddress?: string;
   entityHeads: { [entityName: string]: number };
 }

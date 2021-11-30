@@ -21,7 +21,7 @@ export class FarmMetaService {
   ) {}
 
   private contractDetailsLimiter = new Bottleneck({
-    maxConcurrent: 10,
+    maxConcurrent: 30,
   });
 
   async updateMeta(farms: Farm[]) {
@@ -166,7 +166,7 @@ export class FarmMetaService {
           tokenAddress: tokenAddress,
         });
         return {
-          ...farm,
+          ...farmWithSeedTransaction,
           currencyAddress: tokenAddress,
           disabled: true,
           disabledReason: 'Failed to fetch token details',
@@ -174,7 +174,7 @@ export class FarmMetaService {
       }
 
       return {
-        ...farm,
+        ...farmWithSeedTransaction,
         currencyAddress: tokenDetails.address,
         currencyName: tokenDetails.symbol,
         currencyDecimals: Number(tokenDetails.decimals),
