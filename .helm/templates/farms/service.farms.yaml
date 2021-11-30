@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: nocodb
+  name: farms
 spec:
   selector:
-    app: nocodb
+    app: farms
   ports:
   - name: http
-    port: 8080
+    port: 3001
     protocol: TCP
