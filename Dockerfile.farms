@@ -11,4 +11,4 @@ COPY . /app
 
 RUN yarn build farms
 
-CMD ["npm","run","start:prod"]
+CMD ["node","dist/app/farms/main"]
