@@ -6,7 +6,7 @@ import { BlockchainProviderService } from './provider/blockchain-provider.servic
 import { BlockchainTokenService } from './token/blockchain-token.service';
 import { BlockchainTransactionService } from './transaction/blockchain-transaction.service';
 import { EtherscanService } from './etherscan/etherscan.service';
-import Moralis from 'moralis/types';
+import Moralis from 'moralis/node';
 @Module({
   imports: [TypeOrmModule.forFeature([Transaction]), LoggerModule],
 

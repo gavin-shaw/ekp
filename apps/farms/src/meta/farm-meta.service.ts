@@ -18,7 +18,7 @@ export class FarmMetaService {
     private etherscanService: EtherscanService,
     private logger: Logger,
     private farmPersistService: FarmPersistService,
-  ) {}
+  ) { }
 
   private contractDetailsLimiter = new Bottleneck({
     maxConcurrent: 10,
@@ -152,8 +152,11 @@ export class FarmMetaService {
         };
       }
 
-      const tokenDetails = await this.blockchainTokenService.getTokenDetails(
-        tokenAddress,
+      const tokenDetails = await this.blockchainTokenService.getTokenMetaData(
+        {
+          address: tokenAddress,
+          chain: 'bsc'
+        }
       );
 
       if (!tokenDetails) {
@@ -171,7 +174,7 @@ export class FarmMetaService {
 
       return {
         ...farm,
-        currencyAddress: tokenDetails.tokenAddress,
+        currencyAddress: tokenDetails.address,
         currencyName: tokenDetails.symbol,
         currencyDecimals: Number(tokenDetails.decimals),
         seedTransactionFetched: true,
@@ -181,6 +184,7 @@ export class FarmMetaService {
 
   private async getSeedTransaction(farm: Farm): Promise<Transaction> {
     return await this.blockchainTransactionService.findFirstWithMethodSig({
+      chain: 'bsc',
       address: farm.contractAddress,
       methodSig: '3b653755',
       limit: 10,

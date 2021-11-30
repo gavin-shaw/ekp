@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { FarmBalanceService } from './farm-balance.service';
 import { BlockchainProviderService, BlockchainTokenService } from '@app/sdk';
+import { Logger } from '@nestjs/common';
 
 describe('BalanceService', () => {
   let service: FarmBalanceService;
@@ -14,6 +15,9 @@ describe('BalanceService', () => {
           return {};
         }
         if (token === BlockchainProviderService) {
+          return {};
+        }
+        if (token === Logger) {
           return {};
         }
       })

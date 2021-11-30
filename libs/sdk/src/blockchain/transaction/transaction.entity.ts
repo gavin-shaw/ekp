@@ -9,12 +9,6 @@ export class Transaction {
   readonly blockNumber: number;
 
   @Column()
-  readonly confirmations: string;
-
-  @Column()
-  readonly contractAddress: string;
-
-  @Column()
   readonly cumulativeGasUsed: string;
 
   @Column()
@@ -35,9 +29,6 @@ export class Transaction {
   @Column()
   readonly input: string;
 
-  @Column()
-  readonly isError: string;
-
   @Column({ nullable: true })
   readonly methodSig?: string;
 
@@ -54,7 +45,7 @@ export class Transaction {
   readonly transactionIndex: string;
 
   @Column()
-  readonly txreceipt_status: string;
+  readonly receiptStatus: string;
 
   @Column()
   readonly value: string;

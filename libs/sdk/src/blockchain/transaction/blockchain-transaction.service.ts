@@ -2,11 +2,12 @@ import * as etherscan from '@app/etherscan';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ethers } from 'ethers';
-import { Moralis } from 'moralis/types';
+import Moralis from 'moralis/node';
 import { Repository } from 'typeorm';
 import { BlockchainProviderService } from '../provider/blockchain-provider.service';
 import { Transaction } from './transaction.entity';
 import * as moralis from '../moralis';
+import moment from 'moment';
 
 @Injectable()
 export class BlockchainTransactionService {
@@ -60,7 +61,7 @@ export class BlockchainTransactionService {
     for (const transaction of firstTransactionsCollection.result) {
       const transactionEntity = this.mapToTransactionEntity(transaction);
 
-      if (transactionEntity.methodSig === options.methodSig) {
+      if (transactionEntity.methodSig === methodSig) {
         // Save this transaction to the database so we don't need to find it again
         await this.transactionRepository.save(transactionEntity);
 
@@ -74,17 +75,25 @@ export class BlockchainTransactionService {
   }
 
   private mapToTransactionEntity(
-    transaction: ,
+    transaction: moralis.Transaction,
   ): Transaction {
     return {
       ...transaction,
-      blockNumber: Number(transaction.blockNumber),
-      timeStamp: Number(transaction.timeStamp),
+      blockHash: transaction.block_hash,
+      cumulativeGasUsed: transaction.receipt_cumulative_gas_used,
+      from: transaction.from_address,
+      to: transaction.to_address,
+      gasPrice: transaction.receipt_gas_used,
+      gasUsed: transaction.receipt_gas_used,
+      receiptStatus: transaction.receipt_status,
+      transactionIndex: transaction.transaction_index,
+      blockNumber: Number(transaction.block_number),
+      timeStamp: moment(transaction.block_timestamp).unix(),
       methodSig: this.getMethodSig(transaction),
     };
   }
 
-  private getMethodSig(transaction: etherscan.Transaction) {
+  private getMethodSig(transaction: moralis.Transaction) {
     if (!transaction.input || transaction.input.length < 10) {
       return undefined;
     }

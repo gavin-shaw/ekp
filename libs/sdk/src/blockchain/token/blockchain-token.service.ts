@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ethers } from 'ethers';
-import { TokenDetails } from './token-details';
-import { BlockchainProviderService } from '../provider/blockchain-provider.service';
-import { EtherscanService } from '../etherscan/etherscan.service';
 import { validate } from 'bycontract';
+import { ethers } from 'ethers';
+import Moralis from 'moralis/node';
+import { EtherscanService } from '../etherscan';
+import * as moralis from '../moralis';
+import { BlockchainProviderService } from '../provider';
 import erc20abi from './erc20.json';
+import { TokenMetaData } from './interfaces';
 
 @Injectable()
 export class BlockchainTokenService {
@@ -12,7 +14,7 @@ export class BlockchainTokenService {
     private blockchainProviderService: BlockchainProviderService,
     private etherscanService: EtherscanService,
     private logger: Logger,
-  ) {}
+  ) { }
 
   async getBalanceOf(
     tokenAddress: string,
@@ -39,62 +41,17 @@ export class BlockchainTokenService {
     );
   }
 
-  async getTokenDetails(tokenAddress: string): Promise<TokenDetails> {
-    const api = this.etherscanService.getApi();
+  async getTokenMetaData({ address, chain }: { address: string, chain: moralis.Chain }): Promise<TokenMetaData> {
+    validate([address, chain], ['string', 'string']);
 
-    const tokenAbi: string = (await api.contract.getContractAbi(
-      tokenAddress,
-    )) as string;
+    const result = await Moralis.Web3API.token.getTokenMetadata({ addresses: [address], chain });
 
-    return this.blockchainProviderService.scheduleRpc(async (provider) => {
-      const tokenContract = new ethers.Contract(
-        tokenAddress,
-        new ethers.utils.Interface(tokenAbi),
-        provider,
-      );
+    if (!Array.isArray(result) || result.length === 0) {
+      return undefined;
+    }
 
-      let decimals: number;
-      let symbol: string;
-
-      try {
-        decimals = await tokenContract
-          .decimals()
-          .then((result: ethers.BigNumber) => result.toNumber());
-      } catch (error) {
-        try {
-          decimals = await tokenContract
-            ._decimals()
-            .then((result: ethers.BigNumber) => result.toNumber());
-        } catch {
-          this.logger.warn('Could not fetch decimals for currency', {
-            contractAddress: tokenAddress,
-          });
-          return undefined;
-        }
-      }
-
-      try {
-        symbol = await tokenContract
-          .symbol()
-          .then((result: ethers.BigNumber) => result.toNumber());
-      } catch (error) {
-        try {
-          symbol = await tokenContract
-            ._symbol()
-            .then((result: ethers.BigNumber) => result.toNumber());
-        } catch {
-          this.logger.warn('Could not fetch decimals for currency', {
-            contractAddress: tokenAddress,
-          });
-          return undefined;
-        }
-      }
-
-      return {
-        decimals,
-        symbol,
-        tokenAddress,
-      };
-    });
+    return {
+      ...result[0]
+    }
   }
 }
