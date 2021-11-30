@@ -25,9 +25,9 @@ spec:
             - name: BSCSCAN_API_KEY
               value: "{{ .Values.bscscan.apiKey }}"
             - name: MORALIS_APP_ID
-              value: "{{ .Values.moralis.serverUrl }}"
-            - name: MORALIS_SERVER_URL
               value: "{{ .Values.moralis.appId }}"
+            - name: MORALIS_SERVER_URL
+              value: "{{ .Values.moralis.serverUrl }}"
 
           ports:
             - containerPort: 3001
