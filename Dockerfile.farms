@@ -9,6 +9,6 @@ RUN npm ci
 
 COPY . /app 
 
-RUN npm run build
+RUN nest build farms
 
 CMD ["npm","run","start:prod"]
