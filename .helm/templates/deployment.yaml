@@ -20,7 +20,7 @@ spec:
           image: "{{ .Values.werf.image.farms }}"
           workingDir: /app
           env:
-            - name: PG_URL
+            - name: DATABASE_URL
               value: postgres://postgres:postgres@ekp-postgresql:5432/ekp
             - name: BSCSCAN_API_KEY
               value: "{{ .Values.bscscan.apiKey }}"
