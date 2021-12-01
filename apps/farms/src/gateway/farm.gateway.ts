@@ -5,7 +5,8 @@ import { validate } from 'bycontract';
 import { FarmBalanceService } from '../balance';
 import { Farm, FarmPersistService } from '../persist';
 import { FarmsListSchema, FarmUiService } from '../ui';
-import { FarmDto, FarmsDtoSchema } from './farm.dto';
+import { FarmDto } from './farm.dto';
+import { FarmsDtoSchema } from './farms-dto.schema';
 
 @Injectable()
 export class FarmGateway {
@@ -54,7 +55,10 @@ export class FarmGateway {
     farms: Farm[],
     clientEvent: ClientStateEvent,
   ): Promise<void> {
-    const farmDtos = await this.uiService.formatFarms(farms, clientEvent.state);
+    const farmDtos = await this.uiService.getServerState(
+      farms,
+      clientEvent.state,
+    );
 
     this.emitServerState(farmDtos, clientEvent.clientId);
   }

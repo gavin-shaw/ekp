@@ -6,7 +6,10 @@ import { EtherscanService } from '../etherscan';
 import * as moralis from '../moralis';
 import { BlockchainProviderService } from '../provider';
 import erc20abi from './erc20.json';
-import { TokenMetaData } from './interfaces';
+import { TokenMetaData } from './token-meta-data';
+import { TokenBalance } from './token-balance';
+import { morphism, StrictSchema } from 'morphism';
+import { formatUnits } from '@ethersproject/units';
 
 @Injectable()
 export class BlockchainTokenService {
@@ -14,7 +17,7 @@ export class BlockchainTokenService {
     private blockchainProviderService: BlockchainProviderService,
     private etherscanService: EtherscanService,
     private logger: Logger,
-  ) { }
+  ) {}
 
   async getBalanceOf(
     tokenAddress: string,
@@ -41,17 +44,54 @@ export class BlockchainTokenService {
     );
   }
 
-  async getTokenMetaData({ address, chain }: { address: string, chain: moralis.Chain }): Promise<TokenMetaData> {
+  async getTokenBalances({
+    address,
+    chain,
+  }: {
+    address: string;
+    chain: moralis.Chain;
+  }): Promise<TokenBalance[]> {
     validate([address, chain], ['string', 'string']);
 
-    const result = await Moralis.Web3API.token.getTokenMetadata({ addresses: [address], chain });
+    const result: moralis.TokenBalance[] =
+      await Moralis.Web3API.account.getTokenBalances({
+        address,
+        chain,
+      });
+
+    const schema: StrictSchema<TokenBalance, moralis.TokenBalance> = {
+      balance: {
+        path: 'balance',
+        fn: (value, source) => formatUnits(value, source.decimals),
+      },
+      name: 'name',
+      symbol: 'symbol',
+      address: 'token_address',
+    };
+
+    return morphism(schema, result);
+  }
+
+  async getTokenMetaData({
+    address,
+    chain,
+  }: {
+    address: string;
+    chain: moralis.Chain;
+  }): Promise<TokenMetaData> {
+    validate([address, chain], ['string', 'string']);
+
+    const result = await Moralis.Web3API.token.getTokenMetadata({
+      addresses: [address],
+      chain,
+    });
 
     if (!Array.isArray(result) || result.length === 0) {
       return undefined;
     }
 
     return {
-      ...result[0]
-    }
+      ...result[0],
+    };
   }
 }

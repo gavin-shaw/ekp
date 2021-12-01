@@ -15,7 +15,11 @@ export class EkpLogger implements Logger {
         winston.format.prettyPrint(),
       ),
       transports: [
-        new winston.transports.Console({ format: winston.format.simple() }),
+        new winston.transports.Console({
+          format: winston.format.printf(
+            (info) => `${info.timestamp} ${info.level}: ${info.message}`,
+          ),
+        }),
       ],
     });
   }

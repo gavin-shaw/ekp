@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import Moralis from 'moralis/node';
 import { LoggerModule } from '../logger/logger.module';
-import { Transaction } from './transaction/transaction.entity';
+import { EtherscanService } from './etherscan/etherscan.service';
 import { BlockchainProviderService } from './provider/blockchain-provider.service';
 import { BlockchainTokenService } from './token/blockchain-token.service';
 import { BlockchainTransactionService } from './transaction/blockchain-transaction.service';
-import { EtherscanService } from './etherscan/etherscan.service';
-import Moralis from 'moralis/node';
-@Module({
-  imports: [TypeOrmModule.forFeature([Transaction]), LoggerModule],
 
+@Module({
+  imports: [LoggerModule],
   providers: [
     BlockchainProviderService,
     BlockchainTransactionService,
@@ -26,7 +24,10 @@ import Moralis from 'moralis/node';
 export class BlockchainModule {
   constructor() {
     if (!!process.env.MORALIS_SERVER_URL && !!process.env.MORALIS_APP_ID) {
-      Moralis.start({ serverUrl: process.env.MORALIS_SERVER_URL, appId: process.env.MORALIS_APP_ID });
+      Moralis.start({
+        serverUrl: process.env.MORALIS_SERVER_URL,
+        appId: process.env.MORALIS_APP_ID,
+      });
     }
   }
 }

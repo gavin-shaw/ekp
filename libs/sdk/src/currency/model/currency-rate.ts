@@ -1,6 +1,6 @@
 export interface CurrencyRate {
   coinAddress: string;
   coinId: string;
-  fiatSymbol: string;
+  fiatId: string;
   rate: number;
 }

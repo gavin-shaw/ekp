@@ -9,10 +9,10 @@ import { LoggerModule } from './logger/logger.module';
   imports: [
     BlockchainModule,
     CurrencyModule,
-    GatewayModule,
     EventEmitterModule.forRoot(),
+    GatewayModule,
     LoggerModule,
   ],
-  exports: [BlockchainModule, CurrencyModule, GatewayModule],
+  exports: [BlockchainModule, CurrencyModule, GatewayModule, LoggerModule],
 })
 export class GlobalModule {}

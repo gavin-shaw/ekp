@@ -15,7 +15,7 @@ interface GeckoCoin {
 @Injectable()
 export class CurrencyService {
   @cacheable(3600)
-  async fetchGeckoCoins(): Promise<GeckoCoin[]> {
+  private async fetchGeckoCoins(): Promise<GeckoCoin[]> {
     const url = `${BASE_URL}/coins/list?include_platform=true`;
     const response = await axios.get(url);
 
@@ -36,19 +36,22 @@ export class CurrencyService {
 
   @cacheable(300)
   async fetchRates(
-    coinAddresses: string[],
-    fiatSymbol: string,
+    tokenAddresses: string[],
+    fiatId: string,
     platform = 'binance-smart-chain',
   ): Promise<CurrencyRate[]> {
     validate(
-      [coinAddresses, fiatSymbol, platform],
+      [tokenAddresses, fiatId, platform],
       ['Array.<string>', 'string', 'string'],
     );
+
+    // TODO: how to make this multichain?
+
     const geckoCoins = await this.fetchGeckoCoins();
 
-    coinAddresses.push(CurrencyService.WBNB_ADDRESS);
+    tokenAddresses.push(CurrencyService.WBNB_ADDRESS);
 
-    const coinIds = coinAddresses
+    const coinIds = tokenAddresses
       .map(
         (address) =>
           geckoCoins.find(
@@ -59,7 +62,7 @@ export class CurrencyService {
       .filter((id) => !!id);
 
     const response = await axios.get(
-      `${BASE_URL}/simple/price?ids=${coinIds.join()}&vs_currencies=${fiatSymbol}`,
+      `${BASE_URL}/simple/price?ids=${coinIds.join()}&vs_currencies=${fiatId}`,
     );
 
     if (!response?.data) {
@@ -75,27 +78,27 @@ export class CurrencyService {
       }
 
       return {
-        id: `${id}_${fiatSymbol}`,
+        id: `${id}_${fiatId}`,
         coinAddress: address,
         coinId: id,
-        fiatSymbol: fiatSymbol,
-        rate: response.data[id][fiatSymbol.toLowerCase()],
+        fiatId,
+        rate: response.data[id][fiatId.toLowerCase()],
       };
     });
 
     return currencies;
   }
 
-  async convertCurrency(
+  convertCurrency(
     value: number,
-    coinAddress: string,
-    fiatSymbol: string,
-    currencies: CurrencyRate[],
-  ): Promise<number> {
-    const currency = currencies.find(
+    tokenAddress: string,
+    fiatId: string,
+    currencyRates: CurrencyRate[],
+  ): number {
+    const currency = currencyRates.find(
       (c) =>
-        c.coinAddress.toLowerCase() === coinAddress.toLowerCase() &&
-        c.fiatSymbol === fiatSymbol,
+        c.coinAddress.toLowerCase() === tokenAddress.toLowerCase() &&
+        c.fiatId === fiatId,
     );
 
     if (!currency?.rate) {

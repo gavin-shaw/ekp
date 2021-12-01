@@ -12,7 +12,7 @@ export class FarmUiService {
     private logger: Logger,
   ) {}
 
-  async formatFarms(
+  async getServerState(
     farms: Farm[],
     clientState: ClientStateDto,
   ): Promise<FarmDto[]> {
@@ -93,7 +93,7 @@ export class FarmUiService {
         tooltip: reason,
       };
 
-      const balance = await this.currencyService.convertCurrency(
+      const balance = this.currencyService.convertCurrency(
         farm.balance,
         farm.currencyAddress,
         fiatId,

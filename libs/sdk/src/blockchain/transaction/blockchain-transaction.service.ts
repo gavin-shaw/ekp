@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ethers } from 'ethers';
 import moment from 'moment';
@@ -11,6 +11,7 @@ import { Transaction } from './transaction.entity';
 @Injectable()
 export class BlockchainTransactionService {
   constructor(
+    @Optional()
     @InjectRepository(Transaction)
     private transactionRepository: Repository<Transaction>,
     private blockchainProviderService: BlockchainProviderService,
@@ -37,18 +38,20 @@ export class BlockchainTransactionService {
     limit?: number;
     chain: moralis.Chain;
   }) {
-    const existingTransaction = await this.transactionRepository.findOne({
-      where: [
-        { to: address, methodSig: methodSig },
-        { from: address, methodSig: methodSig },
-      ],
-      order: {
-        timeStamp: 'ASC',
-      },
-    });
+    if (!!this.transactionRepository) {
+      const existingTransaction = await this.transactionRepository.findOne({
+        where: [
+          { to: address, methodSig: methodSig },
+          { from: address, methodSig: methodSig },
+        ],
+        order: {
+          timeStamp: 'ASC',
+        },
+      });
 
-    if (!!existingTransaction) {
-      return existingTransaction;
+      if (!!existingTransaction) {
+        return existingTransaction;
+      }
     }
 
     // We don't have the transaction locally, so we need to scan the chain
@@ -65,8 +68,10 @@ export class BlockchainTransactionService {
       const transactionEntity = this.mapToTransactionEntity(transaction);
 
       if (transactionEntity.methodSig === methodSig) {
-        // Save this transaction to the database so we don't need to find it again
-        await this.transactionRepository.save(transactionEntity);
+        if (!!this.transactionRepository) {
+          // Save this transaction to the database so we don't need to find it again
+          await this.transactionRepository.save(transactionEntity);
+        }
 
         // Return the transaction
         return transactionEntity;

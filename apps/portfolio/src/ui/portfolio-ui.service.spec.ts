@@ -1,26 +1,22 @@
 import { CurrencyService } from '@app/sdk';
-import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { FarmUiService } from './farm-ui.service';
+import { PortfolioUiService } from './portfolio-ui.service';
 
-describe('UiService', () => {
-  let service: FarmUiService;
+describe('PortfolioUiService', () => {
+  let service: PortfolioUiService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [FarmUiService],
+      providers: [PortfolioUiService],
     })
       .useMocker((token) => {
         if (token === CurrencyService) {
           return {};
         }
-        if (token === Logger) {
-          return {};
-        }
       })
       .compile();
 
-    service = module.get<FarmUiService>(FarmUiService);
+    service = module.get<PortfolioUiService>(PortfolioUiService);
   });
 
   it('should be defined', () => {

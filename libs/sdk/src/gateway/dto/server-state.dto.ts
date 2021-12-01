@@ -3,7 +3,8 @@ import { MetaDataDto } from './meta-data.dto';
 
 export interface ServerStateDto {
   meta: MetaDataDto;
-  entities: any;
-  entitiesSchema: JsonSchema7;
-  uiSchema: UISchemaElement;
+  entities?: any;
+  entitiesSchema?: JsonSchema7;
+  uiSchema?: UISchemaElement;
+  walletRequired?: boolean;
 }

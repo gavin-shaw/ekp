@@ -24,5 +24,6 @@ dotenv.config();
     }),
     LoggerModule,
   ],
+  exports: [TypeOrmModule],
 })
 export class DatabaseModule {}

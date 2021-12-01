@@ -27,6 +27,15 @@
       "compilerOptions": {
         "tsConfigPath": "libs/etherscan/tsconfig.lib.json"
       }
+    },
+    "portfolio": {
+      "type": "application",
+      "root": "apps/portfolio",
+      "entryFile": "main",
+      "sourceRoot": "apps/portfolio/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/portfolio/tsconfig.app.json"
+      }
     }
   },
   "compilerOptions": {
