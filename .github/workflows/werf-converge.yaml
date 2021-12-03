@@ -37,7 +37,7 @@ jobs:
           werf helm dependency update .helm
           source $(werf ci-env github --as-file)
           werf render
-          werf converge
+          werf converge --synchronization=:local
         env:
           GITHUB_TOKEN: ${{ github.token }}
           WERF_PLATFORM: linux/amd64
