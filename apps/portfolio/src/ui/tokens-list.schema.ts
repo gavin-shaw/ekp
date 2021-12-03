@@ -46,10 +46,7 @@ export const TokensListSchema = [
       },
       {
         id: 'description',
-        value: '$.balance',
         label: '$.description',
-        sortable: true,
-        filterable: true,
         cell: [
           {
             view: 'link',
@@ -77,7 +74,20 @@ export const TokensListSchema = [
         ],
       },
       {
+        center: true,
         actions: [
+          {
+            icon: 'cil-swap-horizontal',
+            tooltip: 'Swap Token',
+            color: 'yellow',
+            when: '$.allowSwap',
+          },
+          {
+            icon: 'cil-wallet',
+            tooltip: 'Add token to metamask',
+            color: 'yellow',
+            size: 14,
+          },
           {
             icon: 'cil-burn',
             tooltip: 'Burn spam token',

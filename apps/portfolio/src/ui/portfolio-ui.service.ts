@@ -36,14 +36,19 @@ export class PortfolioUiService {
       fiatId,
     );
 
-    return tokenDtosWithFiatValues.map((it) => ({
-      ...it,
-      allowBurnToken: isNaN(it.fiatValue),
-      description: `${it.balanceFormatted} ${it.symbol}`,
-      fiatValueFormatted: formatters.currencyValue(it.fiatValue, fiatSymbol),
-      tokenLink: `https://bscscan.com/token/${it.tokenAddress}`,
-      walletTokenLink: `https://bscscan.com/token/${it.tokenAddress}?a=${clientState.walletAddress}`,
-    }));
+    return tokenDtosWithFiatValues.map((it) => {
+      const tokenDto: TokenDto = {
+        ...it,
+        allowBurnToken: isNaN(it.fiatValue),
+        allowSwap: !isNaN(it.fiatValue),
+        description: `${it.balanceFormatted} ${it.symbol}`,
+        fiatValueFormatted: formatters.currencyValue(it.fiatValue, fiatSymbol),
+        swapLink: `https://poocoin.app/swap?inputCurrency=${it.tokenAddress}`,
+        tokenLink: `https://bscscan.com/token/${it.tokenAddress}`,
+        walletTokenLink: `https://bscscan.com/token/${it.tokenAddress}?a=${clientState.walletAddress}`,
+      };
+      return tokenDto;
+    });
   }
 
   private async addFiatValuesToTokens(
