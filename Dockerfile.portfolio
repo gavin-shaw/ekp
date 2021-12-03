@@ -9,6 +9,6 @@ RUN npm ci
 
 COPY . /app 
 
-RUN yarn build farms
+RUN yarn build portfolio
 
-CMD ["node","dist/apps/farms/main"]
+CMD ["node","dist/apps/portfolio/main"]

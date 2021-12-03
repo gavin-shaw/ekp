@@ -1,11 +1,11 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: farms
+  name: portfolio
 spec:
   selector:
     matchLabels:
-      app: farms
+      app: portfolio
   revisionHistoryLimit: 3
   strategy:
     type: RollingUpdate
@@ -13,24 +13,19 @@ spec:
   template:
     metadata:
       labels:
-        app: farms
+        app: portfolio
     spec:
       containers:
-        - name: farms
-          image: '{{ .Values.werf.image.farms }}'
+        - name: portfolio
+          image: '{{ .Values.werf.image.portfolio }}'
           workingDir: /app
           env:
-            - name: DATABASE_URL
-              value: postgres://postgres:postgres@ekp-postgresql:5432/ekp
             - name: BSCSCAN_API_KEY
               value: '{{ .Values.bscscan.apiKey }}'
             - name: MORALIS_APP_ID
               value: '{{ .Values.moralis.appId }}'
             - name: MORALIS_SERVER_URL
               value: '{{ .Values.moralis.serverUrl }}'
-            - name: DATABASE_SSL
-              value: disable
-
           ports:
             - containerPort: 3001
               protocol: TCP
