@@ -38,9 +38,11 @@ export class PortfolioUiService {
 
     return tokenDtosWithFiatValues.map((it) => ({
       ...it,
-      fiatValueFormatted: formatters.currencyValue(it.fiatValue, fiatSymbol),
-      description: `${it.balanceFormatted} ${it.symbol}`,
       allowBurnToken: isNaN(it.fiatValue),
+      description: `${it.balanceFormatted} ${it.symbol}`,
+      fiatValueFormatted: formatters.currencyValue(it.fiatValue, fiatSymbol),
+      tokenLink: `https://bscscan.com/token/${it.tokenAddress}`,
+      walletTokenLink: `https://bscscan.com/token/${it.tokenAddress}?a=${clientState.walletAddress}`,
     }));
   }
 
@@ -57,14 +59,23 @@ export class PortfolioUiService {
       fiatId,
     );
 
-    return tokens.map((token) => ({
-      ...token,
-      fiatValue: this.currencyService.convertCurrency(
-        token.balance,
-        token.tokenAddress,
-        fiatId,
-        currencyRates,
-      ),
-    }));
+    return tokens.map((token) => {
+      const coinId = currencyRates.find(
+        (it) => it.coinAddress === token.tokenAddress,
+      )?.coinId;
+
+      return {
+        ...token,
+        coinLink: !!coinId
+          ? `https://www.coingecko.com/en/coins/${coinId}`
+          : undefined,
+        fiatValue: this.currencyService.convertCurrency(
+          token.balance,
+          token.tokenAddress,
+          fiatId,
+          currencyRates,
+        ),
+      };
+    });
   }
 }

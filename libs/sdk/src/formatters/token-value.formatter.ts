@@ -5,6 +5,10 @@ export function tokenValue(value: number) {
     return '?';
   }
 
+  if (value < 0.0001) {
+    return value.toString();
+  }
+
   const sigfig = roundSignif(value, 4);
 
   return commify(sigfig);

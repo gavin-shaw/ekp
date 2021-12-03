@@ -8,13 +8,26 @@ export const TokensListSchema = [
       defaultSortAsc: false,
     },
     columns: [
+      // {
+      //   id: 'type',
+      //   value: 'Token',
+      //   grow: 0,
+      //   center: true,
+      //   filterable: true,
+      //   filterOptions: ['Token'],
+      // },
       {
-        id: 'type',
-        title: 'Type',
-        value: 'Token',
-        width: '100px',
+        id: 'chain',
+        grow: 0,
         center: true,
-        filterable: true,
+        cell: [
+          {
+            view: 'image',
+            url: 'https://cryptologos.cc/logos/binance-coin-bnb-logo.png?v=014',
+            size: 16,
+            tooltip: 'Binance Smart Chain',
+          },
+        ],
       },
       {
         id: 'name',
@@ -22,14 +35,29 @@ export const TokensListSchema = [
         value: '$.name',
         filterable: true,
         sortable: true,
+        cell: [
+          {
+            view: 'link',
+            url: '$.tokenLink',
+            content: '$.name',
+            tooltip: 'Open token details',
+          },
+        ],
       },
       {
         id: 'description',
-        title: 'Description',
         value: '$.balance',
         label: '$.description',
         sortable: true,
         filterable: true,
+        cell: [
+          {
+            view: 'link',
+            url: '$.walletTokenLink',
+            content: '$.description',
+            tooltip: 'Open token history',
+          },
+        ],
       },
       {
         id: 'fiatValue',
@@ -39,6 +67,14 @@ export const TokensListSchema = [
         center: true,
         sortable: true,
         filterable: true,
+        cell: [
+          {
+            view: 'link',
+            url: '$.coinLink',
+            content: '$.fiatValueFormatted',
+            tooltip: 'View coin price history',
+          },
+        ],
       },
       {
         actions: [
