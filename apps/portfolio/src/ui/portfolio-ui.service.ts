@@ -3,7 +3,7 @@ import { validate } from 'bycontract';
 import morphism, { StrictSchema } from 'morphism';
 import { TokenDto } from '../gateway';
 import { Token } from '../token';
-import { CurrencyService, ClientStateDto } from '@app/sdk';
+import { CurrencyService, ClientStateDto, formatters } from '@app/sdk';
 
 @Injectable()
 export class PortfolioUiService {
@@ -14,9 +14,14 @@ export class PortfolioUiService {
     clientState: ClientStateDto,
   ): Promise<TokenDto[]> {
     const fiatId = clientState.currency?.id ?? 'usd';
+    const fiatSymbol = clientState.currency?.symbol ?? '$';
 
     const schema: StrictSchema<TokenDto, Token> = {
       balance: 'balance',
+      balanceFormatted: {
+        path: 'balance',
+        fn: (value) => formatters.tokenValue(value),
+      },
       fiatValue: 'fiatValue',
       name: 'name',
       symbol: 'symbol',
@@ -31,7 +36,12 @@ export class PortfolioUiService {
       fiatId,
     );
 
-    return tokenDtosWithFiatValues;
+    return tokenDtosWithFiatValues.map((it) => ({
+      ...it,
+      fiatValueFormatted: formatters.currencyValue(it.fiatValue, fiatSymbol),
+      description: `${it.balanceFormatted} ${it.symbol}`,
+      allowBurnToken: isNaN(it.fiatValue),
+    }));
   }
 
   private async addFiatValuesToTokens(

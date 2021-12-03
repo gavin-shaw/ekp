@@ -17,7 +17,10 @@ export class PortfolioTokenService {
     });
 
     const schema: StrictSchema<Token, TokenBalance> = {
-      balance: 'balance',
+      balance: {
+        path: 'balance',
+        fn: (value) => Number(value),
+      },
       chain: 'bsc',
       name: 'name',
       symbol: 'symbol',

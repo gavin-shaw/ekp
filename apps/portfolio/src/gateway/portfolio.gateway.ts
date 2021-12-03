@@ -2,7 +2,7 @@ import { ClientStateEvent, ServerStateDto } from '@app/sdk';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { validate } from 'bycontract';
-import { TokenDto, TokensDtoSchema } from '.';
+import { TokenDto } from '.';
 import { PortfolioTokenService } from '../token';
 import { PortfolioUiService, TokensListSchema } from '../ui';
 
@@ -48,12 +48,6 @@ export class PortfolioGateway {
       walletRequired: false,
       entities: {
         tokens: tokenDtos,
-      },
-      entitiesSchema: {
-        type: 'object',
-        properties: {
-          tokens: TokensDtoSchema,
-        },
       },
       uiSchema: TokensListSchema,
       meta: { pluginName: 'Portfolio' },
