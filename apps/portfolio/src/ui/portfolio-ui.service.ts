@@ -1,9 +1,10 @@
+import { ClientStateDto, CurrencyService, formatters } from '@app/sdk';
 import { Injectable } from '@nestjs/common';
 import { validate } from 'bycontract';
+import moment from 'moment';
 import morphism, { StrictSchema } from 'morphism';
 import { TokenDto } from '../gateway';
 import { Token } from '../token';
-import { CurrencyService, ClientStateDto, formatters } from '@app/sdk';
 
 @Injectable()
 export class PortfolioUiService {
@@ -16,14 +17,18 @@ export class PortfolioUiService {
     const fiatId = clientState.currency?.id ?? 'usd';
     const fiatSymbol = clientState.currency?.symbol ?? '$';
 
+    const now = moment().unix();
+
     const schema: StrictSchema<TokenDto, Token> = {
       balance: 'balance',
       balanceFormatted: {
         path: 'balance',
         fn: (value) => formatters.tokenValue(value),
       },
+      created: now,
       fiatValue: 'fiatValue',
       name: 'name',
+      updated: now,
       symbol: 'symbol',
       tokenAddress: 'tokenAddress',
       walletAddress: 'walletAddress',

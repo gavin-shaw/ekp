@@ -4,6 +4,7 @@ export interface TokenDto {
   balance: number;
   balanceFormatted: string;
   coinLink?: string;
+  created: number;
   description?: string;
   fiatValue?: number;
   fiatValueFormatted?: string;
@@ -12,6 +13,7 @@ export interface TokenDto {
   symbol: string;
   tokenAddress: string;
   tokenLink?: string;
+  updated: number;
   walletAddress: string;
   walletTokenLink?: string;
 }

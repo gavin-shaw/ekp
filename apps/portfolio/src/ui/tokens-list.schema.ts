@@ -1,4 +1,4 @@
-export const TokensListSchema = [
+export const TokensListSchema = ({ loading }) => [
   {
     view: 'datatable',
     title: 'Portfolio',
@@ -6,6 +6,7 @@ export const TokensListSchema = [
     options: {
       defaultSortFieldId: 'fiatValue',
       defaultSortAsc: false,
+      loading,
     },
     columns: [
       // {
@@ -20,12 +21,15 @@ export const TokensListSchema = [
         id: 'chain',
         grow: 0,
         center: true,
+        value: 'BSC',
+        filterable: true,
+        filterOptions: ['BSC'],
         cell: [
           {
             view: 'image',
             url: 'https://cryptologos.cc/logos/binance-coin-bnb-logo.png?v=014',
             size: 16,
-            tooltip: 'Binance Smart Chain',
+            tooltip: 'BSC',
           },
         ],
       },
@@ -84,13 +88,13 @@ export const TokensListSchema = [
           },
           {
             icon: 'cil-wallet',
-            tooltip: 'Add token to metamask',
+            tooltip: 'Add to Metamask',
             color: 'yellow',
             size: 14,
           },
           {
             icon: 'cil-burn',
-            tooltip: 'Burn spam token',
+            tooltip: 'Burn Spam Token',
             color: 'yellow',
             when: '$.allowBurnToken',
           },

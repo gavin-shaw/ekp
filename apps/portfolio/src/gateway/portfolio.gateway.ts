@@ -30,6 +30,8 @@ export class PortfolioGateway {
       return;
     }
 
+    this.emitInProgressState(clientId);
+
     const tokensWithBalances =
       await this.portfolioTokenService.getTokensWithBalances(
         state.walletAddress,
@@ -49,7 +51,18 @@ export class PortfolioGateway {
       entities: {
         tokens: tokenDtos,
       },
-      uiSchema: TokensListSchema,
+      uiSchema: TokensListSchema({ loading: false }),
+      meta: { pluginName: 'Portfolio' },
+    };
+
+    this.eventEmitter.emit('server-state', { clientId, state: serverState });
+  }
+
+  emitInProgressState(clientId: string) {
+    const serverState: ServerStateDto = {
+      walletRequired: false,
+      partial: true,
+      uiSchema: TokensListSchema({ loading: true }),
       meta: { pluginName: 'Portfolio' },
     };
 
