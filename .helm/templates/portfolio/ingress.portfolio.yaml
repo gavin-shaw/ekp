@@ -9,7 +9,7 @@ spec:
   tls:
     - hosts:
         - "portfolio.{{ .Values.ingress.hostname }}"
-      secretName: ekp-public-tls
+      secretName: portfolio-public-tls
   rules:
     - host: "portfolio.{{ .Values.ingress.hostname }}"
       http:
