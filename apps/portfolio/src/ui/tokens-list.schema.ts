@@ -4,19 +4,12 @@ export const TokensListSchema = ({ loading }) => [
     title: 'Portfolio',
     items: '$.tokens',
     options: {
+      pagination: false,
       defaultSortFieldId: 'fiatValue',
       defaultSortAsc: false,
       loading,
     },
     columns: [
-      // {
-      //   id: 'type',
-      //   value: 'Token',
-      //   grow: 0,
-      //   center: true,
-      //   filterable: true,
-      //   filterOptions: ['Token'],
-      // },
       {
         id: 'chain',
         grow: 0,
@@ -85,12 +78,28 @@ export const TokensListSchema = ({ loading }) => [
             tooltip: 'Swap Token',
             color: 'yellow',
             when: '$.allowSwap',
+            rpc: {
+              method: 'ek_openLink',
+              params: ['$.swapLink'],
+            },
           },
           {
             icon: 'cil-wallet',
             tooltip: 'Add to Metamask',
             color: 'yellow',
             size: 14,
+            rpc: {
+              method: 'wallet_watchAsset',
+              params: {
+                type: 'ERC20',
+                options: {
+                  address: '$.tokenAddress',
+                  symbol: '$.symbol',
+                  decimals: '$.decimals',
+                  image: '$.logo',
+                },
+              },
+            },
           },
           {
             icon: 'cil-burn',

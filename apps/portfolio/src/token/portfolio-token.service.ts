@@ -22,8 +22,11 @@ export class PortfolioTokenService {
         fn: (value) => Number(value),
       },
       chain: 'bsc',
+      decimals: 'decimals',
+      logo: 'logo',
       name: 'name',
       symbol: 'symbol',
+      thumbnail: 'thumbnail',
       tokenAddress: 'address',
       walletAddress: () => walletAddress,
     };

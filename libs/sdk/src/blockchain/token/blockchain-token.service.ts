@@ -60,13 +60,16 @@ export class BlockchainTokenService {
       });
 
     const schema: StrictSchema<TokenBalance, moralis.TokenBalance> = {
+      address: 'token_address',
       balance: {
         path: 'balance',
         fn: (value, source) => formatUnits(value, source.decimals),
       },
+      decimals: 'decimals',
+      logo: 'logo',
       name: 'name',
       symbol: 'symbol',
-      address: 'token_address',
+      thumbnail: 'thumbnail',
     };
 
     return morphism(schema, result);

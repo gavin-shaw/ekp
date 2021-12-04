@@ -26,6 +26,7 @@ export class PortfolioUiService {
         fn: (value) => formatters.tokenValue(value),
       },
       created: now,
+      decimals: 'decimals',
       fiatValue: 'fiatValue',
       name: 'name',
       updated: now,
