@@ -76,7 +76,6 @@ export const TokensListSchema = ({ loading }) => [
           {
             icon: 'cil-swap-horizontal',
             tooltip: 'Swap Token',
-            color: 'yellow',
             when: '$.allowSwap',
             rpc: {
               method: 'ek_openLink',
@@ -86,7 +85,6 @@ export const TokensListSchema = ({ loading }) => [
           {
             icon: 'cil-wallet',
             tooltip: 'Add to Metamask',
-            color: 'yellow',
             size: 14,
             rpc: {
               method: 'wallet_watchAsset',
@@ -104,7 +102,6 @@ export const TokensListSchema = ({ loading }) => [
           {
             icon: 'cil-burn',
             tooltip: 'Burn Spam Token',
-            color: 'yellow',
             when: '$.allowBurnToken',
           },
         ],
