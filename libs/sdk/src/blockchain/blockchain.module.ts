@@ -3,6 +3,7 @@ import Moralis from 'moralis/node';
 import { LoggerModule } from '../logger/logger.module';
 import { EtherscanService } from './etherscan/etherscan.service';
 import { BlockchainProviderService } from './provider/blockchain-provider.service';
+import { RpcService } from './rpc';
 import { BlockchainTokenService } from './token/blockchain-token.service';
 import { BlockchainTransactionService } from './transaction/blockchain-transaction.service';
 
@@ -10,15 +11,17 @@ import { BlockchainTransactionService } from './transaction/blockchain-transacti
   imports: [LoggerModule],
   providers: [
     BlockchainProviderService,
+    BlockchainTokenService,
     BlockchainTransactionService,
     EtherscanService,
-    BlockchainTokenService,
+    RpcService,
   ],
   exports: [
     BlockchainProviderService,
+    BlockchainTokenService,
     BlockchainTransactionService,
     EtherscanService,
-    BlockchainTokenService,
+    RpcService,
   ],
 })
 export class BlockchainModule {

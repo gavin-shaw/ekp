@@ -1,5 +1,6 @@
 export interface Token {
   readonly balance: number;
+  readonly balanceRaw: string;
   readonly chain: string;
   readonly decimals: number;
   readonly fiatValue?: number;

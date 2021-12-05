@@ -25,6 +25,7 @@ export class PortfolioTokenService {
 
     const schema: StrictSchema<Token, TokenBalance> = {
       balance: (it) => Number(it.balance),
+      balanceRaw: 'balanceRaw',
       chain: 'bsc',
       decimals: 'decimals',
       logo: 'logo',

@@ -1,12 +1,14 @@
 import { ClientStateDto, formatters } from '@app/sdk';
 import { Injectable } from '@nestjs/common';
-import moment from 'moment';
 import morphism, { StrictSchema } from 'morphism';
 import { TokenDto } from '../dto';
 import { Token } from '../token';
+import { RpcService } from '@app/sdk';
 
 @Injectable()
 export class PortfolioUiService {
+  constructor(private rpcService: RpcService) {}
+
   async formatTokens(
     tokens: Token[],
     clientState: ClientStateDto,
@@ -19,6 +21,13 @@ export class PortfolioUiService {
       balance: 'balance',
       balanceFormatted: (it) =>
         formatters.tokenValue(it.balance) + ' ' + it.symbol,
+      burnTxRpc: (it) =>
+        this.rpcService.tokenTransfer({
+          amount: it.balanceRaw,
+          contractAddress: it.tokenAddress,
+          recipient: '0x000000000000000000000000000000000000dead',
+          walletAddress: clientState.walletAddress,
+        }),
       chainLogo: () =>
         'https://cryptologos.cc/logos/binance-coin-bnb-logo.png?v=014',
       decimals: 'decimals',

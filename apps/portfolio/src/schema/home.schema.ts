@@ -162,7 +162,6 @@ const actions = [
   {
     icon: 'cil-wallet',
     name: 'Add to Metamask',
-    size: 14,
     rpc: {
       method: 'wallet_watchAsset',
       params: {
@@ -178,8 +177,8 @@ const actions = [
   },
   {
     icon: 'cil-burn',
-    name: 'Burn Spam Token',
-    when: '$.allowBurnToken',
+    name: 'Burn Balance',
+    rpc: '$.burnTxRpc',
   },
   {
     icon: 'cil-swap-horizontal',
@@ -188,6 +187,22 @@ const actions = [
     rpc: {
       method: 'ek_openLink',
       params: ['$.swapLink'],
+    },
+  },
+  {
+    icon: 'cil-external-link',
+    name: 'Token Details',
+    rpc: {
+      method: 'ek_openLink',
+      params: ['$.tokenLink'],
+    },
+  },
+  {
+    icon: 'cil-external-link',
+    name: 'Token Transactions',
+    rpc: {
+      method: 'ek_openLink',
+      params: ['$.walletTokenLink'],
     },
   },
 ];

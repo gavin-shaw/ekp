@@ -3,6 +3,7 @@ export interface TokenDto {
   allowSwap?: boolean;
   balance: number;
   balanceFormatted: string;
+  burnTxRpc?: Record<string, unknown>;
   chainLogo?: string;
   coinLink?: string;
   decimals: number;
