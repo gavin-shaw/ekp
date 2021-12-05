@@ -1,6 +1,6 @@
 import { GlobalModule } from '@app/sdk';
 import { Module } from '@nestjs/common';
-import { PortfolioGateway } from './gateway/portfolio.gateway';
+import { PortfolioGateway } from './portfolio.gateway';
 import { PortfolioTokenService } from './token';
 import { PortfolioUiService } from './ui';
 

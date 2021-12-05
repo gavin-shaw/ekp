@@ -5,21 +5,32 @@ export function tokenValue(value: number) {
     return '?';
   }
 
-  if (value < 0.0001) {
-    return value.toString();
+  if (value === 0) {
+    return '0';
   }
 
-  const sigfig = roundSignif(value, 4);
+  if (value < 0.0001) {
+    return '~0';
+  }
 
-  return commify(sigfig);
-}
+  // TODO: find a better way to implement significant figures
+  // I tried a couple of libraries and toPrecision() but they didn't work very well
 
-function roundDecimal(value: number, digits = 0) {
-  const n = Math.pow(10, digits);
-  return Math.round(value * n) / n;
-}
+  if (value < 1) {
+    return value.toFixed(4);
+  }
 
-function roundSignif(value: number, digits = 1) {
-  const scaleFactor = Math.floor(Math.log10(Math.abs(value)));
-  return roundDecimal(value, digits - scaleFactor - 1);
+  if (value < 10) {
+    return value.toFixed(3);
+  }
+
+  if (value < 100) {
+    return value.toFixed(2);
+  }
+
+  if (value < 1000) {
+    return value.toFixed(1);
+  }
+
+  return commify(Math.floor(value));
 }

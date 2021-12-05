@@ -1,2 +1,2 @@
 export * from './portfolio-ui.service';
-export * from './tokens-list.schema';
+export * from '../schema/home.schema';

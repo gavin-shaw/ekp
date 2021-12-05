@@ -1,23 +1,18 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { formatUnits } from '@ethersproject/units';
+import { Injectable } from '@nestjs/common';
 import { validate } from 'bycontract';
 import { ethers } from 'ethers';
 import Moralis from 'moralis/node';
-import { EtherscanService } from '../etherscan';
+import { morphism, StrictSchema } from 'morphism';
 import * as moralis from '../moralis';
 import { BlockchainProviderService } from '../provider';
 import erc20abi from './erc20.json';
-import { TokenMetaData } from './token-meta-data';
 import { TokenBalance } from './token-balance';
-import { morphism, StrictSchema } from 'morphism';
-import { formatUnits } from '@ethersproject/units';
+import { TokenMetaData } from './token-meta-data';
 
 @Injectable()
 export class BlockchainTokenService {
-  constructor(
-    private blockchainProviderService: BlockchainProviderService,
-    private etherscanService: EtherscanService,
-    private logger: Logger,
-  ) {}
+  constructor(private blockchainProviderService: BlockchainProviderService) {}
 
   async getBalanceOf(
     tokenAddress: string,

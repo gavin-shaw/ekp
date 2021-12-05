@@ -2,9 +2,9 @@ import { ClientStateEvent, ServerStateDto } from '@app/sdk';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { validate } from 'bycontract';
-import { TokenDto } from '.';
-import { PortfolioTokenService } from '../token';
-import { PortfolioUiService, TokensListSchema } from '../ui';
+import { PortfolioTokenService } from './token';
+import { TokenDto } from './dto/token.dto';
+import { PortfolioUiService, HomeSchema } from './ui';
 
 @Injectable()
 export class PortfolioGateway {
@@ -37,8 +37,20 @@ export class PortfolioGateway {
         state.walletAddress,
       );
 
+    const fiatId = state.currency?.id ?? 'usd';
+
+    const tokensWithPrices =
+      await this.portfolioTokenService.addPricingToTokens(
+        tokensWithBalances,
+        fiatId,
+      );
+
+    const tokensWithLogos = await this.portfolioTokenService.addLogosToTokens(
+      tokensWithPrices,
+    );
+
     const tokenDtos = await this.portfolioUiService.formatTokens(
-      tokensWithBalances,
+      tokensWithLogos,
       state,
     );
 
@@ -51,7 +63,7 @@ export class PortfolioGateway {
       entities: {
         tokens: tokenDtos,
       },
-      uiSchema: TokensListSchema({ loading: false }),
+      uiSchema: HomeSchema({ loading: false }),
       meta: { pluginName: 'Portfolio' },
     };
 
@@ -62,7 +74,7 @@ export class PortfolioGateway {
     const serverState: ServerStateDto = {
       walletRequired: false,
       partial: true,
-      uiSchema: TokensListSchema({ loading: true }),
+      uiSchema: HomeSchema({ loading: true }),
       meta: { pluginName: 'Portfolio' },
     };
 

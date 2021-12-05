@@ -3,20 +3,20 @@ export interface TokenDto {
   allowSwap?: boolean;
   balance: number;
   balanceFormatted: string;
+  chainLogo?: string;
   coinLink?: string;
-  created: number;
   decimals: number;
-  description?: string;
   fiatValue?: number;
   fiatValueFormatted?: string;
   logo?: string;
   name: string;
+  price?: number;
+  priceFormatted?: string;
   swapLink?: string;
   symbol: string;
   thumbnail?: string;
   tokenAddress: string;
   tokenLink?: string;
-  updated: number;
   walletAddress: string;
   walletTokenLink?: string;
 }
