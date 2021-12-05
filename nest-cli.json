@@ -10,15 +10,6 @@
         "tsConfigPath": "libs/sdk/tsconfig.lib.json"
       }
     },
-    "farms": {
-      "type": "application",
-      "root": "apps/farms",
-      "entryFile": "main",
-      "sourceRoot": "apps/farms/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/farms/tsconfig.app.json"
-      }
-    },
     "etherscan": {
       "type": "library",
       "root": "libs/etherscan",

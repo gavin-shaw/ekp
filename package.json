@@ -31,7 +31,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./apps/my-project/test/jest-e2e.json",
-    "heroku:deploy:farms": "git subtree push --prefix farms heroku master",
+    "heroku:deploy:portfolio": "git subtree push --prefix portfolio heroku master",
     "k:check-cert": "kubectl describe certificate ${npm_package_config_namespace}-public-tls -n $npm_package_config_namespace",
     "k:gen-secret-key": "werf helm secret generate-secret-key > .werf_secret_key",
     "k:encrypt-secrets": "werf helm secret values encrypt clear-values.yaml -o .helm/secret-values.yaml"
