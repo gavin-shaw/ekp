@@ -62,6 +62,7 @@ export const HomeSchema = ({ loading }) => [
         id: 'balance',
         value: '$.balance',
         label: '$.balanceFormatted',
+        hide: 'md',
         sortable: true,
         filterable: true,
         right: true,
@@ -75,6 +76,14 @@ export const HomeSchema = ({ loading }) => [
         filterable: true,
         right: true,
         width: '120px',
+      },
+      {
+        id: 'actions',
+        compact: true,
+        name: '',
+        center: true,
+        width: '32px',
+        actions,
       },
     ],
   },
@@ -138,6 +147,47 @@ export const HomeSchema = ({ loading }) => [
           },
         ],
       },
+      {
+        id: 'actions',
+        compact: true,
+        name: '',
+        width: '22px',
+        actions,
+      },
     ],
+  },
+];
+
+const actions = [
+  {
+    icon: 'cil-wallet',
+    name: 'Add to Metamask',
+    size: 14,
+    rpc: {
+      method: 'wallet_watchAsset',
+      params: {
+        type: 'ERC20',
+        options: {
+          address: '$.tokenAddress',
+          symbol: '$.symbol',
+          decimals: '$.decimals',
+          image: '$.logo',
+        },
+      },
+    },
+  },
+  {
+    icon: 'cil-burn',
+    name: 'Burn Spam Token',
+    when: '$.allowBurnToken',
+  },
+  {
+    icon: 'cil-swap-horizontal',
+    name: 'Swap Token',
+    when: '$.allowSwap',
+    rpc: {
+      method: 'ek_openLink',
+      params: ['$.swapLink'],
+    },
   },
 ];

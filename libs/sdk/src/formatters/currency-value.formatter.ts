@@ -2,7 +2,7 @@ import { commify } from '@ethersproject/units';
 
 export function currencyValue(value: number, symbol: string) {
   if (isNaN(value)) {
-    return `${symbol} ?`;
+    return `?`;
   }
 
   if (value === 0) {

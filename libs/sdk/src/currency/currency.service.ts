@@ -44,9 +44,11 @@ export class CurrencyService {
 
   static WBNB_ADDRESS = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c';
 
-  @cacheable(300)
+  @cacheable(3600)
   async getImageUrl(tokenAddress: string, platform = 'binance-smart-chain') {
     validate([tokenAddress], ['string']);
+
+    console.log({ tokenAddress });
 
     return await limiter.schedule(async () => {
       const geckoCoins = await this.fetchGeckoCoins();
@@ -57,7 +59,7 @@ export class CurrencyService {
       )?.id;
 
       if (!coinId) {
-        return undefined;
+        return null;
       }
 
       const response = await axios.get(`${BASE_URL}/coins/${coinId}`);

@@ -33,7 +33,7 @@ export function cacheable(ttlSecs?: number) {
 
       const result = await cache.get(key);
 
-      if (result !== null && result !== undefined) {
+      if (result !== undefined) {
         return result;
       }
 
