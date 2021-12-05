@@ -30,7 +30,7 @@ export class PortfolioGateway {
       return;
     }
 
-    this.emitInProgressState(clientId);
+    this.emitLoadingState(clientId);
 
     const tokensWithBalances =
       await this.portfolioTokenService.getTokensWithBalances(
@@ -70,7 +70,7 @@ export class PortfolioGateway {
     this.eventEmitter.emit('server-state', { clientId, state: serverState });
   }
 
-  emitInProgressState(clientId: string) {
+  emitLoadingState(clientId: string) {
     const serverState: ServerStateDto = {
       walletRequired: false,
       partial: true,
