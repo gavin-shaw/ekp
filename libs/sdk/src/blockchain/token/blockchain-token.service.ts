@@ -62,10 +62,52 @@ export class BlockchainTokenService {
       logo: 'logo',
       name: 'name',
       symbol: 'symbol',
-      thumbnail: 'thumbnail',
     };
 
-    return morphism(schema, result);
+    const balances = morphism(schema, result);
+
+    const nativeResult = await Moralis.Web3API.account.getNativeBalance({
+      address,
+      chain,
+    });
+
+    // TODO: find a better way to populate these by chain or move to its own service
+
+    let nativeAddress: string;
+    let nativeDecimals: number;
+    let nativeLogo: string;
+    let nativeName: string;
+    let nativeSymbol: string;
+
+    switch (chain) {
+      case 'bsc':
+        (nativeAddress = '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c'),
+          (nativeName = 'Binance Coin');
+        nativeDecimals = 18;
+        nativeSymbol = 'BNB';
+        nativeLogo =
+          'https://cryptologos.cc/logos/thumbs/binance-coin.png?v=014';
+        break;
+      default:
+        nativeAddress = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+        nativeName = 'Ethereum';
+        nativeDecimals = 18;
+        nativeSymbol = 'ETH';
+        nativeLogo = 'https://cryptologos.cc/logos/thumbs/ethereum.png?v=014';
+        break;
+    }
+
+    const nativeTokenBalance: TokenBalance = {
+      address: nativeAddress,
+      balanceRaw: nativeResult.balance,
+      balance: formatUnits(nativeResult.balance, nativeDecimals),
+      decimals: nativeDecimals,
+      logo: nativeLogo,
+      name: nativeName,
+      symbol: nativeSymbol,
+    };
+
+    return [...balances, nativeTokenBalance];
   }
 
   async getTokenMetaData({

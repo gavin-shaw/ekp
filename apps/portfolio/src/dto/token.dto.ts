@@ -1,4 +1,5 @@
-export interface TokenDto {
+import { TrackedRecordDto } from '@app/sdk';
+export interface TokenDto extends TrackedRecordDto {
   allowBurnToken?: boolean;
   allowSwap?: boolean;
   balance: number;
@@ -15,7 +16,6 @@ export interface TokenDto {
   priceFormatted?: string;
   swapLink?: string;
   symbol: string;
-  thumbnail?: string;
   tokenAddress: string;
   tokenLink?: string;
   walletAddress: string;

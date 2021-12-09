@@ -48,8 +48,6 @@ export class CurrencyService {
   async getImageUrl(tokenAddress: string, platform = 'binance-smart-chain') {
     validate([tokenAddress], ['string']);
 
-    console.log({ tokenAddress });
-
     return await limiter.schedule(async () => {
       const geckoCoins = await this.fetchGeckoCoins();
 

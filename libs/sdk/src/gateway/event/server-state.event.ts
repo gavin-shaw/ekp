@@ -1,6 +1,7 @@
-import { ClientStateDto } from '../dto/client-state.dto';
+import { ServerStateDto } from '../dto';
 
+export const SERVER_STATE = 'server-state';
 export interface ServerStateEvent {
   clientId: string;
-  state: ClientStateDto;
+  state: ServerStateDto;
 }

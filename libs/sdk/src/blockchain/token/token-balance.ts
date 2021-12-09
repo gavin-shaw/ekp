@@ -4,7 +4,6 @@ export interface TokenBalance {
   readonly balanceRaw: string;
   readonly decimals: number;
   readonly logo: string;
-  readonly thumbnail: string;
   readonly name: string;
   readonly symbol: string;
 }

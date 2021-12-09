@@ -1,9 +1,10 @@
-import { ClientStateDto, formatters } from '@app/sdk';
+import { formatters, ClientStateDto } from '@app/sdk';
 import { Injectable } from '@nestjs/common';
 import morphism, { StrictSchema } from 'morphism';
 import { TokenDto } from '../dto';
 import { Token } from '../token';
 import { RpcService } from '@app/sdk';
+import moment from 'moment';
 
 @Injectable()
 export class PortfolioUiService {
@@ -13,7 +14,11 @@ export class PortfolioUiService {
     tokens: Token[],
     clientState: ClientStateDto,
   ): Promise<TokenDto[]> {
+    // TODO: a better way to decide default currency
     const fiatSymbol = clientState.currency?.symbol ?? '$';
+
+    // TODO: make created and updated below DRY
+    const now = moment().unix();
 
     const schema: StrictSchema<TokenDto, Token> = {
       allowBurnToken: (it) => isNaN(it.fiatValue),
@@ -26,10 +31,11 @@ export class PortfolioUiService {
           amount: it.balanceRaw,
           contractAddress: it.tokenAddress,
           recipient: '0x000000000000000000000000000000000000dead',
-          walletAddress: clientState.walletAddress,
+          walletAddress: clientState.connectedWallet,
         }),
       chainLogo: () =>
         'https://cryptologos.cc/logos/binance-coin-bnb-logo.png?v=014',
+      created: () => now,
       decimals: 'decimals',
       fiatValue: 'fiatValue',
       fiatValueFormatted: (it) =>
@@ -45,9 +51,10 @@ export class PortfolioUiService {
       symbol: 'symbol',
       tokenAddress: 'tokenAddress',
       tokenLink: (it) => `https://bscscan.com/token/${it.tokenAddress}`,
+      updated: () => now,
       walletAddress: 'walletAddress',
       walletTokenLink: (it) =>
-        `https://bscscan.com/token/${it.tokenAddress}?a=${clientState.walletAddress}`,
+        `https://bscscan.com/token/${it.tokenAddress}?a=${clientState.connectedWallet}`,
     };
 
     return morphism(schema, tokens);

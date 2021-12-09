@@ -1,10 +1,13 @@
-import { ClientStateEvent, ServerStateDto } from '@app/sdk';
+import { ClientStateEvent, CLIENT_STATE, ServerStateDto } from '@app/sdk';
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { validate } from 'bycontract';
-import { PortfolioTokenService } from './token';
+import moment from 'moment';
 import { TokenDto } from './dto/token.dto';
-import { PortfolioUiService, HomeSchema } from './ui';
+import { metadata } from './metadata';
+import { PortfolioTokenService } from './token';
+import { homeSchema, menuschema, PortfolioUiService } from './ui';
+import { SERVER_STATE } from '../../../libs/sdk/src/gateway/event/server-state.event';
 
 @Injectable()
 export class PortfolioGateway {
@@ -15,29 +18,28 @@ export class PortfolioGateway {
     private portfolioUiService: PortfolioUiService,
   ) {}
 
-  @OnEvent('client-state')
-  async handleClientState(event: ClientStateEvent) {
-    const { clientId, state } = event;
-
-    validate([clientId, state], ['string', 'object']);
+  @OnEvent(CLIENT_STATE)
+  async handleClientState(clientEvent: ClientStateEvent) {
+    validate([clientEvent.clientId, clientEvent.state], ['string', 'object']);
 
     this.logger.log(`Handling client state event`, {
-      clientId,
+      client: clientEvent.clientId,
     });
 
-    if (!state.walletAddress) {
-      this.emitWalletRequiredState(clientId);
+    if (!clientEvent.state.connectedWallet) {
+      this.emitWalletRequiredState(clientEvent);
       return;
     }
 
-    this.emitLoadingState(clientId);
+    this.emitLoadingState(clientEvent);
 
     const tokensWithBalances =
       await this.portfolioTokenService.getTokensWithBalances(
-        state.walletAddress,
+        clientEvent.state.connectedWallet,
       );
 
-    const fiatId = state.currency?.id ?? 'usd';
+    // TODO: a better way to decide default currency
+    const fiatId = clientEvent.state.currency?.id ?? 'usd';
 
     const tokensWithPrices =
       await this.portfolioTokenService.addPricingToTokens(
@@ -51,44 +53,88 @@ export class PortfolioGateway {
 
     const tokenDtos = await this.portfolioUiService.formatTokens(
       tokensWithLogos,
-      state,
+      clientEvent.state,
     );
 
-    this.emitServerState(tokenDtos, clientId);
+    this.emitTokens(clientEvent, tokenDtos);
   }
 
-  emitServerState(tokenDtos: TokenDto[], clientId: string) {
-    const serverState: ServerStateDto = {
-      walletRequired: false,
-      entities: {
-        tokens: tokenDtos,
+  emitTokens(clientEvent: ClientStateEvent, tokens: TokenDto[]) {
+    // TODO: make this DRY
+    const now = moment().unix();
+
+    const newServerState: ServerStateDto = {
+      menuschema,
+      metadata,
+      overwrite: ['tokens'],
+      shared: {
+        tokens,
+        uiSchema: [
+          {
+            created: now,
+            match: '/plugins/porfolio',
+            shema: homeSchema({ loading: false }),
+            updated: now,
+          },
+        ],
       },
-      uiSchema: HomeSchema({ loading: false }),
-      meta: { pluginName: 'Portfolio' },
+      timestamp: now,
     };
 
-    this.eventEmitter.emit('server-state', { clientId, state: serverState });
+    this.eventEmitter.emit(SERVER_STATE, {
+      clientId: clientEvent.clientId,
+      state: newServerState,
+    });
   }
 
-  emitLoadingState(clientId: string) {
-    const serverState: ServerStateDto = {
-      walletRequired: false,
-      partial: true,
-      uiSchema: HomeSchema({ loading: true }),
-      meta: { pluginName: 'Portfolio' },
-    };
+  emitLoadingState(clientEvent: ClientStateEvent) {
+    // TODO: make this DRY
+    const now = moment().unix();
 
-    this.eventEmitter.emit('server-state', { clientId, state: serverState });
+    const newServerState: ServerStateDto = {
+      menuschema,
+      metadata,
+      shared: {
+        uiSchema: [
+          {
+            created: now,
+            match: '/plugins/porfolio',
+            shema: homeSchema({ loading: true }),
+            updated: now,
+          },
+        ],
+      },
+      timestamp: now,
+    };
+    this.eventEmitter.emit(SERVER_STATE, {
+      clientId: clientEvent.clientId,
+      state: newServerState,
+    });
   }
 
-  emitWalletRequiredState(clientId: string) {
-    validate([clientId], ['string']);
+  emitWalletRequiredState(clientEvent: ClientStateEvent) {
+    // TODO: make this DRY
+    const now = moment().unix();
 
-    const serverState: ServerStateDto = {
-      walletRequired: true,
-      meta: { pluginName: 'Portfolio' },
+    const newServerState: ServerStateDto = {
+      menuschema,
+      metadata,
+      shared: {
+        uiSchema: [
+          {
+            created: now,
+            match: '/plugins/porfolio',
+            shema: homeSchema({ walletRequired: true }),
+            updated: now,
+          },
+        ],
+      },
+      timestamp: now,
     };
 
-    this.eventEmitter.emit('server-state', { clientId, state: serverState });
+    this.eventEmitter.emit(SERVER_STATE, {
+      clientId: clientEvent.clientId,
+      state: newServerState,
+    });
   }
 }

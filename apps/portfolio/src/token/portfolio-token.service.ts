@@ -31,7 +31,6 @@ export class PortfolioTokenService {
       logo: 'logo',
       name: 'name',
       symbol: 'symbol',
-      thumbnail: 'thumbnail',
       tokenAddress: 'address',
       walletAddress: () => walletAddress,
     };
@@ -62,7 +61,8 @@ export class PortfolioTokenService {
 
     return tokens.map((token) => {
       const currencyRate = currencyRates.find(
-        (it) => it.coinAddress === token.tokenAddress,
+        (it) =>
+          it.coinAddress.toLowerCase() === token.tokenAddress.toLowerCase(),
       );
 
       return {

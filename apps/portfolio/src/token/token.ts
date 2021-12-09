@@ -8,7 +8,6 @@ export interface Token {
   readonly name: string;
   readonly price?: number;
   readonly symbol: string;
-  readonly thumbnail?: number;
   readonly tokenAddress: string;
   readonly walletAddress: string;
 }

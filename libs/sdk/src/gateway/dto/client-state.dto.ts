@@ -1,7 +1,9 @@
-import { CurrencyDto } from './currency.dto';
+import { TrackedRecordDto } from '.';
 
 export interface ClientStateDto {
-  currency?: CurrencyDto;
-  walletAddress?: string;
-  entityHeads: { [entityName: string]: number };
+  readonly connectedWallet?: string;
+  readonly currency?: { id: string; symbol: string };
+  readonly currentPath: string;
+  readonly lastServerUpdate?: number;
+  readonly shared?: { [key: string]: TrackedRecordDto[] };
 }

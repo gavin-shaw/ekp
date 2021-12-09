@@ -4,6 +4,5 @@ export interface TokenMetaData {
   logo?: string;
   name: string;
   symbol: string;
-  thumbnail?: string;
   validated?: string;
 }
