@@ -1,6 +1,6 @@
-export interface TrackedRecordDto {
+export interface RecordDto {
+  readonly id: string;
   readonly created: number;
   readonly updated: number;
   readonly deleted?: number;
-  readonly [key: string]: any;
 }

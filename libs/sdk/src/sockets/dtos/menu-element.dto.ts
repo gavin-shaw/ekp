@@ -1,5 +1,5 @@
-export interface MenuschemaDto {
-  readonly children?: MenuschemaDto[];
+export interface MenuElementDto {
+  readonly children?: MenuElementDto[];
   readonly external?: boolean;
   readonly icon?: string;
   readonly label: string;

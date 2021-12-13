@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { validate } from 'bycontract';
 import { ethers } from 'ethers';
 import Moralis from 'moralis/node';
-import { morphism, StrictSchema } from 'morphism';
 import * as moralis from '../moralis';
 import { BlockchainProviderService } from '../provider';
 import erc20abi from './erc20.json';
@@ -54,17 +53,16 @@ export class BlockchainTokenService {
         chain,
       });
 
-    const schema: StrictSchema<TokenBalance, moralis.TokenBalance> = {
-      address: 'token_address',
-      balance: (it) => formatUnits(it.balance, it.decimals),
-      balanceRaw: 'balance',
-      decimals: 'decimals',
-      logo: 'logo',
-      name: 'name',
-      symbol: 'symbol',
-    };
-
-    const balances = morphism(schema, result);
+    const balances: TokenBalance[] = result.map((it) => ({
+      address: it.token_address,
+      balance: formatUnits(it.balance, it.decimals),
+      balanceRaw: it.balance,
+      decimals: Number(it.decimals),
+      logo: it.logo,
+      name: it.name,
+      owner: address,
+      symbol: it.symbol,
+    }));
 
     const nativeResult = await Moralis.Web3API.account.getNativeBalance({
       address,
@@ -104,6 +102,7 @@ export class BlockchainTokenService {
       decimals: nativeDecimals,
       logo: nativeLogo,
       name: nativeName,
+      owner: address,
       symbol: nativeSymbol,
     };
 

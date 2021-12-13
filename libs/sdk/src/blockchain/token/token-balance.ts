@@ -6,4 +6,5 @@ export interface TokenBalance {
   readonly logo: string;
   readonly name: string;
   readonly symbol: string;
+  readonly owner: string;
 }

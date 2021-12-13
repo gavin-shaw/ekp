@@ -1,11 +1,12 @@
 import { GlobalModule } from '@app/sdk';
 import { Module } from '@nestjs/common';
-import { PortfolioGateway } from './portfolio.gateway';
-import { PortfolioTokenService } from './token';
-import { PortfolioUiService } from './ui';
+import { PluginService } from './plugin.service';
+import { UiService } from './ui';
+import { TokenService } from './token';
+import { StorageService } from './storage';
 
 @Module({
   imports: [GlobalModule],
-  providers: [PortfolioGateway, PortfolioTokenService, PortfolioUiService],
+  providers: [PluginService, StorageService, TokenService, UiService],
 })
 export class PortfolioModule {}
