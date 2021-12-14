@@ -1,5 +1,4 @@
-import { RecordDto } from '@app/sdk';
-import { BigNumberDto } from './bignumber.dto';
+import { RecordDto, BigNumberDto } from '@app/sdk';
 
 export interface TokenRecord extends RecordDto {
   allowBurnToken?: boolean;

@@ -1,20 +1,23 @@
 import {
-  BlockchainTokenService,
+  chainIds,
+  chains,
   ClientStateDto,
   CurrencyDto,
   CurrencyService,
+  EvmTokenService,
   formatters,
+  TokenBalance,
 } from '@app/sdk';
 import { Injectable } from '@nestjs/common';
 import { validate } from 'bycontract';
+import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
 import { TokenRecord } from './dtos';
-
 @Injectable()
 export class TokenService {
   constructor(
-    private blockchainTokenService: BlockchainTokenService,
+    private evmTokenService: EvmTokenService,
     private currencyService: CurrencyService,
   ) {}
 
@@ -42,33 +45,44 @@ export class TokenService {
   }
 
   private async getTokensWithBalances(
-    addresses: string[],
+    ownerAddresses: string[],
   ): Promise<TokenRecord[]> {
-    validate([addresses], ['Array.<string>']);
+    validate([ownerAddresses], ['Array.<string>']);
 
-    if (addresses.length === 0) {
+    if (ownerAddresses.length === 0) {
       return [];
     }
 
-    const tokenBalances = _.flatten(
-      await Promise.all(
-        addresses.map((address) =>
-          this.blockchainTokenService.getTokenBalances({
-            chain: 'bsc', // TODO: support multiple chains,
-            address,
-          }),
-        ),
-      ),
+    const requestPromises = [];
+
+    for (const chainId of chainIds) {
+      for (const ownerAddress of ownerAddresses) {
+        requestPromises.push(
+          this.evmTokenService.allBalancesOf(chainId, ownerAddress),
+        );
+      }
+    }
+
+    const tokenBalances: TokenBalance[] = _.flatten(
+      await Promise.all(requestPromises),
     );
 
-    const tokensByAddress = _.groupBy(tokenBalances, 'address');
+    const tokensById = _.groupBy(
+      tokenBalances,
+      (tokenBalance) =>
+        `${tokenBalance.chainId}_${tokenBalance.contractAddress}`,
+    );
 
     const now = moment().unix();
 
-    return Object.entries(tokensByAddress).map(([address, tokens]) => {
-      const balanceValue = _.sumBy(tokens, (token) => Number(token.balance));
+    return Object.entries(tokensById).map(([id, tokens]) => {
+      const balanceValue = _.sumBy(tokens, (token) =>
+        Number(ethers.utils.formatUnits(token.balance, token.decimals)),
+      );
+      const chainMetadata = chains[tokens[0].chainId];
+
       return {
-        id: address,
+        id,
         created: now,
         updated: now,
         balance: {
@@ -76,19 +90,19 @@ export class TokenService {
           value: balanceValue,
         },
         chain: {
-          id: 'bsc',
-          logo: 'https://cryptologos.cc/logos/binance-coin-bnb-logo.png?v=014',
-          name: 'Binance Smart Chain',
+          id: chainMetadata.chainId,
+          logo: chainMetadata.logo,
+          name: chainMetadata.name,
         },
-        contractAddress: address,
+        contractAddress: tokens[0].contractAddress,
         decimals: tokens[0].decimals,
         links: {
-          swap: `https://poocoin.app/swap?inputCurrency=${address}`,
-          token: `https://bscscan.com/token/${address}`,
+          swap: `https://poocoin.app/swap?inputCurrency=${tokens[0].contractAddress}`,
+          token: `https://bscscan.com/token/${tokens[0].contractAddress}`,
         },
         logo: tokens[0].logo,
         name: tokens[0].name,
-        owners: tokens.map((token) => token.owner),
+        owners: tokens.map((token) => token.ownerAddress),
         symbol: tokens[0].symbol,
       };
     });
@@ -109,42 +123,48 @@ export class TokenService {
       currency.id,
     );
 
-    return tokenRecords.map((token) => {
-      const currencyRate = currencyRates.find(
-        (it) =>
-          it.coinAddress.toLowerCase() === token.contractAddress.toLowerCase(),
-      );
+    return tokenRecords
+      .map((token) => {
+        const currencyRate = currencyRates.find(
+          (it) =>
+            it.coinAddress.toLowerCase() ===
+            token.contractAddress.toLowerCase(),
+        );
 
-      const balanceFiatValue = this.currencyService.convertCurrency(
-        token.balance.value,
-        token.contractAddress,
-        currency.id,
-        currencyRates,
-      );
+        const balanceFiatValue = this.currencyService.convertCurrency(
+          token.balance.value,
+          token.contractAddress,
+          currency.id,
+          currencyRates,
+        );
 
-      return {
-        ...token,
-        allowSwap: !isNaN(balanceFiatValue),
-        allowBurnToken: isNaN(balanceFiatValue),
-        balanceFiat: {
-          display: formatters.currencyValue(balanceFiatValue, currency.symbol),
-          value: balanceFiatValue,
-        },
-        links: {
-          ...token.links,
-          token: !!currencyRate?.coinId
-            ? `https://www.coingecko.com/en/coins/${currencyRate?.coinId}`
-            : token.links.token,
-        },
-        price: {
-          display: formatters.currencyValue(
-            currencyRate?.rate,
-            currency.symbol,
-          ),
-          value: currencyRate?.rate,
-        },
-      };
-    });
+        return {
+          ...token,
+          allowSwap: !isNaN(balanceFiatValue),
+          allowBurnToken: isNaN(balanceFiatValue),
+          balanceFiat: {
+            display: formatters.currencyValue(
+              balanceFiatValue,
+              currency.symbol,
+            ),
+            value: balanceFiatValue,
+          },
+          links: {
+            ...token.links,
+            token: !!currencyRate?.coinId
+              ? `https://www.coingecko.com/en/coins/${currencyRate?.coinId}`
+              : token.links.token,
+          },
+          price: {
+            display: formatters.currencyValue(
+              currencyRate?.rate,
+              currency.symbol,
+            ),
+            value: currencyRate?.rate,
+          },
+        };
+      })
+      .filter((it) => !isNaN(it.balanceFiat.value));
   }
 
   private async addTokenLogos(tokenRecords: TokenRecord[]) {

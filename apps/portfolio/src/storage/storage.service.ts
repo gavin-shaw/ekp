@@ -7,6 +7,7 @@ import { Injectable } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { validate } from 'bycontract';
 import { metadata } from '../metadata';
+import { NftService } from '../nft';
 import { TokenService } from '../token';
 import { UiService } from '../ui';
 
@@ -15,6 +16,7 @@ export class StorageService {
   constructor(
     private eventEmitter: EventEmitter2,
     private tokenService: TokenService,
+    private nftService: NftService,
     private uiService: UiService,
   ) {}
 
@@ -25,6 +27,12 @@ export class StorageService {
       ['string', 'object'],
     );
 
+    this.emitUi(clientConnectedEvent);
+    this.emitTokens(clientConnectedEvent);
+    this.emitNfts(clientConnectedEvent);
+  }
+
+  private async emitUi(clientConnectedEvent: ClientConnectedEvent) {
     const menus = this.uiService.getMenus();
     const pages = this.uiService.getPages();
 
@@ -42,7 +50,9 @@ export class StorageService {
         },
       },
     });
+  }
 
+  private async emitTokens(clientConnectedEvent: ClientConnectedEvent) {
     const tokens = await this.tokenService.getAllTokens({
       ...clientConnectedEvent.state,
       watchedAddresses: !!clientConnectedEvent.state.client.selectedWallet
@@ -63,6 +73,33 @@ export class StorageService {
       tables: {
         tokens: {
           add: tokens,
+          clear: true,
+        },
+      },
+    });
+  }
+
+  private async emitNfts(clientConnectedEvent: ClientConnectedEvent) {
+    const collections = await this.nftService.allCollectionsOf({
+      ...clientConnectedEvent.state,
+      watchedAddresses: !!clientConnectedEvent.state.client.selectedWallet
+        ? [clientConnectedEvent.state.client.selectedWallet]
+        : [],
+      client: {
+        connectedWallets: [],
+        currency: {
+          id: 'usd',
+          symbol: '$',
+        },
+      },
+    });
+
+    this.eventEmitter.emit(UPDATE_STORAGE, {
+      clientId: clientConnectedEvent.clientId,
+      pluginId: metadata.pluginId,
+      tables: {
+        collections: {
+          add: collections,
           clear: true,
         },
       },
