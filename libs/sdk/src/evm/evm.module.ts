@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
 import Moralis from 'moralis/node';
-import { LoggerModule } from '../logger/logger.module';
 import { EvmNftService } from './nft';
 import { EvmProviderService } from './provider';
 import { EvmRpcService } from './rpc';
 import { EvmTokenService } from './token';
-
+import { OpenseaModule } from '../opensea/opensea.module';
 @Module({
-  imports: [LoggerModule],
+  imports: [OpenseaModule],
   providers: [
     EvmNftService,
     EvmProviderService,

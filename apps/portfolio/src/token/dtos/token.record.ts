@@ -1,4 +1,4 @@
-import { RecordDto, BigNumberDto } from '@app/sdk';
+import { RecordDto, BigNumberDto, ChainId } from '@app/sdk';
 
 export interface TokenRecord extends RecordDto {
   allowBurnToken?: boolean;
@@ -6,10 +6,11 @@ export interface TokenRecord extends RecordDto {
   balance: BigNumberDto;
   balanceFiat?: BigNumberDto;
   chain: {
-    id: string;
+    id: ChainId;
     logo: string;
     name: string;
   };
+  coinId?: string;
   contractAddress: string;
   decimals: number;
   links: {

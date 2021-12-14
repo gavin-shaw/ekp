@@ -1,16 +1,22 @@
-import { RecordDto, BigNumberDto } from '@app/sdk';
+import { RecordDto, BigNumberDto, ChainId } from '@app/sdk';
 
 export interface CollectionRecord extends RecordDto {
   balance: BigNumberDto;
   balanceFiat?: BigNumberDto;
   chain: {
-    id: string;
+    id: ChainId;
     logo: string;
     name: string;
   };
   contractAddress: string;
-  floorPrice?: BigNumberDto;
-  floorPriceFiat?: BigNumberDto;
+  floorPrice?: {
+    value?: number;
+    display?: string;
+  };
+  floorPriceFiat?: {
+    value?: number;
+    display?: string;
+  };
   floorPriceToken?: {
     contractAddress: string;
     name: string;

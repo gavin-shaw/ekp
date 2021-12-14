@@ -33,7 +33,7 @@ export class EvmTokenService {
     return {
       ...chainMetadata,
       balance: BigNumber.from(result.balance),
-      chainId: chainMetadata.chainId,
+      chainId: chainMetadata.id,
       contractAddress: chainMetadata.token.contractAddress,
       decimals: chainMetadata.token.decimals,
       logo: chainMetadata.logo,

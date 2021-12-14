@@ -3,7 +3,7 @@ import {
   chains,
   ClientStateDto,
   CurrencyDto,
-  CurrencyService,
+  CoingeckoService,
   EvmTokenService,
   formatters,
   TokenBalance,
@@ -18,7 +18,7 @@ import { TokenRecord } from './dtos';
 export class TokenService {
   constructor(
     private evmTokenService: EvmTokenService,
-    private currencyService: CurrencyService,
+    private coingeckoService: CoingeckoService,
   ) {}
 
   async getAllTokens(clientState: ClientStateDto): Promise<TokenRecord[]> {
@@ -90,7 +90,7 @@ export class TokenService {
           value: balanceValue,
         },
         chain: {
-          id: chainMetadata.chainId,
+          id: chainMetadata.id,
           logo: chainMetadata.logo,
           name: chainMetadata.name,
         },
@@ -114,29 +114,34 @@ export class TokenService {
   ): Promise<TokenRecord[]> {
     validate([tokenRecords, currency], ['Array.<object>', 'object']);
 
-    const contractAddresses = tokenRecords.map(
-      (token) => token.contractAddress,
+    const tokenRecordsWithCoinIds = await Promise.all(
+      tokenRecords.map(async (tokenRecord) => ({
+        ...tokenRecord,
+        coinId: await this.coingeckoService.coinIdOf(
+          tokenRecord.chain.id,
+          tokenRecord.contractAddress,
+        ),
+      })),
     );
 
-    const currencyRates = await this.currencyService.fetchRates(
-      contractAddresses,
+    const coinIds: string[] = tokenRecordsWithCoinIds.map((it) => it.coinId);
+
+    const coinPrices = await this.coingeckoService.latestPricesOf(
+      coinIds.filter((it) => !!it),
       currency.id,
     );
 
-    return tokenRecords
+    return tokenRecordsWithCoinIds
       .map((token) => {
-        const currencyRate = currencyRates.find(
-          (it) =>
-            it.coinAddress.toLowerCase() ===
-            token.contractAddress.toLowerCase(),
+        const coinPrice = coinPrices.find(
+          (it) => it.coinId.toLowerCase() === token.coinId,
         );
 
-        const balanceFiatValue = this.currencyService.convertCurrency(
-          token.balance.value,
-          token.contractAddress,
-          currency.id,
-          currencyRates,
-        );
+        let balanceFiatValue = undefined;
+
+        if (!!coinPrice) {
+          balanceFiatValue = coinPrice.price * token.balance.value;
+        }
 
         return {
           ...token,
@@ -151,16 +156,15 @@ export class TokenService {
           },
           links: {
             ...token.links,
-            token: !!currencyRate?.coinId
-              ? `https://www.coingecko.com/en/coins/${currencyRate?.coinId}`
+            token: !!token.coinId
+              ? `https://www.coingecko.com/en/coins/${token.coinId}`
               : token.links.token,
           },
           price: {
-            display: formatters.currencyValue(
-              currencyRate?.rate,
-              currency.symbol,
-            ),
-            value: currencyRate?.rate,
+            display: !!coinPrice
+              ? formatters.currencyValue(coinPrice.price, currency.symbol)
+              : '?',
+            value: coinPrice?.price,
           },
         };
       })
@@ -174,7 +178,7 @@ export class TokenService {
       tokenRecords.map(async (token) => ({
         ...token,
         logo:
-          (await this.currencyService.getImageUrl(token.contractAddress)) ??
+          (await this.coingeckoService.getImageUrl(token.coinId)) ??
           'https://media.istockphoto.com/vectors/question-mark-in-a-shield-icon-vector-sign-and-symbol-isolated-on-vector-id1023572464?k=20&m=1023572464&s=170667a&w=0&h=EopKUPT7ix-yq92EZkAASv244wBsn_z-fbNpyxxTl6o=',
       })),
     );

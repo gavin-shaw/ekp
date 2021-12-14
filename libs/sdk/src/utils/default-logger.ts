@@ -1,13 +1,12 @@
 import winston from 'winston';
-import { Injectable, LoggerService as Logger, LogLevel } from '@nestjs/common';
+import { LoggerService, LogLevel } from '@nestjs/common';
 
-@Injectable()
-export class EkpLogger implements Logger {
+export class DefaultLogger implements LoggerService {
   private logger: winston.Logger;
 
   constructor() {
     this.logger = winston.createLogger({
-      level: 'debug',
+      level: 'debug', // TODO: make this configurable from the enviroment
       format: winston.format.combine(
         winston.format.errors({ stack: true }),
         winston.format.colorize(),
@@ -43,3 +42,5 @@ export class EkpLogger implements Logger {
     // Not sure what to do about this one
   }
 }
+
+export const logger = new DefaultLogger();

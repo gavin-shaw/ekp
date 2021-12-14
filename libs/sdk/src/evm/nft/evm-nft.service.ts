@@ -1,15 +1,21 @@
+import { OpenseaService } from '../../opensea';
 import { Injectable } from '@nestjs/common';
 import { validate } from 'bycontract';
 import cacheManager from 'cache-manager';
+import { ethers } from 'ethers';
 import _ from 'lodash';
 import Moralis from 'moralis/node';
-import { ChainId } from '../utils';
 import * as moralis from '../moralis';
+import { ChainId } from '../utils';
 import { NftCollection } from './model/nft-collection';
+import { NftCollectionFloorPrice } from './model/nft-collection-floor-price';
+import { logger } from '@app/sdk';
 
 @Injectable()
 export class EvmNftService {
   cache = cacheManager.caching({ store: 'memory', ttl: 0 });
+
+  constructor(private openseaService: OpenseaService) {}
 
   // async allTransfersOf({ address, chain }) {
   //   const cacheKey = `nft_collections_${address}_${chain}`;
@@ -83,6 +89,34 @@ export class EvmNftService {
 
   //   return Object.values(collections);
   // }
+
+  async floorPriceOf(
+    chainId: ChainId,
+    contractAddress: string,
+  ): Promise<NftCollectionFloorPrice> {
+    if (chainId !== 'eth') {
+      // TODO: implement other chains
+      return undefined;
+    }
+
+    const slug = await this.openseaService.slugOf(contractAddress);
+
+    if (!slug) {
+      logger.warn(
+        'Skipping opensea price due to missing slug: ' + contractAddress,
+      );
+      return undefined;
+    }
+
+    const price = await this.openseaService.floorPriceOf(slug);
+
+    return {
+      chainId,
+      contractAddress,
+      decimals: 18,
+      price: !!price ? ethers.utils.parseEther(`${price}`) : undefined,
+    };
+  }
 
   async allCollectionsOf(
     chainId: ChainId,

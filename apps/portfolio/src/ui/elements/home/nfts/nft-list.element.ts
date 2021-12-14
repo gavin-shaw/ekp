@@ -3,8 +3,8 @@ export const nftList = {
   items: '$.collections',
   options: {
     pagination: false,
-    defaultSortFieldId: 'asset',
-    defaultSortAsc: true,
+    defaultSortFieldId: 'value',
+    defaultSortAsc: false,
     filterable: false,
   },
   columns: [
@@ -30,7 +30,7 @@ export const nftList = {
     },
     {
       id: 'value',
-      value: '$.balanceFiat.display',
+      value: '$.balanceFiat.value',
       filterable: true,
       sortable: true,
       right: true,

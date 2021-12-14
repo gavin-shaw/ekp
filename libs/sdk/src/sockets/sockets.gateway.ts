@@ -1,12 +1,4 @@
-import {
-  CLIENT_CONNECTED,
-  CLIENT_STATE_CHANGED,
-  UpdateMetadataEvent,
-  UpdateStorageEvent,
-  UPDATE_METADATA,
-  UPDATE_STORAGE,
-} from './events';
-import { Logger } from '@nestjs/common';
+import { logger } from '@app/sdk';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import {
   OnGatewayConnection,
@@ -15,9 +7,17 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
 import { validate } from 'bycontract';
 import _ from 'lodash';
+import { Server, Socket } from 'socket.io';
+import {
+  CLIENT_CONNECTED,
+  CLIENT_STATE_CHANGED,
+  UpdateMetadataEvent,
+  UpdateStorageEvent,
+  UPDATE_METADATA,
+  UPDATE_STORAGE,
+} from './events';
 
 @WebSocketGateway({ cors: true })
 export class SocketsGateway
@@ -28,19 +28,17 @@ export class SocketsGateway
   @WebSocketServer()
   server: Server;
 
-  private logger: Logger = new Logger('SocketsGateway');
-
   handleConnection(client: Socket) {
-    this.logger.log(`Client connected: ${client.id}`);
+    logger.log(`Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected: ${client.id}`);
+    logger.log(`Client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage(CLIENT_CONNECTED)
   async handleClientConnectedMessage(client: Socket, payload: any) {
-    this.logger.debug(`Received CLIENT_CONNECTED: ${client.id}`);
+    logger.debug(`Received CLIENT_CONNECTED: ${client.id}`);
 
     this.eventEmitter.emit(CLIENT_CONNECTED, {
       clientId: client.id,
@@ -50,7 +48,7 @@ export class SocketsGateway
 
   @SubscribeMessage(CLIENT_STATE_CHANGED)
   async handleClientStateChangedMessage(client: Socket, payload: any) {
-    this.logger.debug(`Received CLIENT_STATE_CHANGED: ${client.id}`);
+    logger.debug(`Received CLIENT_STATE_CHANGED: ${client.id}`);
 
     this.eventEmitter.emit(CLIENT_STATE_CHANGED, {
       clientId: client.id,
@@ -62,9 +60,7 @@ export class SocketsGateway
   async emitUpdateStorageMessage(updateStorageEvent: UpdateStorageEvent) {
     validate([updateStorageEvent.clientId], ['string']);
 
-    this.logger.debug(
-      `Emitting UPDATE_STORAGE: ${updateStorageEvent.clientId}`,
-    );
+    logger.debug(`Emitting UPDATE_STORAGE: ${updateStorageEvent.clientId}`);
 
     this.server
       .to(updateStorageEvent.clientId)
@@ -78,9 +74,7 @@ export class SocketsGateway
   async emitUpdateMetaData(updateMetadataEvent: UpdateMetadataEvent) {
     validate([updateMetadataEvent.clientId], ['string']);
 
-    this.logger.debug(
-      `Emitting UPDATE_METADATA: ${updateMetadataEvent.clientId}`,
-    );
+    logger.debug(`Emitting UPDATE_METADATA: ${updateMetadataEvent.clientId}`);
 
     this.server
       .to(updateMetadataEvent.clientId)
