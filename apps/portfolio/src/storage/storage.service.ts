@@ -11,6 +11,7 @@ import { metadata } from '../metadata';
 import { NftService } from '../nft';
 import { TokenService } from '../token';
 import { UiService } from '../ui';
+import { formatters } from '@app/sdk';
 
 @Injectable()
 export class StorageService {
@@ -69,17 +70,24 @@ export class StorageService {
   }
 
   private async emitTokens(clientConnectedEvent: ClientConnectedEvent) {
+    // TODO: fix currency not being sent properly from the client
+    const currency = {
+      id: 'usd',
+      symbol: '$',
+    };
+
     const tokens = await this.tokenService.getAllTokens({
       ...clientConnectedEvent.state,
       client: {
         ...clientConnectedEvent.state.client,
-        // TODO: fix currency not being sent properly from the client
-        currency: {
-          id: 'usd',
-          symbol: '$',
-        },
+        currency,
       },
     });
+
+    const totalValue = tokens.reduce(
+      (prev, curr) => prev + curr.balanceFiat?.value ?? 0,
+      0,
+    );
 
     this.eventEmitter.emit(UPDATE_STORAGE, {
       clientId: clientConnectedEvent.clientId,
@@ -89,22 +97,38 @@ export class StorageService {
           add: tokens,
           clear: true,
         },
+        portfolioStats: {
+          add: [
+            {
+              id: 'tokenValue',
+              value: formatters.currencyValue(totalValue, currency.symbol),
+              name: 'Token Value',
+            },
+          ],
+        },
       },
     });
   }
 
   private async emitNfts(clientConnectedEvent: ClientConnectedEvent) {
+    // TODO: fix currency not being sent properly from the client
+    const currency = {
+      id: 'usd',
+      symbol: '$',
+    };
+
     const collections = await this.nftService.allCollectionsOf({
       ...clientConnectedEvent.state,
       client: {
         ...clientConnectedEvent.state.client,
-        // TODO: fix currency not being sent properly from the client
-        currency: {
-          id: 'usd',
-          symbol: '$',
-        },
+        currency,
       },
     });
+
+    const totalValue = collections.reduce(
+      (prev, curr) => prev + curr.floorPriceFiat?.value ?? 0,
+      0,
+    );
 
     this.eventEmitter.emit(UPDATE_STORAGE, {
       clientId: clientConnectedEvent.clientId,
@@ -113,6 +137,15 @@ export class StorageService {
         collections: {
           add: collections,
           clear: true,
+        },
+        portfolioStats: {
+          add: [
+            {
+              id: 'nftValue',
+              value: formatters.currencyValue(totalValue, currency.symbol),
+              name: 'NFT Value',
+            },
+          ],
         },
       },
     });
