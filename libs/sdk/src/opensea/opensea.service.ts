@@ -18,7 +18,7 @@ const limiter = new Bottleneck({
 @Injectable()
 export class OpenseaService {
   @cacheable(0)
-  async slugOf(contractAddress: string) {
+  async metadataOf(contractAddress: string) {
     validate([contractAddress], ['string']);
     const url = `${BASE_URL}/asset_contract/${contractAddress}`;
 
@@ -29,7 +29,7 @@ export class OpenseaService {
 
           const contractResult = await axios.get(url);
 
-          return contractResult.data?.collection?.slug;
+          return contractResult.data?.collection;
         }),
       {
         onRetry: (error) => {

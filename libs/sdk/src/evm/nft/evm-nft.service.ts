@@ -7,8 +7,11 @@ import _ from 'lodash';
 import Moralis from 'moralis/node';
 import * as moralis from '../moralis';
 import { ChainId } from '../utils';
-import { NftCollection } from './model/nft-collection';
-import { NftCollectionFloorPrice } from './model/nft-collection-floor-price';
+import {
+  NftCollection,
+  NftCollectionFloorPrice,
+  NftCollectionMetadata,
+} from './model';
 import { logger } from '@app/sdk';
 
 @Injectable()
@@ -90,29 +93,44 @@ export class EvmNftService {
   //   return Object.values(collections);
   // }
 
-  async floorPriceOf(
+  async metadataOf(
     chainId: ChainId,
     contractAddress: string,
-  ): Promise<NftCollectionFloorPrice> {
+  ): Promise<NftCollectionMetadata> {
     if (chainId !== 'eth') {
       // TODO: implement other chains
       return undefined;
     }
 
-    const slug = await this.openseaService.slugOf(contractAddress);
+    const metadata = await this.openseaService.metadataOf(contractAddress);
 
-    if (!slug) {
-      logger.warn(
-        'Skipping opensea price due to missing slug: ' + contractAddress,
-      );
+    if (!metadata) {
       return undefined;
     }
-
-    const price = await this.openseaService.floorPriceOf(slug);
 
     return {
       chainId,
       contractAddress,
+      logo: metadata.image_url,
+      slug: metadata.slug,
+    };
+  }
+
+  async floorPriceOf(
+    collectionMetadata: NftCollectionMetadata,
+  ): Promise<NftCollectionFloorPrice> {
+    if (collectionMetadata.chainId !== 'eth') {
+      // TODO: implement other chains
+      return undefined;
+    }
+
+    const price = await this.openseaService.floorPriceOf(
+      collectionMetadata.slug,
+    );
+
+    return {
+      chainId: collectionMetadata.chainId,
+      contractAddress: collectionMetadata.contractAddress,
       decimals: 18,
       price: !!price ? ethers.utils.parseEther(`${price}`) : undefined,
     };
