@@ -2,9 +2,8 @@ import { CurrencyDto } from './currency.dto';
 
 export interface ClientStateDto {
   readonly client: {
-    readonly selectedWallet?: string;
-    readonly connectedWallets: string[];
     readonly currency: CurrencyDto;
+    readonly watchedWallets: { address: string }[];
   };
-  [key: string]: any;
+  // [key: string]: any;
 }

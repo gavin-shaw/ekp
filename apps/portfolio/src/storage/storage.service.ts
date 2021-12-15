@@ -1,6 +1,7 @@
 import {
   ClientConnectedEvent,
   CLIENT_CONNECTED,
+  CLIENT_STATE_CHANGED,
   UPDATE_STORAGE,
 } from '@app/sdk';
 import { Injectable } from '@nestjs/common';
@@ -22,6 +23,21 @@ export class StorageService {
 
   @OnEvent(CLIENT_CONNECTED)
   async handleClientConnectedEvent(clientConnectedEvent: ClientConnectedEvent) {
+    validate(
+      [clientConnectedEvent.clientId, clientConnectedEvent.state],
+      ['string', 'object'],
+    );
+
+    this.emitUi(clientConnectedEvent);
+    this.emitTokens(clientConnectedEvent);
+    this.emitNfts(clientConnectedEvent);
+  }
+
+  // TODO: make this dry (see method above)
+  @OnEvent(CLIENT_STATE_CHANGED)
+  async handleClientStateChangedEvent(
+    clientConnectedEvent: ClientConnectedEvent,
+  ) {
     validate(
       [clientConnectedEvent.clientId, clientConnectedEvent.state],
       ['string', 'object'],
@@ -55,11 +71,9 @@ export class StorageService {
   private async emitTokens(clientConnectedEvent: ClientConnectedEvent) {
     const tokens = await this.tokenService.getAllTokens({
       ...clientConnectedEvent.state,
-      watchedAddresses: !!clientConnectedEvent.state.client.selectedWallet
-        ? [clientConnectedEvent.state.client.selectedWallet]
-        : [],
       client: {
-        connectedWallets: [],
+        ...clientConnectedEvent.state.client,
+        // TODO: fix currency not being sent properly from the client
         currency: {
           id: 'usd',
           symbol: '$',
@@ -82,11 +96,9 @@ export class StorageService {
   private async emitNfts(clientConnectedEvent: ClientConnectedEvent) {
     const collections = await this.nftService.allCollectionsOf({
       ...clientConnectedEvent.state,
-      watchedAddresses: !!clientConnectedEvent.state.client.selectedWallet
-        ? [clientConnectedEvent.state.client.selectedWallet]
-        : [],
       client: {
-        connectedWallets: [],
+        ...clientConnectedEvent.state.client,
+        // TODO: fix currency not being sent properly from the client
         currency: {
           id: 'usd',
           symbol: '$',

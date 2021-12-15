@@ -28,14 +28,14 @@ export class NftService {
   ): Promise<CollectionRecord[]> {
     validate([clientState], ['object']);
 
-    if (!Array.isArray(clientState.watchedAddresses)) {
+    if (!Array.isArray(clientState.client?.watchedWallets)) {
       return [];
     }
 
     validate([clientState.client?.currency], ['object']);
 
     const collectionsWithBalances = await this.getCollectionsWithBalances(
-      clientState.watchedAddresses,
+      clientState.client.watchedWallets.map((it) => it.address),
     );
 
     const collectionsWithPrices = await this.addCollectionPrices(

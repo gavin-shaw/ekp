@@ -24,14 +24,14 @@ export class TokenService {
   async getAllTokens(clientState: ClientStateDto): Promise<TokenRecord[]> {
     validate([clientState], ['object']);
 
-    if (!Array.isArray(clientState.watchedAddresses)) {
+    if (!Array.isArray(clientState.client?.watchedWallets)) {
       return [];
     }
 
     validate([clientState.client?.currency], ['object']);
 
     const tokensWithBalances = await this.getTokensWithBalances(
-      clientState.watchedAddresses,
+      clientState.client.watchedWallets.map((it) => it.address),
     );
 
     const tokensWithPrices = await this.addTokenPrices(
