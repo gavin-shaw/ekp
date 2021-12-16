@@ -1,17 +1,16 @@
 import {
   chainIds,
+  chains,
   ClientStateDto,
   CoingeckoService,
-  EvmNftService,
-  NftCollection,
-  chains,
-  NftCollectionFloorPrice,
-  formatters,
   CurrencyDto,
+  EvmNftService,
+  formatters,
+  NftCollection,
 } from '@app/sdk';
-import { ethers } from 'ethers';
 import { Injectable } from '@nestjs/common';
 import { validate } from 'bycontract';
+import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
 import { CollectionRecord } from './dtos';
@@ -32,7 +31,7 @@ export class NftService {
       return [];
     }
 
-    validate([clientState.client?.currency], ['object']);
+    validate([clientState.client?.selectedCurrency], ['object']);
 
     const collectionsWithBalances = await this.getCollectionsWithBalances(
       clientState.client.watchedWallets.map((it) => it.address),
@@ -40,7 +39,7 @@ export class NftService {
 
     const collectionsWithPrices = await this.addCollectionPrices(
       collectionsWithBalances,
-      clientState.client.currency,
+      clientState.client.selectedCurrency,
     );
 
     return collectionsWithPrices;

@@ -2,8 +2,8 @@ import {
   chainIds,
   chains,
   ClientStateDto,
-  CurrencyDto,
   CoingeckoService,
+  CurrencyDto,
   EvmTokenService,
   formatters,
   TokenBalance,
@@ -28,7 +28,7 @@ export class TokenService {
       return [];
     }
 
-    validate([clientState.client?.currency], ['object']);
+    validate([clientState.client?.selectedCurrency], ['object']);
 
     const tokensWithBalances = await this.getTokensWithBalances(
       clientState.client.watchedWallets.map((it) => it.address),
@@ -36,7 +36,7 @@ export class TokenService {
 
     const tokensWithPrices = await this.addTokenPrices(
       tokensWithBalances,
-      clientState.client.currency,
+      clientState.client.selectedCurrency,
     );
 
     const tokensWithLogos = await this.addTokenLogos(tokensWithPrices);

@@ -70,24 +70,16 @@ export class StorageService {
   }
 
   private async emitTokens(clientConnectedEvent: ClientConnectedEvent) {
-    // TODO: fix currency not being sent properly from the client
-    const currency = {
-      id: 'usd',
-      symbol: '$',
-    };
-
-    const tokens = await this.tokenService.getAllTokens({
-      ...clientConnectedEvent.state,
-      client: {
-        ...clientConnectedEvent.state.client,
-        currency,
-      },
-    });
+    const tokens = await this.tokenService.getAllTokens(
+      clientConnectedEvent.state,
+    );
 
     const totalValue = tokens.reduce(
       (prev, curr) => prev + curr.balanceFiat?.value ?? 0,
       0,
     );
+
+    const currency = clientConnectedEvent.state.client.selectedCurrency;
 
     this.eventEmitter.emit(UPDATE_STORAGE, {
       clientId: clientConnectedEvent.clientId,
@@ -111,24 +103,16 @@ export class StorageService {
   }
 
   private async emitNfts(clientConnectedEvent: ClientConnectedEvent) {
-    // TODO: fix currency not being sent properly from the client
-    const currency = {
-      id: 'usd',
-      symbol: '$',
-    };
-
-    const collections = await this.nftService.allCollectionsOf({
-      ...clientConnectedEvent.state,
-      client: {
-        ...clientConnectedEvent.state.client,
-        currency,
-      },
-    });
+    const collections = await this.nftService.allCollectionsOf(
+      clientConnectedEvent.state,
+    );
 
     const totalValue = collections.reduce(
       (prev, curr) => prev + curr.floorPriceFiat?.value ?? 0,
       0,
     );
+
+    const currency = clientConnectedEvent.state.client.selectedCurrency;
 
     this.eventEmitter.emit(UPDATE_STORAGE, {
       clientId: clientConnectedEvent.clientId,
