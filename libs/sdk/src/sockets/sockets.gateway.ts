@@ -14,9 +14,9 @@ import {
   CLIENT_CONNECTED,
   CLIENT_STATE_CHANGED,
   UpdateMetadataEvent,
-  UpdateStorageEvent,
+  SetLayersEvent,
   UPDATE_METADATA,
-  UPDATE_STORAGE,
+  SET_LAYERS,
 } from './events';
 
 @WebSocketGateway({ cors: true })
@@ -56,16 +56,16 @@ export class SocketsGateway
     });
   }
 
-  @OnEvent(UPDATE_STORAGE)
-  async emitUpdateStorageMessage(updateStorageEvent: UpdateStorageEvent) {
+  @OnEvent(SET_LAYERS)
+  async emitSetLayersMessage(updateStorageEvent: SetLayersEvent) {
     validate([updateStorageEvent.clientId], ['string']);
 
-    logger.debug(`Emitting UPDATE_STORAGE: ${updateStorageEvent.clientId}`);
+    logger.debug(`Emitting SET_LAYERS: ${updateStorageEvent.clientId}`);
 
     this.server
       .to(updateStorageEvent.clientId)
       .emit(
-        UPDATE_STORAGE,
+        SET_LAYERS,
         JSON.stringify(_.omit(updateStorageEvent, ['clientId'])),
       );
   }

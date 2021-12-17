@@ -47,7 +47,7 @@ export class OpenseaService {
     return retry(
       async () =>
         await limiter.schedule(async () => {
-          logger.debug(`GET  ${url}`);
+          logger.debug(`GET ${url}`);
 
           const statsResult = await axios.get(url);
 

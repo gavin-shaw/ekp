@@ -2,16 +2,18 @@ import {
   ClientConnectedEvent,
   CLIENT_CONNECTED,
   CLIENT_STATE_CHANGED,
-  UPDATE_STORAGE,
+  CurrencyDto,
+  formatters,
+  SET_LAYERS,
 } from '@app/sdk';
 import { Injectable } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { validate } from 'bycontract';
+import moment from 'moment';
 import { metadata } from '../metadata';
 import { NftService } from '../nft';
 import { TokenService } from '../token';
 import { UiService } from '../ui';
-import { formatters } from '@app/sdk';
 
 @Injectable()
 export class StorageService {
@@ -24,14 +26,28 @@ export class StorageService {
 
   @OnEvent(CLIENT_CONNECTED)
   async handleClientConnectedEvent(clientConnectedEvent: ClientConnectedEvent) {
-    validate(
-      [clientConnectedEvent.clientId, clientConnectedEvent.state],
-      ['string', 'object'],
+    // TODO: put this validation in the sdk
+
+    const clientId = validate(clientConnectedEvent.clientId, 'string');
+
+    const selectedCurrency = validate(
+      clientConnectedEvent.state?.client.selectedCurrency,
+      'object',
     );
 
-    this.emitUi(clientConnectedEvent);
-    this.emitTokens(clientConnectedEvent);
-    this.emitNfts(clientConnectedEvent);
+    const lastTimestamp = validate(
+      clientConnectedEvent.state?.client.lastTimestamp,
+      'number=',
+    );
+
+    const watchedWallets = validate(
+      clientConnectedEvent.state?.client.watchedWallets,
+      'Array.<object>',
+    );
+
+    await this.emitUi(clientId);
+    await this.emitTokens(clientId, selectedCurrency, watchedWallets);
+    await this.emitNfts(clientId, selectedCurrency, watchedWallets);
   }
 
   // TODO: make this dry (see method above)
@@ -39,39 +55,68 @@ export class StorageService {
   async handleClientStateChangedEvent(
     clientConnectedEvent: ClientConnectedEvent,
   ) {
-    validate(
-      [clientConnectedEvent.clientId, clientConnectedEvent.state],
-      ['string', 'object'],
+    // TODO: put this validation in the sdk
+
+    const clientId = validate(clientConnectedEvent.clientId, 'string');
+
+    const selectedCurrency = validate(
+      clientConnectedEvent.state?.client.selectedCurrency,
+      'object',
     );
 
-    this.emitUi(clientConnectedEvent);
-    this.emitTokens(clientConnectedEvent);
-    this.emitNfts(clientConnectedEvent);
+    const lastTimestamp = validate(
+      clientConnectedEvent.state?.client.lastTimestamp,
+      'number=',
+    );
+
+    const watchedWallets = validate(
+      clientConnectedEvent.state?.client.watchedWallets,
+      'Array.<object>',
+    );
+
+    await this.emitUi(clientId);
+    await this.emitTokens(clientId, selectedCurrency, watchedWallets);
+    await this.emitNfts(clientId, selectedCurrency, watchedWallets);
   }
 
-  private async emitUi(clientConnectedEvent: ClientConnectedEvent) {
+  private async emitUi(clientId: string) {
     const menus = this.uiService.getMenus();
     const pages = this.uiService.getPages();
 
-    this.eventEmitter.emit(UPDATE_STORAGE, {
-      clientId: clientConnectedEvent.clientId,
+    const now = moment().unix();
+
+    this.eventEmitter.emit(SET_LAYERS, {
+      clientId,
       pluginId: metadata.pluginId,
-      tables: {
-        menus: {
-          add: menus,
-          clear: true,
+      layers: [
+        {
+          id: 'menu-layer',
+          tableName: 'menus',
+          timestamp: now,
+          set: {
+            records: menus,
+          },
         },
-        pages: {
-          add: pages,
-          clear: true,
+        {
+          id: 'pages-layer',
+          tableName: 'pages',
+          timestamp: now,
+          set: {
+            records: pages,
+          },
         },
-      },
+      ],
     });
   }
 
-  private async emitTokens(clientConnectedEvent: ClientConnectedEvent) {
+  private async emitTokens(
+    clientId: string,
+    selectedCurrency: CurrencyDto,
+    watchedWallets: { address: string }[],
+  ) {
     const tokens = await this.tokenService.getAllTokens(
-      clientConnectedEvent.state,
+      selectedCurrency,
+      watchedWallets,
     );
 
     const totalValue = tokens.reduce(
@@ -79,32 +124,49 @@ export class StorageService {
       0,
     );
 
-    const currency = clientConnectedEvent.state.client.selectedCurrency;
+    const now = moment().unix();
 
-    this.eventEmitter.emit(UPDATE_STORAGE, {
-      clientId: clientConnectedEvent.clientId,
+    this.eventEmitter.emit(SET_LAYERS, {
+      clientId,
       pluginId: metadata.pluginId,
-      tables: {
-        tokens: {
-          add: tokens,
-          clear: true,
+      layers: [
+        {
+          id: 'tokens-layer',
+          tableName: 'tokens',
+          timestamp: now,
+          set: {
+            records: tokens,
+          },
         },
-        portfolioStats: {
-          add: [
-            {
-              id: 'tokenValue',
-              value: formatters.currencyValue(totalValue, currency.symbol),
-              name: 'Token Value',
-            },
-          ],
+        {
+          id: 'portfolio-stats-token-layer',
+          tableName: 'portfolioStats',
+          timestamp: now,
+          set: {
+            records: [
+              {
+                id: 'token-value',
+                value: formatters.currencyValue(
+                  totalValue,
+                  selectedCurrency.symbol,
+                ),
+                name: 'Token Value',
+              },
+            ],
+          },
         },
-      },
+      ],
     });
   }
 
-  private async emitNfts(clientConnectedEvent: ClientConnectedEvent) {
+  private async emitNfts(
+    clientId: string,
+    selectedCurrency: CurrencyDto,
+    watchedWallets: { address: string }[],
+  ) {
     const collections = await this.nftService.allCollectionsOf(
-      clientConnectedEvent.state,
+      selectedCurrency,
+      watchedWallets,
     );
 
     const totalValue = collections.reduce(
@@ -112,26 +174,38 @@ export class StorageService {
       0,
     );
 
-    const currency = clientConnectedEvent.state.client.selectedCurrency;
+    const now = moment().unix();
 
-    this.eventEmitter.emit(UPDATE_STORAGE, {
-      clientId: clientConnectedEvent.clientId,
+    this.eventEmitter.emit(SET_LAYERS, {
+      clientId,
       pluginId: metadata.pluginId,
-      tables: {
-        collections: {
-          add: collections,
-          clear: true,
+      layers: [
+        {
+          id: 'nfts-layer',
+          tableName: 'collections',
+          timestamp: now,
+          set: {
+            records: collections,
+          },
         },
-        portfolioStats: {
-          add: [
-            {
-              id: 'nftValue',
-              value: formatters.currencyValue(totalValue, currency.symbol),
-              name: 'NFT Value',
-            },
-          ],
+        {
+          id: 'portfolio-stats-nft-layer',
+          tableName: 'portfolioStats',
+          timestamp: now,
+          set: {
+            records: [
+              {
+                id: 'nft-value',
+                value: formatters.currencyValue(
+                  totalValue,
+                  selectedCurrency.symbol,
+                ),
+                name: 'NFT Value',
+              },
+            ],
+          },
         },
-      },
+      ],
     });
   }
 }

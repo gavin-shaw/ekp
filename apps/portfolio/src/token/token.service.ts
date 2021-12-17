@@ -21,22 +21,17 @@ export class TokenService {
     private coingeckoService: CoingeckoService,
   ) {}
 
-  async getAllTokens(clientState: ClientStateDto): Promise<TokenRecord[]> {
-    validate([clientState], ['object']);
-
-    if (!Array.isArray(clientState.client?.watchedWallets)) {
-      return [];
-    }
-
-    validate([clientState.client?.selectedCurrency], ['object']);
-
+  async getAllTokens(
+    selectedCurrency: CurrencyDto,
+    watchedWallets: { address: string }[],
+  ): Promise<TokenRecord[]> {
     const tokensWithBalances = await this.getTokensWithBalances(
-      clientState.client.watchedWallets.map((it) => it.address),
+      watchedWallets.map((it) => it.address),
     );
 
     const tokensWithPrices = await this.addTokenPrices(
       tokensWithBalances,
-      clientState.client.selectedCurrency,
+      selectedCurrency,
     );
 
     const tokensWithLogos = await this.addTokenLogos(tokensWithPrices);

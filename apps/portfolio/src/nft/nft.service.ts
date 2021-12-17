@@ -23,23 +23,20 @@ export class NftService {
   ) {}
 
   async allCollectionsOf(
-    clientState: ClientStateDto,
+    selectedCurrency: CurrencyDto,
+    watchedWallets: { address: string }[],
   ): Promise<CollectionRecord[]> {
-    validate([clientState], ['object']);
-
-    if (!Array.isArray(clientState.client?.watchedWallets)) {
+    if (!Array.isArray(watchedWallets)) {
       return [];
     }
 
-    validate([clientState.client?.selectedCurrency], ['object']);
-
     const collectionsWithBalances = await this.getCollectionsWithBalances(
-      clientState.client.watchedWallets.map((it) => it.address),
+      watchedWallets.map((it) => it.address),
     );
 
     const collectionsWithPrices = await this.addCollectionPrices(
       collectionsWithBalances,
-      clientState.client.selectedCurrency,
+      selectedCurrency,
     );
 
     return collectionsWithPrices;
