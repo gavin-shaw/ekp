@@ -1,4 +1,3 @@
-export * from './cacheable.decorator';
 export * from './coingecko';
 export * from './database.module';
 export * from './dto';

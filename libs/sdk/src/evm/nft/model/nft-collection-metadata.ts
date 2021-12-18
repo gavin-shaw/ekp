@@ -4,5 +4,5 @@ export interface NftCollectionMetadata {
   readonly chainId: ChainId;
   readonly contractAddress: string;
   readonly logo: string;
-  readonly slug: string;
+  readonly slug?: string;
 }

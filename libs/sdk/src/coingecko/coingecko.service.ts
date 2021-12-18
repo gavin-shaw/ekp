@@ -1,9 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
+import { Cache } from 'cache-manager';
 import axios from 'axios';
 import Bottleneck from 'bottleneck';
 import { validate } from 'bycontract';
 import _ from 'lodash';
-import { cacheable } from '../cacheable.decorator';
 import { ChainId } from '../evm';
 import { logger } from '../utils';
 import { CoinPrice } from './model/coin-price';
@@ -16,28 +16,24 @@ interface GeckoCoin {
   platforms: { [name: string]: string };
 }
 
-const limiter = new Bottleneck({
-  maxConcurrent: 10,
-  reservoir: 10,
-  reservoirRefreshAmount: 10,
-  reservoirRefreshInterval: 1000,
-});
-
 @Injectable()
 export class CoingeckoService {
+  constructor(@Inject(CACHE_MANAGER) private cache: Cache) {}
+
+  limiter = new Bottleneck({
+    maxConcurrent: 10,
+    reservoir: 10,
+    reservoirRefreshAmount: 10,
+    reservoirRefreshInterval: 1000,
+  });
+
   private platforms = {
     eth: 'ethereum',
     bsc: 'binance-smart-chain',
     polygon: 'polygon-pos',
   };
 
-  private allCoins: GeckoCoin[];
-
-  async onModuleInit() {
-    this.allCoins = await this.fetchGeckoCoins();
-  }
-
-  async coinIdOf(chainId: ChainId, contractAddress: string) {
+  coinIdOf(chainId: ChainId, contractAddress: string) {
     const platform = this.platforms[chainId];
     return this.allCoins.find(
       (geckoCoin) =>
@@ -45,65 +41,39 @@ export class CoingeckoService {
     )?.id;
   }
 
-  private async fetchGeckoCoins(): Promise<GeckoCoin[]> {
-    const url = `${BASE_URL}/coins/list?include_platform=true`;
-
-    return retry(
-      async () =>
-        await limiter.schedule(async () => {
-          logger.debug('GET ' + url);
-
-          const response = await axios.get(url);
-
-          if (!Array.isArray(response.data)) {
-            throw new Error(`Could not retrieve coin list from coingecko`);
-          }
-
-          const geckoCoins = response.data.map((it) => ({
-            id: it.id,
-            symbol: it.symbol,
-            platforms: it.platforms,
-          }));
-
-          return geckoCoins;
-        }),
-      {
-        onRetry: (error) =>
-          logger.warn(`Retry due to ${error.message}: ${url}`),
-      },
-    );
-  }
-
-  @cacheable(3600)
-  async getImageUrl(coinId: string) {
+  async getImageUrl(coinId: string): Promise<string> {
     validate([coinId], ['string']);
     const url = `${BASE_URL}/coins/${coinId}`;
+    const cacheKey = `coingecko.imageUrl['${coinId}']`;
 
-    return retry(
-      async () =>
-        await limiter.schedule(async () => {
-          if (!coinId) {
-            return null;
-          }
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            if (!coinId) {
+              return null;
+            }
 
-          logger.debug('GET ' + url);
+            logger.debug('GET ' + url);
 
-          const response = await axios.get(url);
+            const response = await axios.get(url);
 
-          if (!response?.data) {
-            throw new Error('Failed to fetch token image for: ' + coinId);
-          }
+            if (!response?.data) {
+              throw new Error('Failed to fetch token image for: ' + coinId);
+            }
 
-          return response.data?.image?.small;
-        }),
-      {
-        onRetry: (error) =>
-          logger.warn(`Retry due to ${error.message}: ${url}`),
-      },
+            return response.data?.image?.small;
+          }),
+          {
+            onRetry: (error) =>
+              logger.warn(`Retry due to ${error.message}: ${url}`),
+          },
+        ),
+      { ttl: 3600000 },
     );
   }
 
-  @cacheable(300)
   async latestPricesOf(
     coinIds: string[],
     fiatId: string,
@@ -114,7 +84,7 @@ export class CoingeckoService {
 
     return retry(
       async () =>
-        await limiter.schedule(async () => {
+        await this.limiter.schedule(async () => {
           logger.debug('GET ' + url);
 
           const response = await axios.get(url);
@@ -136,6 +106,47 @@ export class CoingeckoService {
         onRetry: (error) =>
           logger.warn(`Retry due to ${error.message}: ${url}`),
       },
+    );
+  }
+
+  private allCoins: GeckoCoin[];
+
+  async onModuleInit() {
+    this.allCoins = await this.fetchGeckoCoins();
+  }
+
+  private async fetchGeckoCoins(): Promise<GeckoCoin[]> {
+    const url = `${BASE_URL}/coins/list?include_platform=true`;
+    const cacheKey = 'coingecko.coins';
+
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          async () =>
+            await this.limiter.schedule(async () => {
+              logger.debug('GET ' + url);
+
+              const response = await axios.get(url);
+
+              if (!Array.isArray(response.data)) {
+                throw new Error(`Could not retrieve coin list from coingecko`);
+              }
+
+              const geckoCoins = response.data.map((it) => ({
+                id: it.id,
+                symbol: it.symbol,
+                platforms: it.platforms,
+              }));
+
+              return geckoCoins;
+            }),
+          {
+            onRetry: (error) =>
+              logger.warn(`Retry due to ${error.message}: ${url}`),
+          },
+        ),
+      { ttl: 3600000 },
     );
   }
 }

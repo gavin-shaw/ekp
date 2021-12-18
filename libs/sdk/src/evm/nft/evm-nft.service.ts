@@ -1,108 +1,51 @@
-import { OpenseaService } from '../../opensea';
-import { Injectable } from '@nestjs/common';
+import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
 import { validate } from 'bycontract';
-import cacheManager from 'cache-manager';
-import { ethers } from 'ethers';
+import { Cache } from 'cache-manager';
+import { BigNumber, ethers } from 'ethers';
 import _ from 'lodash';
-import Moralis from 'moralis/node';
-import * as moralis from '../moralis';
+import moment from 'moment';
+import { MoralisService } from '../../moralis';
+import * as moralis from '../../moralis/model';
+import { OpenseaService } from '../../opensea';
 import { ChainId } from '../utils';
 import {
   NftCollection,
   NftCollectionFloorPrice,
   NftCollectionMetadata,
+  NftTransfer,
 } from './model';
-import { logger } from '@app/sdk';
 
 @Injectable()
 export class EvmNftService {
-  cache = cacheManager.caching({ store: 'memory', ttl: 0 });
-
-  constructor(private openseaService: OpenseaService) {}
-
-  // async allTransfersOf({ address, chain }) {
-  //   const cacheKey = `nft_collections_${address}_${chain}`;
-
-  //   const cachedCollections: {
-  //     collections: { [contractAddress: string]: NftCollection[] };
-  //     endBlock: number;
-  //   } = await this.cache.get(cacheKey);
-
-  //   let startBlock: number;
-  //   let endBlock: number;
-
-  //   let collections = {};
-
-  //   if (!!cachedCollections) {
-  //     collections = cachedCollections.collections;
-  //     startBlock = cachedCollections.endBlock + 1;
-  //   }
-
-  //   const addressTransactions =
-  //     await this.evmTransactionService.allTransactionsOf({
-  //       address,
-  //       chain,
-  //       startBlock,
-  //     });
-
-  //   for (const transaction of addressTransactions) {
-  //     endBlock = transaction.blockNumber;
-
-  //     if (!this.isTransfer(transaction)) {
-  //       continue;
-  //     }
-
-  //     const contractAddress = transaction.contractAddress;
-
-  //     let collection = collections[contractAddress];
-
-  //     if (!collection) {
-  //       const nftContractDetails = await this.contractDetailsOf(
-  //         transaction.contactAddress,
-  //       );
-
-  //       if (!nftContract) {
-  //         continue;
-  //       }
-
-  //       collection = {
-  //         // Map new collection details here
-  //       };
-
-  //       collections[contractAddress] = collection;
-  //     }
-
-  //     const tokenId = this.parseTokenId(transaction);
-
-  //     if (transaction.fromAddress === address) {
-  //       _.remove(collection.nfts, (nft) => nft.tokenId === tokenId);
-  //     }
-
-  //     if (transaction.toAddress === address) {
-  //       collection.nfts.push({
-  //         // map new nft here
-  //       });
-  //     }
-  //   }
-
-  //   await this.cache.set(cacheKey, {
-  //     collections,
-  //     endBlock,
-  //   });
-
-  //   return Object.values(collections);
-  // }
+  constructor(
+    private openseaService: OpenseaService,
+    private moralisService: MoralisService,
+    @Inject(CACHE_MANAGER) private cache: Cache,
+  ) {}
 
   async metadataOf(
     chainId: ChainId,
     contractAddress: string,
   ): Promise<NftCollectionMetadata> {
-    if (chainId !== 'eth') {
-      // TODO: implement other chains
-      return undefined;
+    if (chainId === 'eth') {
+      const metadata = await this.openseaService.metadataOf(contractAddress);
+
+      if (!metadata) {
+        return undefined;
+      }
+
+      return {
+        chainId,
+        contractAddress,
+        logo: metadata.image_url,
+        slug: metadata.slug,
+      };
     }
 
-    const metadata = await this.openseaService.metadataOf(contractAddress);
+    const metadata = this.moralisService.nftMetadataOf(
+      chainId,
+      contractAddress,
+    );
 
     if (!metadata) {
       return undefined;
@@ -111,29 +54,129 @@ export class EvmNftService {
     return {
       chainId,
       contractAddress,
-      logo: metadata.image_url,
-      slug: metadata.slug,
+      // TODO: move this one layer higher, into the portfolio module, doesn't belong in the SDK
+      logo: 'https://media.istockphoto.com/vectors/question-mark-in-a-shield-icon-vector-sign-and-symbol-isolated-on-vector-id1023572464?k=20&m=1023572464&s=170667a&w=0&h=EopKUPT7ix-yq92EZkAASv244wBsn_z-fbNpyxxTl6o=',
     };
+  }
+
+  async transfersOf(
+    chainId: ChainId,
+    contractAddress: string,
+    options: { afterTimestamp?: number; afterBlock?: number },
+  ) {
+    validate(
+      [chainId, contractAddress, options?.afterTimestamp, options?.afterBlock],
+      ['string', 'string', 'number=', 'number='],
+    );
+
+    const cacheKey = `nft.transfers['${chainId}']['${contractAddress}']`;
+
+    const cached = ((await this.cache.get(cacheKey)) as {
+      cursor?: string;
+      transfers: NftTransfer[];
+    }) ?? {
+      cursor: undefined,
+      transfers: [],
+    };
+
+    const { cursor, transfers } =
+      await this.moralisService.nftContractTransfersOf(
+        chainId,
+        contractAddress,
+        cached.cursor,
+      );
+
+    const mappedTransfers: NftTransfer[] = transfers.map(
+      (transfer: moralis.NftTransfer): NftTransfer => ({
+        amount:
+          transfer.amount !== undefined ? Number(transfer.amount) : undefined,
+        blockNumber: Number(transfer.block_number),
+        blockTimestamp: Number(transfer.block_timestamp),
+        chainId,
+        contractAddress,
+        fromAddress: transfer.from_address,
+        toAddress: transfer.to_address,
+        tokenId: Number(transfer.token_id),
+        transactionHash: transfer.transaction_hash,
+        value:
+          transfer.value !== undefined
+            ? BigNumber.from(transfer.value)
+            : undefined,
+      }),
+    );
+
+    const combinedTransfers = [...cached.transfers, ...mappedTransfers];
+
+    const newCached = {
+      cursor,
+      transfers: combinedTransfers,
+    };
+
+    await this.cache.set(cacheKey, newCached, { ttl: 0 });
+
+    return combinedTransfers.filter((transfer) => {
+      if (!options) {
+        return true;
+      }
+
+      let include = true;
+
+      if (options.afterTimestamp !== undefined) {
+        include = include && transfer.blockTimestamp > options.afterTimestamp;
+      }
+      if (options.afterBlock !== undefined) {
+        include = include && transfer.blockNumber > options.afterBlock;
+      }
+
+      return include;
+    });
   }
 
   async floorPriceOf(
     collectionMetadata: NftCollectionMetadata,
   ): Promise<NftCollectionFloorPrice> {
-    if (collectionMetadata.chainId !== 'eth') {
-      // TODO: implement other chains
-      return undefined;
-    }
+    const now = moment().unix();
 
-    const price = await this.openseaService.floorPriceOf(
-      collectionMetadata.slug,
+    const transfers = await this.transfersOf(
+      collectionMetadata.chainId,
+      collectionMetadata.contractAddress,
+      { afterTimestamp: now - 3600 },
     );
+
+    let minValue = BigNumber.from(0);
+
+    for (const transfer of transfers) {
+      const value = transfer.value as BigNumber;
+
+      if (!!value || value.isZero()) {
+        continue;
+      }
+
+      if (value.gt(minValue)) {
+        minValue = value;
+      }
+    }
 
     return {
       chainId: collectionMetadata.chainId,
       contractAddress: collectionMetadata.contractAddress,
-      decimals: 18,
-      price: !!price ? ethers.utils.parseEther(`${price}`) : undefined,
+      decimals: 18, // TODO: there is an assumption here that all chains we use have a native coin with 18 decimals
+      price: minValue,
     };
+
+    // TODO: disabling opensea for now, it is missing some of its own collection slugs
+    if (false) {
+      const price = await this.openseaService.floorPriceOf(
+        collectionMetadata.slug,
+      );
+
+      return {
+        chainId: collectionMetadata.chainId,
+        contractAddress: collectionMetadata.contractAddress,
+        decimals: 18,
+        price: !!price ? ethers.utils.parseEther(`${price}`) : undefined,
+      };
+    }
   }
 
   async allCollectionsOf(
@@ -142,12 +185,7 @@ export class EvmNftService {
   ): Promise<NftCollection[]> {
     validate([chainId, ownerAddress], ['string', 'string']);
 
-    const result: moralis.NftOwner[] = (
-      await Moralis.Web3API.account.getNFTs({
-        address: ownerAddress,
-        chain: chainId,
-      })
-    )?.result;
+    const result = await this.moralisService.nftsOf(chainId, ownerAddress);
 
     const collectionsByContractAddress = _.groupBy(result, 'token_address');
 

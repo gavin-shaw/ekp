@@ -34,7 +34,9 @@ export class TokenService {
       selectedCurrency,
     );
 
-    const tokensWithLogos = await this.addTokenLogos(tokensWithPrices);
+    const tokensWithLogos: TokenRecord[] = await this.addTokenLogos(
+      tokensWithPrices,
+    );
 
     return tokensWithLogos;
   }
@@ -109,15 +111,13 @@ export class TokenService {
   ): Promise<TokenRecord[]> {
     validate([tokenRecords, currency], ['Array.<object>', 'object']);
 
-    const tokenRecordsWithCoinIds = await Promise.all(
-      tokenRecords.map(async (tokenRecord) => ({
-        ...tokenRecord,
-        coinId: await this.coingeckoService.coinIdOf(
-          tokenRecord.chain.id,
-          tokenRecord.contractAddress,
-        ),
-      })),
-    );
+    const tokenRecordsWithCoinIds = tokenRecords.map((tokenRecord) => ({
+      ...tokenRecord,
+      coinId: this.coingeckoService.coinIdOf(
+        tokenRecord.chain.id,
+        tokenRecord.contractAddress,
+      ),
+    }));
 
     const coinIds: string[] = tokenRecordsWithCoinIds.map((it) => it.coinId);
 
@@ -166,16 +166,22 @@ export class TokenService {
       .filter((it) => !isNaN(it.balanceFiat.value));
   }
 
-  private async addTokenLogos(tokenRecords: TokenRecord[]) {
+  private async addTokenLogos(
+    tokenRecords: TokenRecord[],
+  ): Promise<TokenRecord[]> {
     validate([tokenRecords], ['Array.<object>']);
 
-    return await Promise.all(
-      tokenRecords.map(async (token) => ({
-        ...token,
-        logo:
-          (await this.coingeckoService.getImageUrl(token.coinId)) ??
-          'https://media.istockphoto.com/vectors/question-mark-in-a-shield-icon-vector-sign-and-symbol-isolated-on-vector-id1023572464?k=20&m=1023572464&s=170667a&w=0&h=EopKUPT7ix-yq92EZkAASv244wBsn_z-fbNpyxxTl6o=',
-      })),
+    return Promise.all(
+      tokenRecords.map(async (token) => {
+        const imageUrl = await this.coingeckoService.getImageUrl(token.coinId);
+
+        return {
+          ...token,
+          logo:
+            imageUrl ??
+            'https://media.istockphoto.com/vectors/question-mark-in-a-shield-icon-vector-sign-and-symbol-isolated-on-vector-id1023572464?k=20&m=1023572464&s=170667a&w=0&h=EopKUPT7ix-yq92EZkAASv244wBsn_z-fbNpyxxTl6o=',
+        };
+      }),
     );
   }
 }

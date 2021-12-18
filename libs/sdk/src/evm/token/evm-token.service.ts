@@ -3,8 +3,9 @@ import { validate } from 'bycontract';
 import { BigNumber, ethers } from 'ethers';
 import Moralis from 'moralis/node';
 import { ChainId, chains } from '../utils';
-import * as moralis from '../moralis';
+import * as moralis from '../../moralis/model';
 import { TokenBalance, TokenMetadata } from './model';
+import { logger } from '@app/sdk';
 
 @Injectable()
 export class EvmTokenService {
@@ -48,6 +49,8 @@ export class EvmTokenService {
     ownerAddress: string,
   ): Promise<TokenBalance[]> {
     validate([chainId, ownerAddress], ['string', 'string']);
+
+    logger.debug(`Web3API > getTokenBalances(${chainId},${ownerAddress})`);
 
     const result: moralis.TokenBalance[] =
       await Moralis.Web3API.account.getTokenBalances({

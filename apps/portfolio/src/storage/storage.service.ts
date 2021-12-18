@@ -45,9 +45,13 @@ export class StorageService {
       'Array.<object>',
     );
 
-    await this.emitUi(clientId);
-    await this.emitTokens(clientId, selectedCurrency, watchedWallets);
-    await this.emitNfts(clientId, selectedCurrency, watchedWallets);
+    try {
+      await this.emitUi(clientId);
+      await this.emitTokens(clientId, selectedCurrency, watchedWallets);
+      await this.emitNfts(clientId, selectedCurrency, watchedWallets);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   // TODO: make this dry (see method above)
@@ -74,9 +78,13 @@ export class StorageService {
       'Array.<object>',
     );
 
-    await this.emitUi(clientId);
-    await this.emitTokens(clientId, selectedCurrency, watchedWallets);
-    await this.emitNfts(clientId, selectedCurrency, watchedWallets);
+    try {
+      await this.emitUi(clientId);
+      await this.emitTokens(clientId, selectedCurrency, watchedWallets);
+      await this.emitNfts(clientId, selectedCurrency, watchedWallets);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   private async emitUi(clientId: string) {

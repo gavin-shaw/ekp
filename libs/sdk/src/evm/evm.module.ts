@@ -5,8 +5,10 @@ import { EvmProviderService } from './provider';
 import { EvmRpcService } from './rpc';
 import { EvmTokenService } from './token';
 import { OpenseaModule } from '../opensea/opensea.module';
+import { MoralisModule } from '../moralis/moralis.module';
 @Module({
-  imports: [OpenseaModule],
+  imports: [MoralisModule, OpenseaModule],
+
   providers: [
     EvmNftService,
     EvmProviderService,
