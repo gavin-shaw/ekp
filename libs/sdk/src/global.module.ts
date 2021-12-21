@@ -6,7 +6,7 @@ import { EvmModule } from './evm/evm.module';
 import { MoralisModule } from './moralis/moralis.module';
 import { SocketsModule } from './sockets/sockets.module';
 import * as redisStore from 'cache-manager-redis-store';
-
+import { OpenseaModule } from './opensea/opensea.module';
 const cacheOptions = !!process.env.REDIS_HOST
   ? {
       isGlobal: true,
@@ -26,9 +26,16 @@ const cacheOptions = !!process.env.REDIS_HOST
     CoingeckoModule,
     EventEmitterModule.forRoot(),
     EvmModule,
+    OpenseaModule,
     MoralisModule,
     SocketsModule,
   ],
-  exports: [CoingeckoModule, EvmModule, SocketsModule],
+  exports: [
+    CoingeckoModule,
+    EvmModule,
+    MoralisModule,
+    OpenseaModule,
+    SocketsModule,
+  ],
 })
 export class GlobalModule {}

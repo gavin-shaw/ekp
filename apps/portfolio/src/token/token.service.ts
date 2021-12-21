@@ -1,12 +1,10 @@
 import {
   chainIds,
   chains,
-  ClientStateDto,
   CoingeckoService,
   CurrencyDto,
   EvmTokenService,
   formatters,
-  TokenBalance,
 } from '@app/sdk';
 import { Injectable } from '@nestjs/common';
 import { validate } from 'bycontract';
@@ -60,9 +58,7 @@ export class TokenService {
       }
     }
 
-    const tokenBalances: TokenBalance[] = _.flatten(
-      await Promise.all(requestPromises),
-    );
+    const tokenBalances = _.flatten(await Promise.all(requestPromises));
 
     const tokensById = _.groupBy(
       tokenBalances,

@@ -1,15 +1,17 @@
-export const SET_LAYERS = 'set-layers';
-import { RecordDto } from '../dtos';
-
-export interface SetLayersEvent {
+export const ADD_LAYERS = 'add-layers';
+import { DocumentDto } from '../dtos';
+export interface AddLayersEvent {
   readonly clientId: string;
   readonly pluginId: string;
-  readonly timestamp: number;
-  readonly tables: {
-    [tableName: string]: {
-      readonly add?: RecordDto[];
-      readonly delete?: string[];
-      readonly clear?: boolean;
-    };
-  };
+  readonly layers: {
+    readonly collectionName: string;
+    readonly id: string;
+    readonly set?: DocumentDto[];
+    readonly patch?: {
+      path: string;
+      value: any;
+    }[];
+    readonly tags?: string[];
+    readonly timestamp: number;
+  }[];
 }

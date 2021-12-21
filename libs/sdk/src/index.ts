@@ -4,5 +4,7 @@ export * from './dto';
 export * from './evm';
 export * as formatters from './formatters';
 export * from './global.module';
+export * from './moralis';
+export * from './opensea';
 export * from './sockets';
 export * from './utils';

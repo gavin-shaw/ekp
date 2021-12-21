@@ -24,7 +24,10 @@ export const nftList = {
             },
           ],
           title: '$.name',
-          subtitle: '$.floorPriceFiat.display',
+          subtitle: { 
+            value: '$.price',
+            formatter: 'currency',
+          },
         },
       ],
     },
@@ -33,7 +36,7 @@ export const nftList = {
       value: '$.balanceFiat.value',
       filterable: true,
       sortable: true,
-      right: true,
+      alignTitle: 'right',
       cell: [
         {
           view: 'tile',

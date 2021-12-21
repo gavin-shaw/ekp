@@ -1,6 +1,6 @@
-import { RecordDto, BigNumberDto, ChainId } from '@app/sdk';
+import { DocumentDto, BigNumberDto, ChainId } from '@app/sdk';
 
-export interface TokenRecord extends RecordDto {
+export interface TokenRecord extends DocumentDto {
   allowBurnToken?: boolean;
   allowSwap?: boolean;
   balance: BigNumberDto;

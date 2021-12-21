@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import Moralis from 'moralis/node';
-import { EvmNftService } from './nft';
 import { EvmProviderService } from './provider';
 import { EvmRpcService } from './rpc';
 import { EvmTokenService } from './token';
@@ -9,13 +8,8 @@ import { MoralisModule } from '../moralis/moralis.module';
 @Module({
   imports: [MoralisModule, OpenseaModule],
 
-  providers: [
-    EvmNftService,
-    EvmProviderService,
-    EvmRpcService,
-    EvmTokenService,
-  ],
-  exports: [EvmProviderService, EvmNftService, EvmRpcService, EvmTokenService],
+  providers: [EvmProviderService, EvmRpcService, EvmTokenService],
+  exports: [EvmProviderService, EvmRpcService, EvmTokenService],
 })
 export class EvmModule {
   constructor() {

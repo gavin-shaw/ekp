@@ -14,9 +14,9 @@ import {
   CLIENT_CONNECTED,
   CLIENT_STATE_CHANGED,
   UpdateMetadataEvent,
-  SetLayersEvent,
+  AddLayersEvent,
   UPDATE_METADATA,
-  SET_LAYERS,
+  ADD_LAYERS,
 } from './events';
 
 @WebSocketGateway({ cors: true })
@@ -30,20 +30,13 @@ export class SocketsGateway
 
   handleConnection(client: Socket) {
     logger.log(`Client connected: ${client.id}`);
+    this.eventEmitter.emit(CLIENT_CONNECTED, {
+      clientId: client.id,
+    });
   }
 
   handleDisconnect(client: Socket) {
     logger.log(`Client disconnected: ${client.id}`);
-  }
-
-  @SubscribeMessage(CLIENT_CONNECTED)
-  async handleClientConnectedMessage(client: Socket, payload: any) {
-    logger.debug(`Received CLIENT_CONNECTED: ${client.id}`);
-
-    this.eventEmitter.emit(CLIENT_CONNECTED, {
-      clientId: client.id,
-      ...JSON.parse(payload),
-    });
   }
 
   @SubscribeMessage(CLIENT_STATE_CHANGED)
@@ -56,16 +49,16 @@ export class SocketsGateway
     });
   }
 
-  @OnEvent(SET_LAYERS)
-  async emitSetLayersMessage(updateStorageEvent: SetLayersEvent) {
+  @OnEvent(ADD_LAYERS)
+  async emitSetLayersMessage(updateStorageEvent: AddLayersEvent) {
     validate([updateStorageEvent.clientId], ['string']);
 
-    logger.debug(`Emitting SET_LAYERS: ${updateStorageEvent.clientId}`);
+    logger.debug(`Emitting ADD_LAYERS: ${updateStorageEvent.clientId}`);
 
     this.server
       .to(updateStorageEvent.clientId)
       .emit(
-        SET_LAYERS,
+        ADD_LAYERS,
         JSON.stringify(_.omit(updateStorageEvent, ['clientId'])),
       );
   }

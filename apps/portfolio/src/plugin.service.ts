@@ -14,7 +14,7 @@ export class PluginService {
 
   @OnEvent(CLIENT_CONNECTED)
   async handleClientConnectedEvent(clientEvent: ClientConnectedEvent) {
-    validate([clientEvent.clientId, clientEvent.state], ['string', 'object']);
+    validate([clientEvent.clientId], ['string']);
 
     this.eventEmitter.emit(UPDATE_METADATA, {
       clientId: clientEvent.clientId,

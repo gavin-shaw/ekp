@@ -37,7 +37,10 @@ export class MoralisService {
               chain: chainId,
             });
 
-            return response?.result;
+            return response?.result?.map((nft) => ({
+              ...nft,
+              chain_id: chainId,
+            }));
           }),
           {
             onRetry: (error) =>
@@ -75,6 +78,57 @@ export class MoralisService {
           },
         ),
       { ttl: 3600000 },
+    );
+  }
+
+  async nextTransfersOf(
+    chainId: ChainList,
+    contractAddress: string,
+    cursor?: string,
+  ): Promise<{ cursor: string; transfers: NftTransfer[] }> {
+    validate(
+      [chainId, contractAddress, cursor],
+      ['string', 'string', 'string='],
+    );
+
+    if (!process.env.MORALIS_API_KEY) {
+      throw new Error('Environment variable MORALIS_API_KEY is required');
+    }
+
+    let url = `${BASE_URL}/nft/${contractAddress}/transfers?chain=${chainId}&format=decimal`;
+
+    if (!!cursor) {
+      url += `&cursor=${cursor}`;
+    }
+
+    const debugMessage = `GET ${url}`;
+
+    return retry(
+      this.limiter.wrap(async () => {
+        logger.debug(debugMessage);
+
+        const response = await axios.get(url, {
+          headers: {
+            'X-API-Key': process.env.MORALIS_API_KEY,
+          },
+        });
+
+        if (!response?.data) {
+          return undefined;
+        }
+
+        return {
+          cursor: response.data.cursor,
+          transfers: response.data.result?.map((it: NftTransfer) => ({
+            ...it,
+            chain_id: chainId,
+          })),
+        };
+      }),
+      {
+        onRetry: (error) =>
+          logger.warn(`Retry due to ${error.message}: ${debugMessage}`),
+      },
     );
   }
 

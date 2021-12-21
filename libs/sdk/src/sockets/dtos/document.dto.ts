@@ -1,4 +1,4 @@
-export interface RecordDto {
+export interface DocumentDto {
   readonly id: string;
   readonly created: number;
   readonly updated: number;

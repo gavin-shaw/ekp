@@ -1,11 +1,12 @@
+import { logger } from '@app/sdk';
 import { Injectable } from '@nestjs/common';
 import { validate } from 'bycontract';
-import { BigNumber, ethers } from 'ethers';
+import { BigNumber } from 'ethers';
 import Moralis from 'moralis/node';
-import { ChainId, chains } from '../utils';
 import * as moralis from '../../moralis/model';
-import { TokenBalance, TokenMetadata } from './model';
-import { logger } from '@app/sdk';
+import { ChainId, chains } from '../utils';
+import { TokenMetadata } from './model';
+import { TokenBalance } from './model/token-balance';
 
 @Injectable()
 export class EvmTokenService {
