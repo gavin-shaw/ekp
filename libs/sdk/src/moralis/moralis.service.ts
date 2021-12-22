@@ -5,19 +5,168 @@ import Bottleneck from 'bottleneck';
 import { validate } from 'bycontract';
 import { Cache } from 'cache-manager';
 import Moralis from 'moralis/node';
-import { logger } from '../utils';
-import { ChainList, NftOwner, NftTransfer } from './model';
+import { LimiterService } from '../limiter.service';
+import { ChainId, chains, logger } from '../utils';
+import {
+  ChainList,
+  NativeBalance,
+  NftOwner,
+  NftTransfer,
+  TokenBalance,
+  TokenMetadata,
+} from './model/types';
 
 const BASE_URL = 'https://deep-index.moralis.io/api/v2';
 
 @Injectable()
 export class MoralisService {
-  constructor(@Inject(CACHE_MANAGER) private cache: Cache) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private cache: Cache,
+    limiterService: LimiterService,
+  ) {
+    this.limiter = limiterService.createLimiter('moralis-limiter', 8);
+  }
 
-  limiter = new Bottleneck({
-    minTime: 250,
-    maxConcurrent: 8,
-  });
+  private limiter: Bottleneck;
+
+  async tokenMetadataOf(
+    chainId: ChainId,
+    contractAddress: string,
+  ): Promise<TokenMetadata> {
+    validate([chainId, contractAddress], ['string', 'string']);
+
+    const cacheKey = `moralis.tokenMetadata['${chainId}']['${contractAddress}']`;
+    const debugMessage = `Web3API > getTokenMetadata('${chainId}', '${contractAddress}')`;
+
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            logger.debug(debugMessage);
+
+            const result = await Moralis.Web3API.token.getTokenMetadata({
+              addresses: [contractAddress],
+              chain: chainId,
+            });
+
+            if (!Array.isArray(result) || result.length === 0) {
+              return undefined;
+            }
+
+            return {
+              ...result[0],
+            };
+          }),
+          {
+            onRetry: (error) =>
+              logger.warn(`Retry due to ${error.message}: ${debugMessage}`),
+          },
+        ),
+      {
+        ttl: 3600000,
+      },
+    );
+  }
+
+  async nativeBalanceOf(
+    chainId: ChainList,
+    ownerAddress: string,
+  ): Promise<string> {
+    validate([chainId, ownerAddress], ['string', 'string']);
+
+    const cacheKey = `moralis.nativeBalance['${chainId}']['${ownerAddress}']`;
+    const debugMessage = `Web3API > getNativeBalance('${chainId}', '${ownerAddress}')`;
+
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            logger.debug(debugMessage);
+
+            const result: NativeBalance =
+              await Moralis.Web3API.account.getNativeBalance({
+                address: ownerAddress,
+                chain: chainId,
+              });
+
+            return result?.balance;
+          }),
+          {
+            onRetry: (error) =>
+              logger.warn(`Retry due to ${error.message}: ${debugMessage}`),
+          },
+        ),
+      {
+        ttl: 5000,
+      },
+    );
+  }
+
+  async tokensOf(
+    chainId: ChainList,
+    ownerAddress: string,
+    includeNativeBalance = true,
+  ): Promise<TokenBalance[]> {
+    validate([chainId, ownerAddress], ['string', 'string']);
+
+    const cacheKey = `moralis.tokensByOwner['${chainId}']['${ownerAddress}']`;
+    const debugMessage = `Web3API > getTokenBalances('${chainId}', '${ownerAddress}')`;
+
+    const tokens: TokenBalance[] = await this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            logger.debug(debugMessage);
+
+            const response = await Moralis.Web3API.account.getTokenBalances({
+              address: ownerAddress,
+              chain: chainId,
+            });
+
+            return response?.map(
+              (token) =>
+                <TokenBalance>{
+                  ...token,
+                  chain_id: chainId,
+                },
+            );
+          }),
+          {
+            onRetry: (error) =>
+              logger.warn(`Retry due to ${error.message}: ${debugMessage}`),
+          },
+        ),
+      {
+        ttl: 5000,
+      },
+    );
+
+    if (includeNativeBalance) {
+      const nativeBalance = await this.nativeBalanceOf(chainId, ownerAddress);
+
+      const chainMetadata = chains[chainId];
+
+      if (!chainMetadata) {
+        throw new Error(`Sorry ${chainId} not ready yet, file an issue!`);
+      }
+
+      tokens.push(<TokenBalance>{
+        balance: nativeBalance,
+        chain_id: chainId,
+        decimals: chainMetadata.token.decimals.toString(),
+        logo: chainMetadata.logo,
+        name: chainMetadata.token.name,
+        symbol: chainMetadata.token.symbol,
+        thumbnail: chainMetadata.logo,
+        token_address: chainMetadata.token.contractAddress,
+      });
+    }
+
+    return tokens;
+  }
 
   async nftsOf(chainId: ChainList, ownerAddress: string): Promise<NftOwner[]> {
     validate([chainId, ownerAddress], ['string', 'string']);

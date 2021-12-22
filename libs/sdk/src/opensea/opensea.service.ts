@@ -4,6 +4,7 @@ import axios from 'axios';
 import Bottleneck from 'bottleneck';
 import { validate } from 'bycontract';
 import { Cache } from 'cache-manager';
+import { LimiterService } from '../limiter.service';
 import { logger } from '../utils';
 import { AssetContract } from './model';
 
@@ -11,14 +12,14 @@ const BASE_URL = 'https://api.opensea.io/api/v1';
 
 @Injectable()
 export class OpenseaService {
-  constructor(@Inject(CACHE_MANAGER) private cache: Cache) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private cache: Cache,
+    limiterService: LimiterService,
+  ) {
+    this.limiter = limiterService.createLimiter('moralis-limiter', 2);
+  }
 
-  limiter = new Bottleneck({
-    maxConcurrent: 2,
-    reservoir: 2,
-    reservoirRefreshAmount: 2,
-    reservoirRefreshInterval: 1000,
-  });
+  limiter: Bottleneck;
 
   async metadataOf(contractAddress: string): Promise<AssetContract> {
     validate([contractAddress], ['string']);

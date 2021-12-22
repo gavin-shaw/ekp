@@ -1,9 +1,9 @@
-export * from './coingecko';
-export * from './database.module';
-export * from './dto';
-export * from './evm';
-export * as formatters from './formatters';
 export * from './global.module';
+export * from './bootstrap';
+export * from './coingecko';
+export * from './config';
+export * from './events.service';
+export * from './evm';
 export * from './moralis';
 export * from './opensea';
 export * from './sockets';

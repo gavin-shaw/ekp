@@ -1,2 +1,2 @@
-export * from './nft.service';
+export * from './nft-client.service';
 export * from './dto';

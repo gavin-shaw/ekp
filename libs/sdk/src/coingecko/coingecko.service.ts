@@ -1,13 +1,13 @@
 import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
-import { Cache } from 'cache-manager';
+import retry from 'async-retry';
 import axios from 'axios';
 import Bottleneck from 'bottleneck';
 import { validate } from 'bycontract';
+import { Cache } from 'cache-manager';
 import _ from 'lodash';
-import { ChainId } from '../evm';
-import { logger } from '../utils';
+import { LimiterService } from '../limiter.service';
+import { ChainId, logger } from '../utils';
 import { CoinPrice } from './model/coin-price';
-import retry from 'async-retry';
 const BASE_URL = 'https://api.coingecko.com/api/v3';
 
 interface GeckoCoin {
@@ -18,14 +18,14 @@ interface GeckoCoin {
 
 @Injectable()
 export class CoingeckoService {
-  constructor(@Inject(CACHE_MANAGER) private cache: Cache) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private cache: Cache,
+    limiterService: LimiterService,
+  ) {
+    this.limiter = limiterService.createLimiter('moralis-limiter', 10);
+  }
 
-  limiter = new Bottleneck({
-    maxConcurrent: 10,
-    reservoir: 10,
-    reservoirRefreshAmount: 10,
-    reservoirRefreshInterval: 1000,
-  });
+  limiter: Bottleneck;
 
   private platforms = {
     eth: 'ethereum',

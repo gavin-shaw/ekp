@@ -1,1 +1,1 @@
-export * from './token.record';
+export * from './token-contract.document';

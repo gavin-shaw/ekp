@@ -1,41 +1,41 @@
-import { CacheModule, Module } from '@nestjs/common';
-import { EventEmitterModule } from '@nestjs/event-emitter';
+import { CacheModule, Global, Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { MongooseModule } from '@nestjs/mongoose';
+import { CoingeckoService } from './coingecko/coingecko.service';
+import { EkConfigService } from './config/ek-config.service';
+import { EventsService } from './events.service';
+import { LimiterService } from './limiter.service';
+import { MoralisService } from './moralis/moralis.service';
+import { OpenseaService } from './opensea/opensea.service';
+import { SocketsGateway } from './sockets/sockets.gateway';
 
-import { CoingeckoModule } from './coingecko/coingecko.module';
-import { EvmModule } from './evm/evm.module';
-import { MoralisModule } from './moralis/moralis.module';
-import { SocketsModule } from './sockets/sockets.module';
-import * as redisStore from 'cache-manager-redis-store';
-import { OpenseaModule } from './opensea/opensea.module';
-const cacheOptions = !!process.env.REDIS_HOST
-  ? {
-      isGlobal: true,
-      store: redisStore,
-      host: process.env.REDIS_HOST,
-      port: process.env.PORT,
-      ttl: 0,
-    }
-  : {
-      isGlobal: true,
-      ttl: 0,
-    };
+const ClientProxyProvider = EkConfigService.createClientProxyProvider();
 
+@Global()
 @Module({
   imports: [
-    CacheModule.register(cacheOptions),
-    CoingeckoModule,
-    EventEmitterModule.forRoot(),
-    EvmModule,
-    OpenseaModule,
-    MoralisModule,
-    SocketsModule,
+    ConfigModule.forRoot({ isGlobal: true }),
+    CacheModule.registerAsync({ useClass: EkConfigService }),
+    MongooseModule.forRootAsync({ useClass: EkConfigService }),
+  ],
+  providers: [
+    ClientProxyProvider,
+    CoingeckoService,
+    EkConfigService,
+    EventsService,
+    LimiterService,
+    MoralisService,
+    OpenseaService,
+    SocketsGateway,
   ],
   exports: [
-    CoingeckoModule,
-    EvmModule,
-    MoralisModule,
-    OpenseaModule,
-    SocketsModule,
+    ClientProxyProvider,
+    CoingeckoService,
+    EkConfigService,
+    EventsService,
+    LimiterService,
+    MoralisService,
+    OpenseaService,
   ],
 })
 export class GlobalModule {}

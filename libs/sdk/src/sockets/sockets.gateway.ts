@@ -1,79 +1,58 @@
-import { logger } from '@app/sdk';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { Inject } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import {
   OnGatewayConnection,
   OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
-  WebSocketServer,
 } from '@nestjs/websockets';
-import { validate } from 'bycontract';
-import _ from 'lodash';
-import { Server, Socket } from 'socket.io';
+import { Socket } from 'socket.io';
+import { CLIENT_PROXY, EkConfigService } from '../config/ek-config.service';
+import { logger } from '../utils/default-logger';
 import {
   CLIENT_CONNECTED,
+  CLIENT_DISCONNECTED,
   CLIENT_STATE_CHANGED,
-  UpdateMetadataEvent,
-  AddLayersEvent,
   UPDATE_METADATA,
-  ADD_LAYERS,
 } from './events';
 
-@WebSocketGateway({ cors: true })
+@WebSocketGateway(3001, { cors: true })
 export class SocketsGateway
   implements OnGatewayConnection, OnGatewayDisconnect
 {
-  constructor(private eventEmitter: EventEmitter2) {}
+  constructor(
+    @Inject(CLIENT_PROXY) private microservice: ClientProxy,
+    private configService: EkConfigService,
+  ) {}
 
-  @WebSocketServer()
-  server: Server;
+  handleConnection(socket: Socket) {
+    logger.log(`Client connected: ${socket.id}`);
 
-  handleConnection(client: Socket) {
-    logger.log(`Client connected: ${client.id}`);
-    this.eventEmitter.emit(CLIENT_CONNECTED, {
-      clientId: client.id,
+    socket.emit(UPDATE_METADATA, {
+      pluginId: this.configService.pluginId,
+      pluginName: this.configService.pluginName,
+    });
+
+    this.microservice.emit(CLIENT_CONNECTED, {
+      clientId: socket.id,
     });
   }
 
-  handleDisconnect(client: Socket) {
-    logger.log(`Client disconnected: ${client.id}`);
+  handleDisconnect(socket: Socket) {
+    logger.log(`Client disconnected: ${socket.id}`);
+
+    this.microservice.emit(CLIENT_DISCONNECTED, {
+      clientId: socket.id,
+    });
   }
 
   @SubscribeMessage(CLIENT_STATE_CHANGED)
   async handleClientStateChangedMessage(client: Socket, payload: any) {
-    logger.debug(`Received CLIENT_STATE_CHANGED: ${client.id}`);
+    logger.log(`Received CLIENT_STATE_CHANGED: ${client.id}`);
 
-    this.eventEmitter.emit(CLIENT_STATE_CHANGED, {
+    this.microservice.emit(CLIENT_STATE_CHANGED, {
       clientId: client.id,
       ...JSON.parse(payload),
     });
-  }
-
-  @OnEvent(ADD_LAYERS)
-  async emitSetLayersMessage(updateStorageEvent: AddLayersEvent) {
-    validate([updateStorageEvent.clientId], ['string']);
-
-    logger.debug(`Emitting ADD_LAYERS: ${updateStorageEvent.clientId}`);
-
-    this.server
-      .to(updateStorageEvent.clientId)
-      .emit(
-        ADD_LAYERS,
-        JSON.stringify(_.omit(updateStorageEvent, ['clientId'])),
-      );
-  }
-
-  @OnEvent(UPDATE_METADATA)
-  async emitUpdateMetaData(updateMetadataEvent: UpdateMetadataEvent) {
-    validate([updateMetadataEvent.clientId], ['string']);
-
-    logger.debug(`Emitting UPDATE_METADATA: ${updateMetadataEvent.clientId}`);
-
-    this.server
-      .to(updateMetadataEvent.clientId)
-      .emit(
-        UPDATE_METADATA,
-        JSON.stringify(_.omit(updateMetadataEvent, ['clientId'])),
-      );
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { validate } from 'bycontract';
 import { BigNumber, ethers } from 'ethers';
-import { erc20abi } from '../abi';
+import { erc20abi } from '../../utils';
 import { TokenTransferParams } from './params';
 
 @Injectable()

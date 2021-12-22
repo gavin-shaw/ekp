@@ -1,19 +1,18 @@
+import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
-import { NftDatabaseService } from './nft-database.service';
-import { NftService } from './nft.service';
-import { NftEmitterService } from './nft-emitter.service';
-import { GlobalModule } from '@app/sdk';
 import { MongooseModule } from '@nestjs/mongoose';
 import { NftTransfer, NftTransferSchema } from './model';
+import { NftClientService } from './nft-client.service';
+import { NftDatabaseService } from './nft-database.service';
+import { NFT_PRICE_QUEUE } from './queues';
 
 @Module({
   imports: [
-    GlobalModule,
     MongooseModule.forFeature([
       { name: NftTransfer.name, schema: NftTransferSchema },
     ]),
+    BullModule.registerQueue({ name: NFT_PRICE_QUEUE }),
   ],
-  providers: [NftService, NftDatabaseService, NftEmitterService],
-  exports: [NftService],
+  providers: [NftClientService, NftDatabaseService],
 })
 export class NftModule {}

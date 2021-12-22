@@ -24,7 +24,7 @@ export const nftList = {
             },
           ],
           title: '$.name',
-          subtitle: { 
+          subtitle: {
             value: '$.price',
             formatter: 'currency',
           },
