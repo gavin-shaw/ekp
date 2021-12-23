@@ -1,32 +1,34 @@
 import {
+  ADD_LAYERS,
   chainIds,
   chains,
   ClientStateChangedEvent,
   CLIENT_STATE_CHANGED,
   CoingeckoService,
   CoinPrice,
-  EventsService,
+  CurrencyDto,
   LayerDto,
   moralis,
   MoralisService,
 } from '@app/sdk';
 import { Injectable } from '@nestjs/common';
-import { EventPattern } from '@nestjs/microservices';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { validate } from 'bycontract';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
+import { defaultLogo } from '../util/constants';
 import { TokenContractDocument } from './dtos';
 
 @Injectable()
 export class TokenClientService {
   constructor(
     private coingeckoService: CoingeckoService,
-    private eventsService: EventsService,
+    private eventEmitter: EventEmitter2,
     private moralisService: MoralisService,
   ) {}
 
-  @EventPattern(CLIENT_STATE_CHANGED)
+  @OnEvent(CLIENT_STATE_CHANGED)
   async handleClientStateChangedEvent(
     clientStateChangedEvent: ClientStateChangedEvent,
   ) {
@@ -64,10 +66,14 @@ export class TokenClientService {
 
     const coinPrices = await this.coingeckoService.latestPricesOf(
       coinIds,
-      selectedCurrency,
+      selectedCurrency.id,
     );
 
-    const tokens = this.mapTokenContractDocuments(tokenBalances, coinPrices);
+    const tokens = this.mapTokenContractDocuments(
+      tokenBalances,
+      selectedCurrency,
+      coinPrices,
+    );
 
     for (const token of tokens) {
       this.fillAndEmitContract(clientId, token);
@@ -78,28 +84,32 @@ export class TokenClientService {
     clientId: string,
     token: TokenContractDocument,
   ) {
-    const imageUrl = await this.coingeckoService.getImageUrl(token.coinId);
+    const imageUrl = !!token.coinId
+      ? await this.coingeckoService.getImageUrl(token.coinId)
+      : undefined;
 
     const updatedToken = {
       ...token,
-      logo:
-        imageUrl ??
-        'https://media.istockphoto.com/vectors/question-mark-in-a-shield-icon-vector-sign-and-symbol-isolated-on-vector-id1023572464?k=20&m=1023572464&s=170667a&w=0&h=EopKUPT7ix-yq92EZkAASv244wBsn_z-fbNpyxxTl6o=',
+      logo: imageUrl ?? defaultLogo,
     };
 
     const layers = <LayerDto[]>[
       {
         id: `token-contract-${token.id}`,
-        collectionName: 'token-contracts',
+        collectionName: 'tokens',
         set: [updatedToken],
       },
     ];
 
-    this.eventsService.emitLayers(clientId, layers);
+    this.eventEmitter.emit(ADD_LAYERS, {
+      channelId: clientId,
+      layers,
+    });
   }
 
   private mapTokenContractDocuments(
     tokenBalances: moralis.TokenBalance[],
+    selectedCurrency: CurrencyDto,
     coinPrices: CoinPrice[],
   ): TokenContractDocument[] {
     const tokensById = _.groupBy(
@@ -110,56 +120,63 @@ export class TokenClientService {
 
     const now = moment().unix();
 
-    return Object.entries(tokensById).map(([id, tokens]) => {
-      const balance = _.sumBy(tokens, (token) =>
-        Number(ethers.utils.formatUnits(token.balance, token.decimals)),
-      );
+    return Object.entries(tokensById)
+      .map(([id, tokens]) => {
+        const balance = _.sumBy(tokens, (token) =>
+          Number(ethers.utils.formatUnits(token.balance, token.decimals)),
+        );
 
-      const chainMetadata = chains[tokens[0].chain_id];
+        const chainMetadata = chains[tokens[0].chain_id];
 
-      const coinId = this.coingeckoService.coinIdOf(
-        tokens[0].chain_id,
-        tokens[0].token_address,
-      );
+        const coinId = this.coingeckoService.coinIdOf(
+          tokens[0].chain_id,
+          tokens[0].token_address,
+        );
 
-      const coinPrice = coinPrices.find(
-        (it) => it.coinId.toLowerCase() === coinId,
-      );
+        if (!coinId) {
+          return undefined;
+        }
 
-      return {
-        id,
-        created: now,
-        updated: now,
-        allowSwap: !!coinPrice,
-        allowBurnToken: !!coinPrice,
-        balance,
-        chain: {
-          id: chainMetadata.id,
-          logo: chainMetadata.logo,
-          name: chainMetadata.name,
-        },
-        coinId,
-        contractAddress: tokens[0].token_address,
-        decimals: Number(tokens[0].decimals),
-        links: {
-          swap: `https://poocoin.app/swap?inputCurrency=${tokens[0].token_address}`,
-          token: !!coinId
-            ? `https://www.coingecko.com/en/coins/${coinId}`
-            : `https://bscscan.com/token/${tokens[0].token_address}`,
-        },
-        logo: tokens[0].logo,
-        name: tokens[0].name,
-        priceFiat: coinPrice.price,
-        symbol: tokens[0].symbol,
-        valueFiat: {
-          _eval: true,
-          scope: {
-            price: '$.priceFiat',
-            balance: '$.balance',
+        const coinPrice = coinPrices.find(
+          (it) => it.coinId.toLowerCase() === coinId,
+        );
+
+        return {
+          id,
+          created: now,
+          updated: now,
+          allowSwap: !!coinPrice,
+          allowBurnToken: !!coinPrice,
+          balance,
+          chain: {
+            id: chainMetadata.id,
+            logo: chainMetadata.logo,
+            name: chainMetadata.name,
           },
-          expression: 'balance * price',
-        },
-      };
-    });
+          coinId,
+          contractAddress: tokens[0].token_address,
+          decimals: Number(tokens[0].decimals),
+          fiatSymbol: selectedCurrency.symbol,
+          links: {
+            swap: `https://poocoin.app/swap?inputCurrency=${tokens[0].token_address}`,
+            token: !!coinId
+              ? `https://www.coingecko.com/en/coins/${coinId}`
+              : `https://bscscan.com/token/${tokens[0].token_address}`,
+          },
+          logo: tokens[0].logo,
+          name: tokens[0].name,
+          priceFiat: coinPrice?.price,
+          symbol: tokens[0].symbol,
+          valueFiat: {
+            _eval: true,
+            scope: {
+              price: '$.priceFiat',
+              balance: '$.balance',
+            },
+            expression: 'balance * price',
+          },
+        };
+      })
+      .filter((it) => !!it);
   }
 }

@@ -12,6 +12,7 @@ export interface TokenContractDocument extends DocumentDto {
   readonly coinId?: string;
   readonly contractAddress: string;
   readonly decimals: number;
+  readonly fiatSymbol: string;
   readonly links: {
     swap: string;
     token: string;

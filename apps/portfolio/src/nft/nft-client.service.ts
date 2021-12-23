@@ -1,20 +1,24 @@
 import {
+  ADD_LAYERS,
   chainIds,
   chains,
   ClientStateChangedEvent,
   CLIENT_STATE_CHANGED,
-  EventsService,
+  CurrencyDto,
+  JOIN_ROOM,
+  logger,
   moralis,
   MoralisService,
   OpenseaService,
 } from '@app/sdk';
 import { InjectQueue } from '@nestjs/bull';
 import { Injectable } from '@nestjs/common';
-import { EventPattern } from '@nestjs/microservices';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { Queue } from 'bull';
 import { validate } from 'bycontract';
 import _ from 'lodash';
 import moment from 'moment';
+import { defaultLogo } from '../util/constants';
 import { NftContractDocument } from './dto';
 import { NFT_PRICE_QUEUE } from './queues';
 
@@ -23,11 +27,11 @@ export class NftClientService {
   constructor(
     private moralisService: MoralisService,
     @InjectQueue(NFT_PRICE_QUEUE) private nftPriceQueue: Queue,
-    private eventsService: EventsService,
+    private eventEmitter: EventEmitter2,
     private openseaService: OpenseaService,
   ) {}
 
-  @EventPattern(CLIENT_STATE_CHANGED)
+  @OnEvent(CLIENT_STATE_CHANGED)
   async handleClientStateChangedEvent(
     clientStateChangedEvent: ClientStateChangedEvent,
   ) {
@@ -60,25 +64,26 @@ export class NftClientService {
       await Promise.all(requestPromises),
     );
 
-    let contracts = this.mapNftContractDocuments(nfts);
+    let contracts = this.mapNftContractDocuments(nfts, selectedCurrency);
     //#endregion
 
     //#region add logos for eth contracts
     contracts = await Promise.all(
-      contracts
-        .filter((it) => it.chain.id === 'eth')
-        .map(async (contract) => {
-          const metadata = await this.openseaService.metadataOf(
-            contract.contractAddress,
-          );
-          if (!metadata?.image_url) {
-            return contract;
-          }
-          return {
-            ...contract,
-            logo: metadata.image_url,
-          };
-        }),
+      contracts.map(async (contract) => {
+        if (contract.chain.id !== 'eth') {
+          return { ...contract, logo: defaultLogo };
+        }
+        const metadata = await this.openseaService.metadataOf(
+          contract.contractAddress,
+        );
+        if (!metadata?.image_url) {
+          return contract;
+        }
+        return {
+          ...contract,
+          logo: metadata.image_url,
+        };
+      }),
     );
     //#endregion
 
@@ -86,12 +91,26 @@ export class NftClientService {
     const layers = [
       {
         id: 'nft-contracts-layer',
-        collectionName: 'nft-contracts',
-        set: contracts,
+        collectionName: 'nfts',
+        patch: contracts,
       },
     ];
 
-    this.eventsService.emitLayers(clientId, layers);
+    this.eventEmitter.emit(ADD_LAYERS, {
+      channelId: clientId,
+      layers,
+    });
+    //#endregion
+
+    //#region join the client to the rooms for the contract
+
+    for (const contract of contracts) {
+      this.eventEmitter.emit(JOIN_ROOM, {
+        clientId,
+        roomName: contract.id,
+      });
+    }
+
     //#endregion
 
     //#region add nft price updates to the bull queue
@@ -106,6 +125,7 @@ export class NftClientService {
 
   private mapNftContractDocuments(
     nfts: moralis.NftOwner[],
+    selectedCurrency: CurrencyDto,
   ): NftContractDocument[] {
     const byContractAddress = _.groupBy(
       nfts,
@@ -115,7 +135,7 @@ export class NftClientService {
     const now = moment().unix();
 
     return Object.entries(byContractAddress).map(([id, nfts]) => {
-      const balance = _.sumBy(nfts, 'amount');
+      const balance = _.sumBy(nfts, (it) => Number(it.amount));
 
       const chainMetadata = chains[nfts[0].chain_id];
 
@@ -131,6 +151,7 @@ export class NftClientService {
           name: chainMetadata.name,
         },
         contractAddress: nfts[0].token_address,
+        fiatSymbol: selectedCurrency.symbol,
         nfts: nfts.map((nft) => ({ tokenId: nft.token_id })),
         price: 0,
         priceFormatted: '?',

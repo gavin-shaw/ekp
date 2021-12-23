@@ -2,7 +2,6 @@ export * from './global.module';
 export * from './bootstrap';
 export * from './coingecko';
 export * from './config';
-export * from './events.service';
 export * from './evm';
 export * from './moralis';
 export * from './opensea';

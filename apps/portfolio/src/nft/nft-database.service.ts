@@ -6,6 +6,7 @@ import { moralis } from '@app/sdk';
 import { ethers } from 'ethers';
 import { validate } from 'bycontract';
 import { NftContractDocument } from './dto';
+import moment from 'moment';
 
 @Injectable()
 export class NftDatabaseService {
@@ -68,7 +69,7 @@ export class NftDatabaseService {
       amount: Number(it.amount),
       blockHash: it.block_hash,
       blockNumber: Number(it.block_number),
-      blockTimestamp: Number(it.block_timestamp),
+      blockTimestamp: moment(it.block_timestamp).unix(),
       chainId: it.chain_id,
       contractAddress: it.token_address,
       contractId: contract.id,

@@ -22,7 +22,7 @@ export class CoingeckoService {
     @Inject(CACHE_MANAGER) private cache: Cache,
     limiterService: LimiterService,
   ) {
-    this.limiter = limiterService.createLimiter('moralis-limiter', 10);
+    this.limiter = limiterService.createLimiter('coingecko-limiter', 10);
   }
 
   limiter: Bottleneck;

@@ -1070,7 +1070,7 @@
     "lodash.set" "4.3.2"
     "uuid" "8.3.2"
 
-"@nestjs/core@^6.0.0 || ^7.0.0 || ^8.0.0", "@nestjs/core@^6.10.11 || ^7.0.0 || ^8.0.0", "@nestjs/core@^8.0.0":
+"@nestjs/core@^6.0.0 || ^7.0.0 || ^8.0.0", "@nestjs/core@^6.10.11 || ^7.0.0 || ^8.0.0", "@nestjs/core@^7.0.0 || ^8.0.0", "@nestjs/core@^8.0.0":
   "integrity" "sha512-CP/Z+uTEdblTZQXRf+xvZHvESZ6v2vxX/YaRcpJDv/ytgxxOafmOJ/RDKSzNOGBkt8kVwYNFpWXzzll4P5AJ0g=="
   "resolved" "https://registry.npmjs.org/@nestjs/core/-/core-8.2.3.tgz"
   "version" "8.2.3"
@@ -1095,6 +1095,13 @@
     "path-to-regexp" "3.2.0"
     "tslib" "2.2.0"
     "uuid" "8.3.2"
+
+"@nestjs/event-emitter@^1.0.0":
+  "integrity" "sha512-dRAou6G89KKYI2iyYfqSVGE6ZTC4WmHkQkFfgh88GLQg8dBqRk92ZY8CRtL2SK32SSelh9bwEDNQn9561uoypA=="
+  "resolved" "https://registry.npmjs.org/@nestjs/event-emitter/-/event-emitter-1.0.0.tgz"
+  "version" "1.0.0"
+  dependencies:
+    "eventemitter2" "6.4.4"
 
 "@nestjs/microservices@^7.0.0":
   "integrity" "sha512-vSSl9hgHgBtTye57f2PZIg36MLcv5TRdqu3QEsS50WlUmxIjISCfAeCMLk+hWQNM8zjvlLwNbKUJW+NOZ2aovA=="
@@ -3810,6 +3817,11 @@
     "bn.js" "4.11.6"
     "number-to-bn" "1.7.0"
 
+"eventemitter2@6.4.4":
+  "integrity" "sha512-HLU3NDY6wARrLCEwyGKRBvuWYyvW6mHYv72SJJAH3iJN3a6eVUvkjFkcxah1bcTgGVBBrFdIopBJPhCQFMLyXw=="
+  "resolved" "https://registry.npmjs.org/eventemitter2/-/eventemitter2-6.4.4.tgz"
+  "version" "6.4.4"
+
 "eventemitter3@4.0.4":
   "integrity" "sha512-rlaVLnVxtxvoyLsQQFBx53YmXHDxRIzzTLbdfxqi4yocpSjAxXwkU0cScM5JgSKMqEhrZpnvQ2D9gjylR0AimQ=="
   "resolved" "https://registry.npmjs.org/eventemitter3/-/eventemitter3-4.0.4.tgz"
@@ -6243,9 +6255,8 @@
   "resolved" "https://registry.npmjs.org/neo-async/-/neo-async-2.6.2.tgz"
   "version" "2.6.2"
 
-"nestjs-redis@^1.3.3":
-  "integrity" "sha512-YLvWtVKP38Uica7pL8T955jPi0MFmJ4+Wj3R/IHbLpsdCJkdA9wtfO9NoUpiZpM1aO1dEGcOBoStvgb0Uy7MGA=="
-  "resolved" "https://registry.npmjs.org/nestjs-redis/-/nestjs-redis-1.3.3.tgz"
+"nestjs-redis@git+https://github.com/skunight/nestjs-redis.git":
+  "resolved" "git+ssh://git@github.com/skunight/nestjs-redis.git#939f33a7f9b252e872c6edb76a3a860ed053bacf"
   "version" "1.3.3"
   dependencies:
     "@nestjs/common" "^7.4.4"

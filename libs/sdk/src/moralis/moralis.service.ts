@@ -5,6 +5,7 @@ import Bottleneck from 'bottleneck';
 import { validate } from 'bycontract';
 import { Cache } from 'cache-manager';
 import Moralis from 'moralis/node';
+import { EkConfigService } from '../config/ek-config.service';
 import { LimiterService } from '../limiter.service';
 import { ChainId, chains, logger } from '../utils';
 import {
@@ -23,8 +24,17 @@ export class MoralisService {
   constructor(
     @Inject(CACHE_MANAGER) private cache: Cache,
     limiterService: LimiterService,
+    configService: EkConfigService,
   ) {
-    this.limiter = limiterService.createLimiter('moralis-limiter', 8);
+    this.limiter = limiterService.createLimiter('moralis-limiter', {
+      maxConcurrent: 20,
+      minTime: 250,
+    });
+
+    Moralis.start({
+      serverUrl: configService.moralisServerUrl,
+      appId: configService.moralisAppId,
+    });
   }
 
   private limiter: Bottleneck;
@@ -230,6 +240,36 @@ export class MoralisService {
     );
   }
 
+  async nftTransfersOf(
+    chainId: ChainList,
+    contractAddress: string,
+    offset: number,
+  ) {
+    validate(
+      [chainId, contractAddress, offset],
+      ['string', 'string', 'number'],
+    );
+
+    const debugMessage = `Web3API > getContractNFTTransfers('${chainId}', '${contractAddress}', ${offset})`;
+
+    return retry(
+      this.limiter.wrap(async () => {
+        logger.debug(debugMessage);
+
+        return await Moralis.Web3API.token.getContractNFTTransfers({
+          address: contractAddress,
+          chain: chainId,
+          offset,
+          order: 'block_number:ASC',
+        });
+      }),
+      {
+        onRetry: (error) =>
+          logger.warn(`Retry due to ${error.message}: ${debugMessage}`),
+      },
+    );
+  }
+
   async nextTransfersOf(
     chainId: ChainList,
     contractAddress: string,
@@ -239,10 +279,6 @@ export class MoralisService {
       [chainId, contractAddress, cursor],
       ['string', 'string', 'string='],
     );
-
-    if (!process.env.MORALIS_API_KEY) {
-      throw new Error('Environment variable MORALIS_API_KEY is required');
-    }
 
     let url = `${BASE_URL}/nft/${contractAddress}/transfers?chain=${chainId}&format=decimal`;
 

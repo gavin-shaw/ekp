@@ -7,7 +7,7 @@ export const homeTokenActions = [
       params: {
         type: 'ERC20',
         options: {
-          address: '$.tokenAddress',
+          address: '$.contractAddress',
           symbol: '$.symbol',
           decimals: '$.decimals',
           image: '$.logo',

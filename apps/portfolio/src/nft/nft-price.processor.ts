@@ -1,15 +1,17 @@
 import {
+  ADD_LAYERS,
   chains,
   CoingeckoService,
-  EventsService,
-  LayerDto,
   logger,
   MoralisService,
+  PUBLISH_CLIENT,
 } from '@app/sdk';
 import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { validate } from 'bycontract';
+import { Redis } from 'ioredis';
 import moment from 'moment';
+import { RedisService } from 'nestjs-redis';
 import { NftContractDocument } from './dto/nft-contract.document';
 import { NftDatabaseService } from './nft-database.service';
 import { NFT_PRICE_QUEUE } from './queues';
@@ -20,16 +22,26 @@ export class NftPriceProcessor {
     private coingeckoService: CoingeckoService,
     private moralisService: MoralisService,
     private nftDatabaseService: NftDatabaseService,
-    private eventsService: EventsService,
-  ) {}
+    redisService: RedisService,
+  ) {
+    this.publishClient = redisService.getClient(PUBLISH_CLIENT);
+  }
 
-  @Process()
+  private readonly publishClient: Redis;
+
+  @Process({ concurrency: 16 })
   async process(job: Job<any>) {
     const selectedCurrency = validate(job.data.selectedCurrency, 'object');
     const contract: NftContractDocument = validate(job.data.contract, 'object');
 
     const latestTransfer = await this.nftDatabaseService.latestTransferOf(
       contract.id,
+    );
+
+    logger.log(
+      `Starting to fetch ${contract.name} from ${moment
+        .unix(latestTransfer.blockTimestamp)
+        .format()}`,
     );
 
     let cursor = latestTransfer?.cursor;
@@ -64,14 +76,14 @@ export class NftPriceProcessor {
           .filter((it) => !!it),
       );
 
-      if (isNaN(latestTimestamp)) {
+      if (isNaN(latestTimestamp) || latestTimestamp <= 0) {
         logger.warn(
           'Skipping patch sync state due to missing block timestamp in transfers',
         );
       } else {
         const layers = [
           {
-            id: `nfts-sync-state-${contract.contractAddress}`,
+            id: `nfts-sync-state-${contract.id}`,
             tags: ['nfts-sync-state'],
             collectionName: 'nfts',
             patch: [
@@ -83,13 +95,25 @@ export class NftPriceProcessor {
           },
         ];
 
-        this.eventsService.broadcastLayers(contract.id, layers);
+        this.publishClient.publish(
+          ADD_LAYERS,
+          JSON.stringify({
+            channelId: contract.id,
+            layers,
+          }),
+        );
+      }
+
+      if (transfers.length < 0) {
+        break;
       }
 
       cursor = newCursor;
     }
 
     const now = moment().unix();
+
+    console.log('here7');
 
     let transfers = await this.nftDatabaseService.latestTransfersWithValueOf(
       contract.id,
@@ -164,7 +188,13 @@ export class NftPriceProcessor {
         },
       ];
 
-      this.eventsService.broadcastLayers(contract.id, layers);
+      this.publishClient.publish(
+        ADD_LAYERS,
+        JSON.stringify({
+          channelId: contract.id,
+          layers,
+        }),
+      );
     }
   }
 }

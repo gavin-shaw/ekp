@@ -27,13 +27,17 @@ export const tokenList = {
             },
           ],
           title: '$.name',
-          subtitle: '$.price.display',
+          subtitle: {
+            value: '$.priceFiat',
+            formatter: 'currency',
+            symbol: '$.fiatSymbol',
+          },
         },
       ],
     },
     {
       id: 'value',
-      value: '$.balanceFiat.value',
+      value: '$.valueFiat',
       filterable: true,
       sortable: true,
       right: true,
@@ -43,7 +47,11 @@ export const tokenList = {
           title: [
             {
               view: 'tile',
-              title: '$.balanceFiat.display',
+              title: {
+                value: '$.valueFiat',
+                formatter: 'currency',
+                symbol: '$.fiatSymbol',
+              },
               right: [
                 {
                   view: 'image',
@@ -54,7 +62,10 @@ export const tokenList = {
               ],
             },
           ],
-          subtitle: '$.balance.display',
+          subtitle: {
+            value: '$.balance',
+            formatter: 'token',
+          },
           right: true,
         },
       ],

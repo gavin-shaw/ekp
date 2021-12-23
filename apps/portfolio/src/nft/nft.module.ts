@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { NftTransfer, NftTransferSchema } from './model';
 import { NftClientService } from './nft-client.service';
 import { NftDatabaseService } from './nft-database.service';
+import { NftPriceProcessor } from './nft-price.processor';
 import { NFT_PRICE_QUEUE } from './queues';
 
 @Module({
@@ -13,6 +14,6 @@ import { NFT_PRICE_QUEUE } from './queues';
     ]),
     BullModule.registerQueue({ name: NFT_PRICE_QUEUE }),
   ],
-  providers: [NftClientService, NftDatabaseService],
+  providers: [NftClientService, NftPriceProcessor, NftDatabaseService],
 })
 export class NftModule {}

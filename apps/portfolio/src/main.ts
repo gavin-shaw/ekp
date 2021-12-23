@@ -1,4 +1,4 @@
-import { microserviceBootstrap } from '@app/sdk';
+import { ekpbootstrap } from '@app/sdk';
 import { PortfolioModule } from './portfolio.module';
 
-microserviceBootstrap(PortfolioModule);
+ekpbootstrap(PortfolioModule);

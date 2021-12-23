@@ -16,7 +16,7 @@ export class OpenseaService {
     @Inject(CACHE_MANAGER) private cache: Cache,
     limiterService: LimiterService,
   ) {
-    this.limiter = limiterService.createLimiter('moralis-limiter', 2);
+    this.limiter = limiterService.createLimiter('opensea-limiter', 2);
   }
 
   limiter: Bottleneck;

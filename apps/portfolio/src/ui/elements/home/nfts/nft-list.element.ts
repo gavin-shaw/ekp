@@ -1,6 +1,6 @@
 export const nftList = {
   view: 'datatable',
-  items: '$.collections',
+  items: '$.nfts',
   options: {
     pagination: false,
     defaultSortFieldId: 'value',
@@ -27,13 +27,14 @@ export const nftList = {
           subtitle: {
             value: '$.price',
             formatter: 'currency',
+            symbol: '$.fiatSymbol',
           },
         },
       ],
     },
     {
       id: 'value',
-      value: '$.balanceFiat.value',
+      value: '$.valueFiat',
       filterable: true,
       sortable: true,
       alignTitle: 'right',
@@ -43,7 +44,11 @@ export const nftList = {
           title: [
             {
               view: 'tile',
-              title: '$.balanceFiat.display',
+              title: {
+                value: '$.valueFiat',
+                formatter: 'currency',
+                symbol: '$.fiatSymbol',
+              },
               right: [
                 {
                   view: 'image',
@@ -54,7 +59,7 @@ export const nftList = {
               ],
             },
           ],
-          subtitle: '$.balance.display',
+          subtitle: { value: '$.fetchTimestamp', formatter: 'datetime' },
           right: true,
         },
       ],

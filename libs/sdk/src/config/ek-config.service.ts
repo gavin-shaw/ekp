@@ -6,17 +6,17 @@ import {
   CacheModuleOptions,
   CacheOptionsFactory,
   Injectable,
-  Provider,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ClientProxyFactory, Transport } from '@nestjs/microservices';
 import {
   MongooseModuleOptions,
   MongooseOptionsFactory,
 } from '@nestjs/mongoose';
 import * as redisStore from 'cache-manager-redis-store';
+import { RedisModuleAsyncOptions } from 'nestjs-redis';
 
-export const CLIENT_PROXY = 'CLIENT_PROXY';
+export const PUBLISH_CLIENT = 'PUBLISH_CLIENT';
+export const SUBSCRIBE_CLIENT = 'SUBSCRIBER_CLIENT';
 
 @Injectable()
 export class EkConfigService
@@ -47,30 +47,25 @@ export class EkConfigService
   readonly redisHost: string;
   readonly redisPort: number;
 
-  static createClientProxyProvider(): Provider {
+  static createRedisAsyncOptions(): RedisModuleAsyncOptions {
     return {
-      provide: CLIENT_PROXY,
-      inject: [EkConfigService],
       useFactory: (configService: EkConfigService) => {
-        return ClientProxyFactory.create({
-          transport: Transport.REDIS,
-          options: {
-            url: `redis://${configService.redisHost}:${configService.redisPort}`,
+        return [
+          {
+            name: PUBLISH_CLIENT,
+            host: configService.redisHost,
+            port: configService.redisPort,
           },
-        });
+          {
+            name: SUBSCRIBE_CLIENT,
+            host: configService.redisHost,
+            port: configService.redisPort,
+          },
+        ];
       },
+      inject: [EkConfigService],
     };
   }
-
-  createMicroserviceOptions() {
-    return {
-      transport: Transport.REDIS,
-      options: {
-        url: `redis://${this.redisHost}:${this.redisPort}`,
-      },
-    };
-  }
-
   createCacheOptions(): CacheModuleOptions {
     return {
       isGlobal: true,

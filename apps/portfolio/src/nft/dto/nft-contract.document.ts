@@ -8,6 +8,7 @@ export interface NftContractDocument extends DocumentDto {
     name: string;
   };
   readonly contractAddress: string;
+  readonly fiatSymbol: string;
   readonly price?: number;
   readonly priceFiat?: number;
   readonly logo?: string;

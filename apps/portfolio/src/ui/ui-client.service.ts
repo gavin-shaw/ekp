@@ -1,20 +1,20 @@
 import {
+  ADD_LAYERS,
   ClientStateChangedEvent,
   CLIENT_STATE_CHANGED,
-  EventsService,
   LayerDto,
 } from '@app/sdk';
 import { Injectable } from '@nestjs/common';
-import { EventPattern } from '@nestjs/microservices';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { validate } from 'bycontract';
 import moment from 'moment';
 import { homeElement } from './elements/home/home.element';
 
 @Injectable()
 export class UiClientService {
-  constructor(private eventsService: EventsService) {}
+  constructor(private eventEmitter: EventEmitter2) {}
 
-  @EventPattern(CLIENT_STATE_CHANGED)
+  @OnEvent(CLIENT_STATE_CHANGED)
   async handleClientStateChangedEvent(
     clientStateChangedEvent: ClientStateChangedEvent,
   ) {
@@ -33,7 +33,10 @@ export class UiClientService {
       },
     ];
 
-    this.eventsService.emitLayers(clientId, layers);
+    this.eventEmitter.emit(ADD_LAYERS, {
+      channelId: clientId,
+      layers,
+    });
   }
 
   getMenus() {
