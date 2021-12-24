@@ -34,6 +34,8 @@ spec:
               value: 'ekp-mongodb'
             - name: REDIS_HOST
               value: 'ekp-redis-master'
+            - name: REDIS_USER
+              value: '{{ .Values.redis.user }}'
             - name: REDIS_PASSWORD
               value: '{{ .Values.redis.password }}'
           ports:

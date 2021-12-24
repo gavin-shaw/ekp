@@ -35,7 +35,9 @@ export class EkConfigService
     this.redisHost = this.required('REDIS_HOST');
     this.mongoPort = this.optional('MONGO_PORT', 27017);
     this.redisPort = this.optional('REDIS_PORT', 6379);
+    this.mongoUser = this.optional('MONGO_USER', undefined);
     this.mongoPassword = this.optional('MONGO_PASSWORD', undefined);
+    this.redisUser = this.optional('REDIS_USER', undefined);
     this.redisPassword = this.optional('REDIS_PASSWORD', undefined);
   }
 
@@ -46,9 +48,11 @@ export class EkConfigService
   readonly moralisApiKey: string;
   readonly mongoHost: string;
   readonly mongoPort: number;
+  readonly mongoUser: string;
   readonly mongoPassword: string;
   readonly redisHost: string;
   readonly redisPort: number;
+  readonly redisUser: string;
   readonly redisPassword: string;
 
   static createRedisAsyncOptions(): RedisModuleAsyncOptions {
@@ -59,12 +63,14 @@ export class EkConfigService
             name: PUBLISH_CLIENT,
             host: configService.redisHost,
             port: configService.redisPort,
+            username: configService.redisUser,
             password: configService.redisPassword,
           },
           {
             name: SUBSCRIBE_CLIENT,
             host: configService.redisHost,
             port: configService.redisPort,
+            username: configService.redisUser,
             password: configService.redisPassword,
           },
         ];
@@ -78,6 +84,7 @@ export class EkConfigService
       store: redisStore,
       host: this.redisHost,
       port: this.redisPort,
+      username: this.redisUser,
       password: this.redisPassword,
       ttl: 0,
     };
@@ -86,6 +93,7 @@ export class EkConfigService
   createMongooseOptions(): MongooseModuleOptions {
     return {
       uri: `mongodb://${this.mongoHost}:${this.mongoPort}/ekp`,
+      user: this.mongoUser,
       pass: this.mongoPassword,
     };
   }
@@ -95,6 +103,7 @@ export class EkConfigService
       redis: {
         host: this.redisHost,
         port: this.redisPort,
+        username: this.redisUser,
         password: this.redisPassword,
       },
     };
