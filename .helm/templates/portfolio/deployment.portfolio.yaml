@@ -26,18 +26,12 @@ spec:
               value: 'Portfolio'
             - name: MORALIS_APP_ID
               value: '{{ .Values.moralis.appId }}'
-            - name: MORALIS_API_KEY
-              value: '{{ .Values.moralis.apiKey }}'
             - name: MORALIS_SERVER_URL
               value: '{{ .Values.moralis.serverUrl }}'
             - name: MONGO_HOST
               value: 'ekp-mongodb'
             - name: REDIS_HOST
               value: 'ekp-redis-master'
-            - name: REDIS_USER
-              value: 'ekp'
-            - name: REDIS_PASSWORD
-              value: 'password'
           ports:
             - containerPort: 3001
               protocol: TCP
