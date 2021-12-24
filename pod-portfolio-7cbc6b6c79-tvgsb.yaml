@@ -1,0 +1,137 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2021-12-24T08:50:26Z"
+  generateName: portfolio-7cbc6b6c79-
+  labels:
+    app: portfolio
+    pod-template-hash: 7cbc6b6c79
+  name: portfolio-7cbc6b6c79-tvgsb
+  namespace: ekp
+  ownerReferences:
+  - apiVersion: apps/v1
+    blockOwnerDeletion: true
+    controller: true
+    kind: ReplicaSet
+    name: portfolio-7cbc6b6c79
+    uid: 3d417b68-9d78-4d0b-a75e-1788cb43131e
+  resourceVersion: "4602463"
+  uid: dd342e3c-959b-46f5-9bad-66a642608752
+spec:
+  containers:
+  - env:
+    - name: EKP_PLUGIN_ID
+      value: portfolio
+    - name: EKP_PLUGIN_NAME
+      value: portfolio
+    - name: MORALIS_APP_ID
+      value: LsjOUwJVpj3iFWFiIfckztjo4VmPdJ2DOmuGUaRU
+    - name: MORALIS_API_KEY
+      value: gJ0cuioJHoL04FBxQc43THPWEBAoxYkJJlgKONmKup4p7DOwpsz4vXHYLH3uzCaM
+    - name: MORALIS_SERVER_URL
+      value: https://krflamw7wsiz.usemoralis.com:2053/server
+    - name: MONGO_HOST
+      value: ekp-mongodb
+    - name: REDIS_HOST
+      value: ekp-redis-master
+    image: ghcr.io/gavin-shaw/ekp/ekp:95a56174996fbf1b325c9774aa15f264e25ca4824da48d1598f5e8c2-1640335774394
+    imagePullPolicy: IfNotPresent
+    name: portfolio
+    ports:
+    - containerPort: 3001
+      protocol: TCP
+    resources: {}
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-jvj6m
+      readOnly: true
+    workingDir: /app
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: ekp-default-pool-ur7zs
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 30
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - name: kube-api-access-jvj6m
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2021-12-24T08:50:26Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2021-12-24T08:52:53Z"
+    message: 'containers with unready status: [portfolio]'
+    reason: ContainersNotReady
+    status: "False"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2021-12-24T08:52:53Z"
+    message: 'containers with unready status: [portfolio]'
+    reason: ContainersNotReady
+    status: "False"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2021-12-24T08:50:26Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: containerd://9a294d743b164681c13fbf0c11b7719e7663934e149d1b489d4db332bd0f1586
+    image: ghcr.io/gavin-shaw/ekp/ekp:95a56174996fbf1b325c9774aa15f264e25ca4824da48d1598f5e8c2-1640335774394
+    imageID: ghcr.io/gavin-shaw/ekp/ekp@sha256:f72db4c97c0167b124ac0ba0b3c4d528c85c0aff63f412ee54bb31019e660e84
+    lastState:
+      terminated:
+        containerID: containerd://9a294d743b164681c13fbf0c11b7719e7663934e149d1b489d4db332bd0f1586
+        exitCode: 1
+        finishedAt: "2021-12-24T08:52:52Z"
+        reason: Error
+        startedAt: "2021-12-24T08:52:50Z"
+    name: portfolio
+    ready: false
+    restartCount: 4
+    started: false
+    state:
+      waiting:
+        message: back-off 1m20s restarting failed container=portfolio pod=portfolio-7cbc6b6c79-tvgsb_ekp(dd342e3c-959b-46f5-9bad-66a642608752)
+        reason: CrashLoopBackOff
+  hostIP: 10.116.0.7
+  phase: Running
+  podIP: 10.244.0.74
+  podIPs:
+  - ip: 10.244.0.74
+  qosClass: BestEffort
+  startTime: "2021-12-24T08:50:26Z"

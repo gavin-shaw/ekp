@@ -1,4 +1,3 @@
 redis:
   auth:
-    user: "ekp"
-    password: "password"
+    enabled: false
