@@ -20,14 +20,20 @@ spec:
           image: '{{ .Values.werf.image.portfolio }}'
           workingDir: /app
           env:
-            - name: BSCSCAN_API_KEY
-              value: '{{ .Values.bscscan.apiKey }}'
+            - name: EKP_PLUGIN_ID
+              value: 'portfolio'
+            - name: EKP_PLUGIN_NAME
+              value: 'portfolio'
             - name: MORALIS_APP_ID
               value: '{{ .Values.moralis.appId }}'
             - name: MORALIS_API_KEY
               value: '{{ .Values.moralis.apiKey }}'
             - name: MORALIS_SERVER_URL
               value: '{{ .Values.moralis.serverUrl }}'
+            - name: MONGO_HOST
+              value: 'mongo'
+            - name: REDIS_HOST
+              value: 'redis'
           ports:
             - containerPort: 3001
               protocol: TCP

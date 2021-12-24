@@ -1,9 +1,9 @@
 dependencies:
-- name: loki-stack
-  repository: https://grafana.github.io/helm-charts
-  version: 2.5.0
-- name: postgresql
+- name: mongodb
   repository: https://charts.bitnami.com/bitnami
-  version: 10.13.8
-digest: sha256:efb89a79c5bfb817ea5ed2bd76b5ecd2a97275aa0605fd43b4f9d2f7d1c50ea2
-generated: "2021-11-25T15:56:38.215362+02:00"
+  version: 10.30.8
+- name: redis
+  repository: https://charts.bitnami.com/bitnami
+  version: 15.6.8
+digest: sha256:f75aaaf9c0451a5b9c77135a00338cc55dc6330999ed018c99a08781f318410b
+generated: "2021-12-24T10:13:43.938307+02:00"

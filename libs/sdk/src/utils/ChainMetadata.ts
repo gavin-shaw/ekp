@@ -5,6 +5,7 @@ export interface ChainMetadata {
   readonly logo: string;
   readonly name: string;
   readonly explorer: string;
+  readonly swap: string;
   readonly token: {
     readonly coinId: string;
     readonly contractAddress: string;

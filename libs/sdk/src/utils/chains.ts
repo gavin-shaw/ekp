@@ -6,6 +6,7 @@ export const chains: { [chainId: string]: ChainMetadata } = {
     logo: 'https://cryptologos.cc/logos/thumbs/binance-coin.png?v=014',
     name: 'Binance Smart Chain',
     explorer: 'https://bscscan.com/',
+    swap: 'https://poocoin.app/swap',
     token: {
       coinId: 'binancecoin',
       contractAddress: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
@@ -19,6 +20,7 @@ export const chains: { [chainId: string]: ChainMetadata } = {
     logo: 'https://cryptologos.cc/logos/thumbs/polygon.png?v=014',
     name: 'Polygon',
     explorer: 'https://polygonscan.com/',
+    swap: 'https://quickswap.exchange/#/swap',
     token: {
       coinId: 'matic-network',
       contractAddress: '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0',
@@ -32,6 +34,7 @@ export const chains: { [chainId: string]: ChainMetadata } = {
     logo: 'https://cryptologos.cc/logos/thumbs/ethereum.png?v=014',
     name: 'Ethereum',
     explorer: 'https://etherscan.com/',
+    swap: 'https://app.uniswap.org/#/swap',
     token: {
       coinId: 'ethereum',
       contractAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',

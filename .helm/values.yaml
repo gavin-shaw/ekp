@@ -1,8 +1,0 @@
-loki-stack:
-  grafana:
-    enabled: true
-  prometheus:
-    enabled: false
-postgresql:
-  postgresqlPassword: postgres
-  postgresqlDatabase: ekp

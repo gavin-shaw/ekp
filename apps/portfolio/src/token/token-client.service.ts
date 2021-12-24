@@ -194,10 +194,10 @@ export class TokenClientService {
           decimals: Number(tokens[0].decimals),
           fiatSymbol: selectedCurrency.symbol,
           links: {
-            swap: `https://poocoin.app/swap?inputCurrency=${tokens[0].token_address}`,
+            swap: `${chainMetadata.swap}?inputCurrency=${tokens[0].token_address}`,
             token: !!coinId
               ? `https://www.coingecko.com/en/coins/${coinId}`
-              : `https://bscscan.com/token/${tokens[0].token_address}`,
+              : `${chainMetadata}token/${tokens[0].token_address}`,
           },
           logo: tokens[0].logo,
           name: tokens[0].name,
