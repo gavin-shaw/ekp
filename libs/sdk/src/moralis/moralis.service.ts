@@ -21,13 +21,15 @@ export class MoralisService {
   constructor(
     @Inject(CACHE_MANAGER) private cache: Cache,
     limiterService: LimiterService,
-    configService: EkConfigService,
+    private configService: EkConfigService,
   ) {
     this.limiter = limiterService.createLimiter('moralis-limiter', 5);
+  }
 
-    Moralis.start({
-      serverUrl: configService.moralisServerUrl,
-      appId: configService.moralisAppId,
+  async onModuleInit() {
+    await Moralis.start({
+      serverUrl: this.configService.moralisServerUrl,
+      appId: this.configService.moralisAppId,
     });
   }
 

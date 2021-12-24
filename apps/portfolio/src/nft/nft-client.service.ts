@@ -209,6 +209,7 @@ export class NftClientService {
         ownerAddresses: nfts.map((nft) => nft.owner_of),
         symbol: nfts[0].symbol,
         rateFiat: chainCoinPrice.price,
+        priceSymbol: chainMetadata.token.symbol,
         priceFiat: {
           _eval: true,
           scope: {

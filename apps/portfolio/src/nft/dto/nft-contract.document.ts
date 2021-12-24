@@ -17,6 +17,7 @@ export interface NftContractDocument extends DocumentDto {
   readonly ownerAddresses: string[];
   readonly price?: any;
   readonly priceFiat?: any;
+  readonly priceSymbol: any;
   readonly rateFiat?: number;
   readonly value?: any;
   readonly valueFiat?: any;

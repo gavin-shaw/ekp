@@ -27,14 +27,14 @@ export const nftList = {
           ],
           title: '$.name',
           subtitle: {
-            value: '{{ priceFiat }} - {{ balance }} nfts',
+            value: '{{ price }} {{ symbol }} - {{ balance }} nfts',
             formatter: 'template',
             scope: {
               balance: '$.balance',
-              priceFiat: {
-                value: '$.priceFiat',
-                formatter: 'currency',
-                symbol: '$.fiatSymbol',
+              symbol: '$.priceSymbol',
+              price: {
+                value: '$.price',
+                formatter: 'token',
               },
             },
           },
