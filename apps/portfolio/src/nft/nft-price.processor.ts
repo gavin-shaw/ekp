@@ -5,16 +5,13 @@ import {
   MoralisService,
   PUBLISH_CLIENT,
 } from '@app/sdk';
-import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { validate } from 'bycontract';
 import { Redis } from 'ioredis';
 import { RedisService } from 'nestjs-redis';
 import { NftContractDocument } from './dto/nft-contract.document';
 import { NftDatabaseService } from './nft-database.service';
-import { NFT_PRICE_QUEUE } from './queues';
 
-@Processor(NFT_PRICE_QUEUE)
 export class NftPriceProcessor {
   constructor(
     private moralisService: MoralisService,
