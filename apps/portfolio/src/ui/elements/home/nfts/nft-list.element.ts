@@ -1,3 +1,5 @@
+import { homeNftActions } from './nft-actions';
+
 export const nftList = {
   view: 'datatable',
   items: '$.nfts',
@@ -25,9 +27,16 @@ export const nftList = {
           ],
           title: '$.name',
           subtitle: {
-            value: '$.price',
-            formatter: 'currency',
-            symbol: '$.fiatSymbol',
+            value: '{{ priceFiat }} - {{ balance }} nfts',
+            formatter: 'template',
+            scope: {
+              balance: '$.balance',
+              priceFiat: {
+                value: '$.priceFiat',
+                formatter: 'currency',
+                symbol: '$.fiatSymbol',
+              },
+            },
           },
         },
       ],
@@ -38,6 +47,7 @@ export const nftList = {
       filterable: true,
       sortable: true,
       alignTitle: 'right',
+      right: true,
       cell: [
         {
           view: 'tile',
@@ -59,10 +69,26 @@ export const nftList = {
               ],
             },
           ],
-          subtitle: { value: '$.fetchTimestamp', formatter: 'datetime' },
+          subtitle: {
+            value: 'as of {{ age }}',
+            formatter: 'template',
+            scope: {
+              age: {
+                value: '$.fetchTimestamp',
+                formatter: 'age',
+              },
+            },
+          },
           right: true,
         },
       ],
+    },
+    {
+      id: 'actions',
+      compact: true,
+      name: '',
+      width: '22px',
+      actions: homeNftActions,
     },
   ],
 };

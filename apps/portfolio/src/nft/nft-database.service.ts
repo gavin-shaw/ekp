@@ -7,6 +7,7 @@ import { ethers } from 'ethers';
 import { validate } from 'bycontract';
 import { NftContractDocument } from './dto';
 import moment from 'moment';
+import _ from 'lodash';
 
 @Injectable()
 export class NftDatabaseService {
@@ -15,6 +16,35 @@ export class NftDatabaseService {
     private nftTransferModel: Model<NftTransferDocument>,
   ) {}
 
+  async priceOf(contractId: string): Promise<number> {
+    validate([contractId], ['string']);
+
+    const now = moment().unix();
+
+    const lastHour = await this.nftTransferModel
+      .find({
+        contractId,
+        value: { $gt: 0 },
+        blockTimestamp: { $gt: now - 3600 },
+      })
+      .sort({ blockTimestamp: -1 })
+      .exec();
+
+    if (Array.isArray(lastHour) && lastHour.length > 0) {
+      return _.minBy(lastHour, (it) => it.value).value;
+    }
+
+    const latest = await this.nftTransferModel
+      .findOne({
+        contractId,
+        value: { $gt: 0 },
+      })
+      .sort({ blockTimestamp: -1 })
+      .exec();
+
+    return latest?.value;
+  }
+
   async latestTransferOf(contractId: string): Promise<NftTransfer> {
     validate([contractId], ['string']);
 
@@ -22,8 +52,16 @@ export class NftDatabaseService {
       .findOne({
         contractId,
       })
-      .sort({ timestamp: -1 })
+      .sort({ blockTimestamp: -1 })
       .exec();
+  }
+
+  async transferCount(contractId: string): Promise<number> {
+    validate([contractId], ['string']);
+
+    return this.nftTransferModel
+      .where({ contractId: contractId })
+      .countDocuments();
   }
 
   async latestTransferWithValueOf(contractId: string): Promise<NftTransfer> {
@@ -34,7 +72,7 @@ export class NftDatabaseService {
         contractId,
         value: { $gte: 0 },
       })
-      .sort({ timestamp: -1 })
+      .sort({ blockTimestamp: -1 })
       .exec();
   }
 
@@ -50,22 +88,18 @@ export class NftDatabaseService {
         blockTimestamp: { $gte: since },
         value: { $gte: 0 },
       })
-      .sort({ timestamp: -1 })
+      .sort({ blockTimestamp: -1 })
       .exec();
   }
 
   mapMoralisTransfers(
     contract: NftContractDocument,
     moralisTransfers: moralis.NftTransfer[],
-    cursor: string,
   ): NftTransfer[] {
-    validate(
-      [contract, moralisTransfers, cursor],
-      ['object', 'Array.<object>', 'string='],
-    );
+    validate([contract, moralisTransfers], ['object', 'Array.<object>']);
 
     return moralisTransfers.map((it) => ({
-      id: `${it.transaction_hash}-${it.transaction_index}-${it.log_index}`,
+      id: `${it.transaction_hash}-${it.transaction_index}-${it.log_index}-${it.token_id}`,
       amount: Number(it.amount),
       blockHash: it.block_hash,
       blockNumber: Number(it.block_number),
@@ -74,7 +108,6 @@ export class NftDatabaseService {
       contractAddress: it.token_address,
       contractId: contract.id,
       contractType: it.contract_type,
-      cursor,
       fromAddress: it.from_address,
       logIndex: Number(it.log_index),
       tokenId: Number(it.token_id),
@@ -91,14 +124,18 @@ export class NftDatabaseService {
 
     // https://stackoverflow.com/a/64853801/264078
 
-    await this.nftTransferModel.collection.bulkWrite(
-      transfers.map((transfer) => ({
-        updateOne: {
-          filter: { id: transfer.id },
-          update: { $set: transfer },
-          upsert: true,
-        },
-      })),
-    );
+    try {
+      await this.nftTransferModel.collection.bulkWrite(
+        transfers.map((transfer) => ({
+          updateOne: {
+            filter: { id: transfer.id },
+            update: { $set: transfer },
+            upsert: true,
+          },
+        })),
+      );
+    } catch (error) {
+      console.error(error);
+    }
   }
 }

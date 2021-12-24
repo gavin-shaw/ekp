@@ -26,10 +26,7 @@ export class MoralisService {
     limiterService: LimiterService,
     configService: EkConfigService,
   ) {
-    this.limiter = limiterService.createLimiter('moralis-limiter', {
-      maxConcurrent: 20,
-      minTime: 250,
-    });
+    this.limiter = limiterService.createLimiter('moralis-limiter', 5);
 
     Moralis.start({
       serverUrl: configService.moralisServerUrl,
@@ -196,10 +193,12 @@ export class MoralisService {
               chain: chainId,
             });
 
-            return response?.result?.map((nft) => ({
-              ...nft,
-              chain_id: chainId,
-            }));
+            return response?.result
+              ?.filter((it) => !['OPENSTORE'].includes(it.symbol))
+              .map((nft) => ({
+                ...nft,
+                chain_id: chainId,
+              }));
           }),
           {
             onRetry: (error) =>
@@ -244,7 +243,7 @@ export class MoralisService {
     chainId: ChainList,
     contractAddress: string,
     offset: number,
-  ) {
+  ): Promise<NftTransfer[]> {
     validate(
       [chainId, contractAddress, offset],
       ['string', 'string', 'number'],
@@ -256,16 +255,34 @@ export class MoralisService {
       this.limiter.wrap(async () => {
         logger.debug(debugMessage);
 
-        return await Moralis.Web3API.token.getContractNFTTransfers({
+        const cursor = btoa(
+          JSON.stringify({
+            order: 'ASC',
+            offset,
+            limit: 1000,
+            token_address: contractAddress,
+          }),
+        );
+
+        const response = await Moralis.Web3API.token.getContractNFTTransfers({
           address: contractAddress,
           chain: chainId,
-          offset,
-          order: 'block_number:ASC',
+          cursor,
         });
+
+        if (!Array.isArray(response?.result)) {
+          return [];
+        }
+
+        return response.result.map((it) => ({ ...it, chain_id: chainId }));
       }),
       {
-        onRetry: (error) =>
-          logger.warn(`Retry due to ${error.message}: ${debugMessage}`),
+        onRetry: (error: any) => {
+          console.error(error);
+          logger.warn(
+            `Retry due to ${error.message ?? error.error}: ${debugMessage}`,
+          );
+        },
       },
     );
   }

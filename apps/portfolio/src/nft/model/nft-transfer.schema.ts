@@ -20,6 +20,8 @@ export class NftTransfer {
   @Prop()
   contractAddress: string;
   @Prop()
+  contractId: string;
+  @Prop()
   contractType?: string;
   @Prop()
   cursor?: string;
@@ -37,4 +39,13 @@ export class NftTransfer {
   value: number;
 }
 
-export const NftTransferSchema = SchemaFactory.createForClass(NftTransfer);
+const NftTransferSchema = SchemaFactory.createForClass(NftTransfer);
+
+NftTransferSchema.index({ id: 1 });
+NftTransferSchema.index({ contractId: 1 });
+NftTransferSchema.index({ contractId: 1, blockTimestamp: -1 });
+NftTransferSchema.index({ contractId: 1, value: 1, blockTimestamp: -1 });
+NftTransferSchema.index({ blockTimestamp: -1 });
+NftTransferSchema.index({ value: 1 });
+
+export { NftTransferSchema };

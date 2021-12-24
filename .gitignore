@@ -83,3 +83,5 @@ clear-values.yaml
 # Nest.js
 dist
 .env
+
+settler.js

@@ -9,8 +9,11 @@ export interface NftContractDocument extends DocumentDto {
   };
   readonly contractAddress: string;
   readonly fiatSymbol: string;
-  readonly price?: number;
-  readonly priceFiat?: number;
+  readonly price?: any;
+  readonly priceFiat?: any;
+  readonly links: {
+    token: string;
+  };
   readonly logo?: string;
   readonly name: string;
   readonly nfts: {
@@ -18,6 +21,6 @@ export interface NftContractDocument extends DocumentDto {
   }[];
   readonly ownerAddresses: string[];
   readonly fetchTimestamp?: number;
-  readonly value?: number;
-  readonly valueFiat?: number;
+  readonly value?: any;
+  readonly valueFiat?: any;
 }

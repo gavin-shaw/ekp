@@ -7,6 +7,7 @@ import {
   CoingeckoService,
   CoinPrice,
   CurrencyDto,
+  formatters,
   LayerDto,
   moralis,
   MoralisService,
@@ -78,6 +79,41 @@ export class TokenClientService {
     for (const token of tokens) {
       this.fillAndEmitContract(clientId, token);
     }
+
+    //#region remove old tokens
+    //#endregion
+
+    const totalValue = _.sumBy(
+      tokens,
+      (token) => token.priceFiat * token.balance,
+    );
+
+    const now = moment().unix();
+
+    const layers = <LayerDto[]>[
+      {
+        id: `token-stats`,
+        collectionName: 'portfolioStats',
+        timestamp: now,
+        set: [
+          {
+            id: 'token_value',
+            created: now,
+            updated: now,
+            name: 'Token Value',
+            value: formatters.currencyValue(
+              totalValue,
+              selectedCurrency.symbol,
+            ),
+          },
+        ],
+      },
+    ];
+
+    this.eventEmitter.emit(ADD_LAYERS, {
+      channelId: clientId,
+      layers,
+    });
   }
 
   private async fillAndEmitContract(

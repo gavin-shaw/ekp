@@ -4,9 +4,10 @@ import {
   chains,
   ClientStateChangedEvent,
   CLIENT_STATE_CHANGED,
+  CoingeckoService,
+  CoinPrice,
   CurrencyDto,
   JOIN_ROOM,
-  logger,
   moralis,
   MoralisService,
   OpenseaService,
@@ -20,14 +21,17 @@ import _ from 'lodash';
 import moment from 'moment';
 import { defaultLogo } from '../util/constants';
 import { NftContractDocument } from './dto';
+import { NftDatabaseService } from './nft-database.service';
 import { NFT_PRICE_QUEUE } from './queues';
 
 @Injectable()
 export class NftClientService {
   constructor(
-    private moralisService: MoralisService,
-    @InjectQueue(NFT_PRICE_QUEUE) private nftPriceQueue: Queue,
+    private coingeckoService: CoingeckoService,
     private eventEmitter: EventEmitter2,
+    private moralisService: MoralisService,
+    private nftDatabaseService: NftDatabaseService,
+    @InjectQueue(NFT_PRICE_QUEUE) private nftPriceQueue: Queue,
     private openseaService: OpenseaService,
   ) {}
 
@@ -64,24 +68,51 @@ export class NftClientService {
       await Promise.all(requestPromises),
     );
 
-    let contracts = this.mapNftContractDocuments(nfts, selectedCurrency);
+    const chainCoinIds = Object.values(chains).map((it) => it.token.coinId);
+
+    const chainCoinPrices = await this.coingeckoService.latestPricesOf(
+      chainCoinIds,
+      selectedCurrency.id,
+    );
+
+    let contracts = this.mapNftContractDocuments(
+      nfts,
+      selectedCurrency,
+      chainCoinPrices,
+    );
     //#endregion
 
     //#region add logos for eth contracts
     contracts = await Promise.all(
       contracts.map(async (contract) => {
+        const price = await this.nftDatabaseService.priceOf(contract.id);
+
+        const latestTransfer = await this.nftDatabaseService.latestTransferOf(
+          contract.id,
+        );
+
         if (contract.chain.id !== 'eth') {
-          return { ...contract, logo: defaultLogo };
+          return {
+            ...contract,
+            fetchTimestamp: latestTransfer?.blockTimestamp,
+            logo: defaultLogo,
+            price,
+          };
         }
+
         const metadata = await this.openseaService.metadataOf(
           contract.contractAddress,
         );
+
         if (!metadata?.image_url) {
           return contract;
         }
+
         return {
           ...contract,
+          fetchTimestamp: latestTransfer?.blockTimestamp,
           logo: metadata.image_url,
+          price,
         };
       }),
     );
@@ -126,6 +157,7 @@ export class NftClientService {
   private mapNftContractDocuments(
     nfts: moralis.NftOwner[],
     selectedCurrency: CurrencyDto,
+    chainCoinPrices: CoinPrice[],
   ): NftContractDocument[] {
     const byContractAddress = _.groupBy(
       nfts,
@@ -138,6 +170,10 @@ export class NftClientService {
       const balance = _.sumBy(nfts, (it) => Number(it.amount));
 
       const chainMetadata = chains[nfts[0].chain_id];
+
+      const chainCoinPrice = chainCoinPrices.find(
+        (it) => it.coinId === chains[nfts[0].chain_id].token.coinId,
+      );
 
       return {
         id,
@@ -152,16 +188,37 @@ export class NftClientService {
         },
         contractAddress: nfts[0].token_address,
         fiatSymbol: selectedCurrency.symbol,
+        links: {
+          token: `${chainMetadata.explorer}address/${nfts[0].token_address}`,
+        },
         nfts: nfts.map((nft) => ({ tokenId: nft.token_id })),
-        price: 0,
-        priceFormatted: '?',
         name: nfts[0].name,
         ownerAddresses: nfts.map((nft) => nft.owner_of),
         symbol: nfts[0].symbol,
-        value: 0,
-        valueFormatted: 'Price ?',
-        valueFiat: 0,
-        valueFiatFormatted: 'Price ?',
+        priceFiat: {
+          _eval: true,
+          scope: {
+            price: '$.price',
+            rate: chainCoinPrice.price,
+          },
+          expression: 'rate * price',
+        },
+        value: {
+          _eval: true,
+          scope: {
+            price: '$.price',
+            balance: '$.balance',
+          },
+          expression: 'balance * price',
+        },
+        valueFiat: {
+          _eval: true,
+          scope: {
+            value: '$.value',
+            rate: chainCoinPrice.price,
+          },
+          expression: 'rate * value',
+        },
       };
     });
   }

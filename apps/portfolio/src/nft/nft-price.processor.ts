@@ -3,6 +3,7 @@ import {
   chains,
   CoingeckoService,
   logger,
+  moralis,
   MoralisService,
   PUBLISH_CLIENT,
 } from '@app/sdk';
@@ -10,6 +11,7 @@ import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { validate } from 'bycontract';
 import { Redis } from 'ioredis';
+import _ from 'lodash';
 import moment from 'moment';
 import { RedisService } from 'nestjs-redis';
 import { NftContractDocument } from './dto/nft-contract.document';
@@ -34,38 +36,25 @@ export class NftPriceProcessor {
     const selectedCurrency = validate(job.data.selectedCurrency, 'object');
     const contract: NftContractDocument = validate(job.data.contract, 'object');
 
-    const latestTransfer = await this.nftDatabaseService.latestTransferOf(
+    let transferCount = await this.nftDatabaseService.transferCount(
       contract.id,
     );
 
-    logger.log(
-      `Starting to fetch ${contract.name} from ${moment
-        .unix(latestTransfer.blockTimestamp)
-        .format()}`,
-    );
-
-    let cursor = latestTransfer?.cursor;
-
     while (true) {
-      const { cursor: newCursor, transfers: moralisTransfers } =
-        await this.moralisService.nextTransfersOf(
+      const moralisTransfers: moralis.NftTransfer[] =
+        await this.moralisService.nftTransfersOf(
           contract.chain.id,
           contract.contractAddress,
-          cursor,
+          transferCount,
         );
 
-      if (
-        !newCursor ||
-        !Array.isArray(moralisTransfers) ||
-        moralisTransfers.length === 0
-      ) {
+      if (moralisTransfers.length === 0) {
         break;
       }
 
       const transfers = this.nftDatabaseService.mapMoralisTransfers(
         contract,
         moralisTransfers,
-        cursor,
       );
 
       await this.nftDatabaseService.saveTransfers(transfers);
@@ -81,6 +70,8 @@ export class NftPriceProcessor {
           'Skipping patch sync state due to missing block timestamp in transfers',
         );
       } else {
+        const price = await this.nftDatabaseService.priceOf(contract.id);
+
         const layers = [
           {
             id: `nfts-sync-state-${contract.id}`,
@@ -90,6 +81,10 @@ export class NftPriceProcessor {
               {
                 id: contract.id,
                 fetchTimestamp: latestTimestamp,
+              },
+              {
+                id: contract.id,
+                price,
               },
             ],
           },
@@ -104,46 +99,12 @@ export class NftPriceProcessor {
         );
       }
 
-      if (transfers.length < 0) {
-        break;
-      }
-
-      cursor = newCursor;
+      transferCount += transfers.length;
     }
 
-    const now = moment().unix();
+    const price = await this.nftDatabaseService.priceOf(contract.id);
 
-    console.log('here7');
-
-    let transfers = await this.nftDatabaseService.latestTransfersWithValueOf(
-      contract.id,
-      now - 3600,
-    );
-
-    if (transfers.length === 0) {
-      transfers = [
-        await this.nftDatabaseService.latestTransferWithValueOf(contract.id),
-      ];
-    }
-
-    if (transfers.length > 0) {
-      const chainCoinIds = Object.values(chains).map((it) => it.token.coinId);
-
-      const chainCoinPrices = await this.coingeckoService.latestPricesOf(
-        chainCoinIds.filter((it) => !!it),
-        selectedCurrency.id,
-      );
-
-      const price = Math.min(
-        ...transfers
-          .map((transfer) => transfer.value)
-          .filter((it) => !isNaN(it)),
-      );
-
-      const chainCoinPrice = chainCoinPrices.find(
-        (it) => it.coinId === chains[contract.chain.id].token.coinId,
-      );
-
+    if (!!price) {
       const layers = [
         {
           id: `nfts-price-${contract.contractAddress}`,
@@ -153,36 +114,6 @@ export class NftPriceProcessor {
             {
               id: contract.id,
               price,
-            },
-            {
-              id: contract.id,
-              priceFiat: {
-                _eval: true,
-                scope: {
-                  price: '$.price',
-                  rate: chainCoinPrice.price,
-                },
-                expression: 'rate * price',
-              },
-              value: {
-                _eval: true,
-                scope: {
-                  price: '$.price',
-                  balance: '$.balance',
-                },
-                expression: 'balance * price',
-              },
-            },
-            {
-              id: contract.id,
-              valueFiat: {
-                _eval: true,
-                scope: {
-                  value: '$.value',
-                  rate: chainCoinPrice.price,
-                },
-                expression: 'rate * value',
-              },
             },
           ],
         },
