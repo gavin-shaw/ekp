@@ -1,0 +1,3 @@
+redis:
+  auth:
+    password: "{{ .Values.redis.password }}"

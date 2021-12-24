@@ -34,6 +34,8 @@ spec:
               value: 'mongo'
             - name: REDIS_HOST
               value: 'redis'
+            - name: REDIS_PASSWORD
+              value: '{{ .Values.redis.password }}'
           ports:
             - containerPort: 3001
               protocol: TCP
