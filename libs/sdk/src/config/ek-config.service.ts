@@ -63,15 +63,11 @@ export class EkConfigService
             name: PUBLISH_CLIENT,
             host: configService.redisHost,
             port: configService.redisPort,
-            username: configService.redisUser,
-            password: configService.redisPassword,
           },
           {
             name: SUBSCRIBE_CLIENT,
             host: configService.redisHost,
             port: configService.redisPort,
-            username: configService.redisUser,
-            password: configService.redisPassword,
           },
         ];
       },
@@ -84,8 +80,6 @@ export class EkConfigService
       store: redisStore,
       host: this.redisHost,
       port: this.redisPort,
-      username: this.redisUser,
-      password: this.redisPassword,
       ttl: 0,
     };
   }
@@ -93,8 +87,6 @@ export class EkConfigService
   createMongooseOptions(): MongooseModuleOptions {
     return {
       uri: `mongodb://${this.mongoHost}:${this.mongoPort}/ekp`,
-      user: this.mongoUser,
-      pass: this.mongoPassword,
     };
   }
 
@@ -103,8 +95,6 @@ export class EkConfigService
       redis: {
         host: this.redisHost,
         port: this.redisPort,
-        username: this.redisUser,
-        password: this.redisPassword,
       },
     };
   }
