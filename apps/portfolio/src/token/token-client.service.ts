@@ -9,6 +9,7 @@ import {
   CurrencyDto,
   formatters,
   LayerDto,
+  logger,
   moralis,
   MoralisService,
 } from '@app/sdk';
@@ -33,87 +34,94 @@ export class TokenClientService {
   async handleClientStateChangedEvent(
     clientStateChangedEvent: ClientStateChangedEvent,
   ) {
-    const clientId = validate(clientStateChangedEvent.clientId, 'string');
+    try {
+      const clientId = validate(clientStateChangedEvent.clientId, 'string');
 
-    const selectedCurrency = validate(
-      clientStateChangedEvent.state?.client.selectedCurrency,
-      'object',
-    );
+      const selectedCurrency = validate(
+        clientStateChangedEvent.state?.client.selectedCurrency,
+        'object',
+      );
 
-    const watchedWallets = validate(
-      clientStateChangedEvent.state?.client.watchedWallets,
-      'Array.<object>',
-    );
+      const watchedWallets = validate(
+        clientStateChangedEvent.state?.client.watchedWallets,
+        'Array.<object>',
+      );
 
-    const requestPromises = [];
+      const requestPromises = [];
 
-    for (const chainId of chainIds) {
-      for (const watchedWallet of watchedWallets) {
-        const address = validate(watchedWallet.address, 'string');
+      for (const chainId of chainIds) {
+        for (const watchedWallet of watchedWallets) {
+          const address = validate(watchedWallet.address, 'string');
 
-        requestPromises.push(this.moralisService.tokensOf(chainId, address));
+          requestPromises.push(this.moralisService.tokensOf(chainId, address));
+        }
       }
+
+      const tokenBalances: moralis.TokenBalance[] = _.flatten(
+        await Promise.all(requestPromises),
+      );
+
+      const coinIds = tokenBalances
+        .map((it) =>
+          this.coingeckoService.coinIdOf(it.chain_id, it.token_address),
+        )
+        .filter((it) => !!it);
+
+      const coinPrices = await this.coingeckoService.latestPricesOf(
+        coinIds,
+        selectedCurrency.id,
+      );
+
+      const tokens = this.mapTokenContractDocuments(
+        tokenBalances,
+        selectedCurrency,
+        coinPrices,
+      );
+
+      for (const token of tokens) {
+        this.fillAndEmitContract(clientId, token);
+      }
+
+      //#region remove old tokens
+      //#endregion
+
+      const totalValue = _.sumBy(
+        tokens,
+        (token) => token.priceFiat * token.balance,
+      );
+
+      const now = moment().unix();
+
+      const layers = <LayerDto[]>[
+        {
+          id: `token-stats`,
+          collectionName: 'portfolioStats',
+          timestamp: now,
+          set: [
+            {
+              id: 'token_value',
+              created: now,
+              updated: now,
+              name: 'Token Value',
+              value: formatters.currencyValue(
+                totalValue,
+                selectedCurrency.symbol,
+              ),
+            },
+          ],
+        },
+      ];
+
+      this.eventEmitter.emit(ADD_LAYERS, {
+        channelId: clientId,
+        layers,
+      });
+    } catch (error) {
+      logger.error(
+        `(TokenClientService) Error occurred handling client state.`,
+      );
+      logger.error(error);
     }
-
-    const tokenBalances: moralis.TokenBalance[] = _.flatten(
-      await Promise.all(requestPromises),
-    );
-
-    const coinIds = tokenBalances
-      .map((it) =>
-        this.coingeckoService.coinIdOf(it.chain_id, it.token_address),
-      )
-      .filter((it) => !!it);
-
-    const coinPrices = await this.coingeckoService.latestPricesOf(
-      coinIds,
-      selectedCurrency.id,
-    );
-
-    const tokens = this.mapTokenContractDocuments(
-      tokenBalances,
-      selectedCurrency,
-      coinPrices,
-    );
-
-    for (const token of tokens) {
-      this.fillAndEmitContract(clientId, token);
-    }
-
-    //#region remove old tokens
-    //#endregion
-
-    const totalValue = _.sumBy(
-      tokens,
-      (token) => token.priceFiat * token.balance,
-    );
-
-    const now = moment().unix();
-
-    const layers = <LayerDto[]>[
-      {
-        id: `token-stats`,
-        collectionName: 'portfolioStats',
-        timestamp: now,
-        set: [
-          {
-            id: 'token_value',
-            created: now,
-            updated: now,
-            name: 'Token Value',
-            value: formatters.currencyValue(
-              totalValue,
-              selectedCurrency.symbol,
-            ),
-          },
-        ],
-      },
-    ];
-
-    this.eventEmitter.emit(ADD_LAYERS, {
-      channelId: clientId,
-      layers,
-    });
   }
 
   private async fillAndEmitContract(

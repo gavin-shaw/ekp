@@ -8,6 +8,7 @@ import {
   CoinPrice,
   CurrencyDto,
   JOIN_ROOM,
+  logger,
   moralis,
   MoralisService,
   OpenseaService,
@@ -39,119 +40,124 @@ export class NftClientService {
   async handleClientStateChangedEvent(
     clientStateChangedEvent: ClientStateChangedEvent,
   ) {
-    //#region validate input
-    const clientId = validate(clientStateChangedEvent.clientId, 'string');
+    try {
+      //#region validate input
+      const clientId = validate(clientStateChangedEvent.clientId, 'string');
 
-    const selectedCurrency = validate(
-      clientStateChangedEvent.state?.client.selectedCurrency,
-      'object',
-    );
+      const selectedCurrency = validate(
+        clientStateChangedEvent.state?.client.selectedCurrency,
+        'object',
+      );
 
-    const watchedWallets = validate(
-      clientStateChangedEvent.state?.client.watchedWallets,
-      'Array.<object>',
-    );
-    //#endregion
+      const watchedWallets = validate(
+        clientStateChangedEvent.state?.client.watchedWallets,
+        'Array.<object>',
+      );
+      //#endregion
 
-    //#region get contracts for client
-    const requestPromises = [];
+      //#region get contracts for client
+      const requestPromises = [];
 
-    for (const chainId of chainIds) {
-      for (const watchedWallet of watchedWallets) {
-        const address = validate(watchedWallet.address, 'string');
+      for (const chainId of chainIds) {
+        for (const watchedWallet of watchedWallets) {
+          const address = validate(watchedWallet.address, 'string');
 
-        requestPromises.push(this.moralisService.nftsOf(chainId, address));
+          requestPromises.push(this.moralisService.nftsOf(chainId, address));
+        }
       }
-    }
 
-    const nfts: moralis.NftOwner[] = _.flatten(
-      await Promise.all(requestPromises),
-    );
+      const nfts: moralis.NftOwner[] = _.flatten(
+        await Promise.all(requestPromises),
+      );
 
-    const chainCoinIds = Object.values(chains).map((it) => it.token.coinId);
+      const chainCoinIds = Object.values(chains).map((it) => it.token.coinId);
 
-    const chainCoinPrices = await this.coingeckoService.latestPricesOf(
-      chainCoinIds,
-      selectedCurrency.id,
-    );
+      const chainCoinPrices = await this.coingeckoService.latestPricesOf(
+        chainCoinIds,
+        selectedCurrency.id,
+      );
 
-    let contracts = this.mapNftContractDocuments(
-      nfts,
-      selectedCurrency,
-      chainCoinPrices,
-    );
-    //#endregion
+      let contracts = this.mapNftContractDocuments(
+        nfts,
+        selectedCurrency,
+        chainCoinPrices,
+      );
+      //#endregion
 
-    //#region add logos for eth contracts
-    contracts = await Promise.all(
-      contracts.map(async (contract) => {
-        const price = await this.nftDatabaseService.priceOf(contract.id);
+      //#region add logos for eth contracts
+      contracts = await Promise.all(
+        contracts.map(async (contract) => {
+          const price = await this.nftDatabaseService.priceOf(contract.id);
 
-        const latestTransfer = await this.nftDatabaseService.latestTransferOf(
-          contract.id,
-        );
+          const latestTransfer = await this.nftDatabaseService.latestTransferOf(
+            contract.id,
+          );
 
-        if (contract.chain.id !== 'eth') {
+          if (contract.chain.id !== 'eth') {
+            return {
+              ...contract,
+              fetchTimestamp: latestTransfer?.blockTimestamp,
+              logo: defaultLogo,
+              price,
+            };
+          }
+
+          const metadata = await this.openseaService.metadataOf(
+            contract.contractAddress,
+          );
+
+          if (!metadata?.image_url) {
+            return contract;
+          }
+
           return {
             ...contract,
             fetchTimestamp: latestTransfer?.blockTimestamp,
-            logo: defaultLogo,
+            logo: metadata.image_url,
             price,
           };
-        }
+        }),
+      );
+      //#endregion
 
-        const metadata = await this.openseaService.metadataOf(
-          contract.contractAddress,
-        );
+      //#region emit nft contracts to the client
+      const layers = [
+        {
+          id: 'nft-contracts-layer',
+          collectionName: 'nfts',
+          patch: contracts,
+        },
+      ];
 
-        if (!metadata?.image_url) {
-          return contract;
-        }
-
-        return {
-          ...contract,
-          fetchTimestamp: latestTransfer?.blockTimestamp,
-          logo: metadata.image_url,
-          price,
-        };
-      }),
-    );
-    //#endregion
-
-    //#region emit nft contracts to the client
-    const layers = [
-      {
-        id: 'nft-contracts-layer',
-        collectionName: 'nfts',
-        patch: contracts,
-      },
-    ];
-
-    this.eventEmitter.emit(ADD_LAYERS, {
-      channelId: clientId,
-      layers,
-    });
-    //#endregion
-
-    //#region join the client to the rooms for the contract
-
-    for (const contract of contracts) {
-      this.eventEmitter.emit(JOIN_ROOM, {
-        clientId,
-        roomName: contract.id,
+      this.eventEmitter.emit(ADD_LAYERS, {
+        channelId: clientId,
+        layers,
       });
-    }
+      //#endregion
 
-    //#endregion
+      //#region join the client to the rooms for the contract
 
-    //#region add nft price updates to the bull queue
-    for (const contract of contracts) {
-      this.nftPriceQueue.add({
-        selectedCurrency,
-        contract,
-      });
+      for (const contract of contracts) {
+        this.eventEmitter.emit(JOIN_ROOM, {
+          clientId,
+          roomName: contract.id,
+        });
+      }
+
+      //#endregion
+
+      //#region add nft price updates to the bull queue
+      for (const contract of contracts) {
+        this.nftPriceQueue.add({
+          selectedCurrency,
+          contract,
+        });
+      }
+      //#endregion
+    } catch (error) {
+      logger.error(`(NftClientService) Error occurred handling client state.`);
+      logger.error(error);
     }
-    //#endregion
   }
 
   private mapNftContractDocuments(
