@@ -13,7 +13,7 @@ export const tokenList = {
   columns: [
     {
       id: 'asset',
-      value: '$.name',
+      value: '$.symbol',
       filterable: true,
       sortable: true,
       cell: [
@@ -26,7 +26,7 @@ export const tokenList = {
               size: 28,
             },
           ],
-          title: '$.name',
+          title: '$.symbol',
           subtitle: {
             value: '$.priceFiat',
             formatter: 'currency',
