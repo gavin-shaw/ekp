@@ -31,9 +31,9 @@ spec:
             - name: MORALIS_SERVER_URL
               value: '{{ .Values.moralis.serverUrl }}'
             - name: MONGO_HOST
-              value: 'mongo'
+              value: 'ekp-mongodb'
             - name: REDIS_HOST
-              value: 'redis'
+              value: 'ekp-redis-master'
             - name: REDIS_PASSWORD
               value: '{{ .Values.redis.password }}'
           ports:
