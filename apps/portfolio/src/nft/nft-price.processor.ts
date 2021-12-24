@@ -1,6 +1,5 @@
 import {
   ADD_LAYERS,
-  CoingeckoService,
   logger,
   moralis,
   MoralisService,
@@ -18,7 +17,6 @@ import { NFT_PRICE_QUEUE } from './queues';
 @Processor(NFT_PRICE_QUEUE)
 export class NftPriceProcessor {
   constructor(
-    private coingeckoService: CoingeckoService,
     private moralisService: MoralisService,
     private nftDatabaseService: NftDatabaseService,
     redisService: RedisService,
@@ -28,7 +26,6 @@ export class NftPriceProcessor {
 
   private readonly publishClient: Redis;
 
-  @Process({ concurrency: 16 })
   async process(job: Job<any>) {
     const contract: NftContractDocument = validate(job.data.contract, 'object');
 
