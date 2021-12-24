@@ -1,4 +1,4 @@
 redis:
   auth:
-    user: "{{ .Values.redis.user }}"
-    password: "{{ .Values.redis.password }}"
+    user: "ekp"
+    password: "password"
