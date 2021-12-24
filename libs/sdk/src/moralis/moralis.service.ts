@@ -1,6 +1,5 @@
 import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common';
 import retry from 'async-retry';
-import axios from 'axios';
 import Bottleneck from 'bottleneck';
 import { validate } from 'bycontract';
 import { Cache } from 'cache-manager';
@@ -16,8 +15,6 @@ import {
   TokenBalance,
   TokenMetadata,
 } from './model/types';
-
-const BASE_URL = 'https://deep-index.moralis.io/api/v2';
 
 @Injectable()
 export class MoralisService {
@@ -242,150 +239,48 @@ export class MoralisService {
   async nftTransfersOf(
     chainId: ChainList,
     contractAddress: string,
-    offset: number,
+    offset = 0,
   ): Promise<NftTransfer[]> {
     validate(
       [chainId, contractAddress, offset],
       ['string', 'string', 'number'],
     );
 
+    const cacheKey = `moralis.nftTransfersOf['${chainId}']['${contractAddress}'][${offset}]`;
     const debugMessage = `Web3API > getContractNFTTransfers('${chainId}', '${contractAddress}', ${offset})`;
 
-    return retry(
-      this.limiter.wrap(async () => {
-        logger.debug(debugMessage);
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            logger.debug(debugMessage);
 
-        const cursor = btoa(
-          JSON.stringify({
-            order: 'ASC',
-            offset,
-            limit: 500,
-            token_address: contractAddress,
+            const response =
+              await Moralis.Web3API.token.getContractNFTTransfers({
+                address: contractAddress,
+                chain: chainId,
+                offset,
+              });
+
+            if (!Array.isArray(response?.result)) {
+              return [];
+            }
+
+            return response.result.map((it) => ({ ...it, chain_id: chainId }));
           }),
-        );
-
-        const response = await Moralis.Web3API.token.getContractNFTTransfers({
-          address: contractAddress,
-          chain: chainId,
-          cursor,
-        });
-
-        if (!Array.isArray(response?.result)) {
-          return [];
-        }
-
-        return response.result.map((it) => ({ ...it, chain_id: chainId }));
-      }),
-      {
-        onRetry: (error: any) => {
-          console.error(error);
-          logger.warn(
-            `Retry due to ${error.message ?? error.error}: ${debugMessage}`,
-          );
-        },
-      },
-    );
-  }
-
-  async nextTransfersOf(
-    chainId: ChainList,
-    contractAddress: string,
-    cursor?: string,
-  ): Promise<{ cursor: string; transfers: NftTransfer[] }> {
-    validate(
-      [chainId, contractAddress, cursor],
-      ['string', 'string', 'string='],
-    );
-
-    let url = `${BASE_URL}/nft/${contractAddress}/transfers?chain=${chainId}&format=decimal`;
-
-    if (!!cursor) {
-      url += `&cursor=${cursor}`;
-    }
-
-    const debugMessage = `GET ${url}`;
-
-    return retry(
-      this.limiter.wrap(async () => {
-        logger.debug(debugMessage);
-
-        const response = await axios.get(url, {
-          headers: {
-            'X-API-Key': process.env.MORALIS_API_KEY,
-          },
-        });
-
-        if (!response?.data) {
-          return undefined;
-        }
-
-        return {
-          cursor: response.data.cursor,
-          transfers: response.data.result?.map((it: NftTransfer) => ({
-            ...it,
-            chain_id: chainId,
-          })),
-        };
-      }),
-      {
-        onRetry: (error) =>
-          logger.warn(`Retry due to ${error.message}: ${debugMessage}`),
-      },
-    );
-  }
-
-  async nftContractTransfersOf(
-    chainId: ChainList,
-    contractAddress: string,
-    cursor?: string,
-  ): Promise<{ cursor: string; transfers: NftTransfer[] }> {
-    const transfers: NftTransfer[] = [];
-
-    // Uncached, use cursor instead
-
-    let nextCursor = cursor;
-
-    while (true) {
-      const url =
-        `${BASE_URL}/nft/${contractAddress}/transfers?chain=${chainId}&format=decimal` +
-        (!nextCursor ? '' : `&cursor=${nextCursor}`);
-
-      const transfersResponse = await retry(
-        this.limiter.wrap(async () => {
-          logger.debug(`GET ${url}`);
-
-          return axios.get(url, {
-            headers: {
-              'X-API-Key': process.env.MORALIS_API_KEY,
+          {
+            onRetry: (error: any) => {
+              console.error(error);
+              logger.warn(
+                `Retry due to ${error.message ?? error.error}: ${debugMessage}`,
+              );
             },
-          });
-        }),
-        {
-          onRetry: (error) =>
-            logger.warn(`Retry due to ${error.message}: ${url}`),
-        },
-      );
-      const data = transfersResponse?.data;
-
-      if (!data || !data.cursor) {
-        return {
-          cursor: nextCursor,
-          transfers,
-        };
-      }
-
-      nextCursor = data.cursor;
-
-      const newTransfers = transfersResponse?.data?.result;
-
-      if (!Array.isArray(newTransfers) || newTransfers.length === 0) {
-        return {
-          cursor: nextCursor,
-          transfers,
-        };
-      }
-
-      transfers.push(data.result);
-    }
+          },
+        ),
+      {
+        ttl: 900000,
+      },
+    );
   }
 }

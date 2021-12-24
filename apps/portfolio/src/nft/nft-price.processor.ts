@@ -5,7 +5,6 @@ import {
   MoralisService,
   PUBLISH_CLIENT,
 } from '@app/sdk';
-import { Job } from 'bull';
 import { validate } from 'bycontract';
 import { Redis } from 'ioredis';
 import { RedisService } from 'nestjs-redis';
@@ -17,13 +16,11 @@ export class NftPriceProcessor {
     private moralisService: MoralisService,
     private nftDatabaseService: NftDatabaseService,
     redisService: RedisService,
-  ) {
-    this.publishClient = redisService.getClient(PUBLISH_CLIENT);
-  }
+  ) {}
 
   private readonly publishClient: Redis;
 
-  async process(job: Job<any>) {
+  async process(job: any) {
     const contract: NftContractDocument = validate(job.data.contract, 'object');
 
     let transferCount = await this.nftDatabaseService.transferCount(

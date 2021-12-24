@@ -70,7 +70,7 @@ export const nftList = {
             },
           ],
           subtitle: {
-            value: 'as of {{ age }}',
+            value: '{{ age }}',
             formatter: 'template',
             scope: {
               age: {
