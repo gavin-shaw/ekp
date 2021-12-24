@@ -23,7 +23,7 @@ spec:
             - name: EKP_PLUGIN_ID
               value: 'portfolio'
             - name: EKP_PLUGIN_NAME
-              value: 'portfolio'
+              value: 'Portfolio'
             - name: MORALIS_APP_ID
               value: '{{ .Values.moralis.appId }}'
             - name: MORALIS_API_KEY

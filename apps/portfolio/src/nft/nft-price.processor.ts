@@ -1,6 +1,5 @@
 import {
   ADD_LAYERS,
-  chains,
   CoingeckoService,
   logger,
   moralis,
@@ -11,8 +10,6 @@ import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { validate } from 'bycontract';
 import { Redis } from 'ioredis';
-import _ from 'lodash';
-import moment from 'moment';
 import { RedisService } from 'nestjs-redis';
 import { NftContractDocument } from './dto/nft-contract.document';
 import { NftDatabaseService } from './nft-database.service';
@@ -33,7 +30,6 @@ export class NftPriceProcessor {
 
   @Process({ concurrency: 16 })
   async process(job: Job<any>) {
-    const selectedCurrency = validate(job.data.selectedCurrency, 'object');
     const contract: NftContractDocument = validate(job.data.contract, 'object');
 
     let transferCount = await this.nftDatabaseService.transferCount(
@@ -80,11 +76,8 @@ export class NftPriceProcessor {
             patch: [
               {
                 id: contract.id,
-                fetchTimestamp: latestTimestamp,
-              },
-              {
-                id: contract.id,
                 price,
+                fetchTimestamp: latestTimestamp,
               },
             ],
           },

@@ -259,7 +259,7 @@ export class MoralisService {
           JSON.stringify({
             order: 'ASC',
             offset,
-            limit: 1000,
+            limit: 500,
             token_address: contractAddress,
           }),
         );
