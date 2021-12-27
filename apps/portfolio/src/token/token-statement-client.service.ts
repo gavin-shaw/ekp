@@ -1,6 +1,5 @@
 import {
   ADD_LAYERS,
-  chainIds,
   chains,
   ClientStateChangedEvent,
   CLIENT_STATE_CHANGED,
@@ -19,11 +18,10 @@ import { validate } from 'bycontract';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
-import { defaultLogo } from '../util/constants';
 import { TokenContractDocument } from './dtos';
 
 @Injectable()
-export class TokenClientService {
+export class TokenStatementClientService {
   constructor(
     private coingeckoService: CoingeckoService,
     private eventEmitter: EventEmitter2,
@@ -59,28 +57,47 @@ export class TokenClientService {
         clientStateChangedEvent,
       );
 
-      //#region get token balances
-      const requestPromises = [];
+      //#region get token transactions for
 
-      for (const chainId of chainIds) {
-        for (const watchedWallet of watchedWallets) {
-          const address = validate(watchedWallet.address, 'string');
+      const promises = [];
 
-          requestPromises.push(this.moralisService.tokensOf(chainId, address));
+      for (const chain of Object.keys(chains)) {
+        for (const address of watchedWallets) {
+          promises.push(async () => {
+            const transfers = [];
+            const transactions = [];
+
+            await Promise.all([
+              this.getAllTransfersOf(chain, address).then((its) =>
+                transfers.push(...its),
+              ),
+              this.getAllTransactionsOf(chain, address).then((its) =>
+                transactions.push(...its),
+              ),
+            ]);
+
+            const plItems = this.mapPlItems(
+              transfers,
+              transactions,
+              selectedCurrency,
+            );
+
+            return plItems;
+          });
         }
       }
 
-      const tokenBalances: moralis.TokenBalance[] = _.flatten(
-        await Promise.all(requestPromises),
-      );
+      const transfers = await Promise.all(promises);
+
       //#endregion
 
       //#region get fiat prices
-      const coinIds = tokenBalances
-        .map((it) =>
-          this.coingeckoService.coinIdOf(it.chain_id, it.token_address),
-        )
-        .filter((it) => !!it);
+
+      const coinIds = _.uniq(
+        transfers
+          .map((it) => this.coingeckoService.coinIdOf(it.chain_id, it.address))
+          .filter((it) => !!it),
+      );
 
       const coinPrices = await this.coingeckoService.latestPricesOf(
         coinIds,
@@ -88,8 +105,8 @@ export class TokenClientService {
       );
       //#endregion
 
-      //#region format tokens
-      const tokens = this.mapTokenContractDocuments(
+      //#region format statement lines
+      const tokens = this.mapDocuments(
         tokenBalances,
         selectedCurrency,
         coinPrices,
@@ -146,34 +163,7 @@ export class TokenClientService {
     }
   }
 
-  private async fillAndEmitContract(
-    clientId: string,
-    token: TokenContractDocument,
-  ) {
-    const imageUrl = !!token.coinId
-      ? await this.coingeckoService.getImageUrl(token.coinId)
-      : undefined;
-
-    const updatedToken = {
-      ...token,
-      logo: imageUrl ?? defaultLogo,
-    };
-
-    const layers = <LayerDto[]>[
-      {
-        id: `token-contract-${token.id}`,
-        collectionName: 'tokens',
-        set: [updatedToken],
-      },
-    ];
-
-    this.eventEmitter.emit(ADD_LAYERS, {
-      channelId: clientId,
-      layers,
-    });
-  }
-
-  private mapTokenContractDocuments(
+  private mapDocuments(
     tokenBalances: moralis.TokenBalance[],
     selectedCurrency: CurrencyDto,
     coinPrices: CoinPrice[],

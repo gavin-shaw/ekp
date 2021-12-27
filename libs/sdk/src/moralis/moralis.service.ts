@@ -238,6 +238,94 @@ export class MoralisService {
     );
   }
 
+  async tokenTransfersOf(
+    chainId: ChainList,
+    ownerAddress: string,
+    offset = 0,
+  ): Promise<NftTransfer[]> {
+    validate([chainId, ownerAddress, offset], ['string', 'string', 'number']);
+
+    const cacheKey = `moralis.transfersOf['${chainId}']['${ownerAddress}'][${offset}]`;
+    const debugMessage = `Web3API > getTokenTransfers('${chainId}', '${ownerAddress}', ${offset})`;
+
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            logger.debug(debugMessage);
+
+            const response = await Moralis.Web3API.account.getTokenTransfers({
+              address: ownerAddress,
+              chain: chainId,
+              offset,
+            });
+
+            if (!Array.isArray(response?.result)) {
+              return [];
+            }
+
+            return response.result.map((it) => ({ ...it, chain_id: chainId }));
+          }),
+          {
+            onRetry: (error: any) => {
+              console.error(error);
+              logger.warn(
+                `Retry due to ${error.message ?? error.error}: ${debugMessage}`,
+              );
+            },
+          },
+        ),
+      {
+        ttl: 3600000,
+      },
+    );
+  }
+
+  async transactionsOf(
+    chainId: ChainList,
+    ownerAddress: string,
+    offset = 0,
+  ): Promise<NftTransfer[]> {
+    validate([chainId, ownerAddress, offset], ['string', 'string', 'number']);
+
+    const cacheKey = `moralis.transactionsOf['${chainId}']['${ownerAddress}'][${offset}]`;
+    const debugMessage = `Web3API > getTransactions('${chainId}', '${ownerAddress}', ${offset})`;
+
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            logger.debug(debugMessage);
+
+            const response = await Moralis.Web3API.account.getTransactions({
+              address: ownerAddress,
+              chain: chainId,
+              offset,
+            });
+
+            if (!Array.isArray(response?.result)) {
+              return [];
+            }
+
+            return response.result.map((it) => ({ ...it, chain_id: chainId }));
+          }),
+          {
+            onRetry: (error: any) => {
+              console.error(error);
+              logger.warn(
+                `Retry due to ${error.message ?? error.error}: ${debugMessage}`,
+              );
+            },
+          },
+        ),
+      {
+        ttl: 3600000,
+      },
+    );
+  }
+
   async nftTransfersOf(
     chainId: ChainList,
     contractAddress: string,
