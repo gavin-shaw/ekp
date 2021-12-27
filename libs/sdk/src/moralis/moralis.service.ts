@@ -14,6 +14,8 @@ import {
   NftTransfer,
   TokenBalance,
   TokenMetadata,
+  TokenTransfer,
+  Transaction,
 } from './model/types';
 
 @Injectable()
@@ -41,7 +43,7 @@ export class MoralisService {
   ): Promise<TokenMetadata> {
     validate([chainId, contractAddress], ['string', 'string']);
 
-    const cacheKey = `moralis.tokenMetadata['${chainId}']['${contractAddress}']`;
+    const cacheKey = `moralis.tokenMetadataOf['${chainId}']['${contractAddress}']`;
     const debugMessage = `Web3API > getTokenMetadata('${chainId}', '${contractAddress}')`;
 
     return this.cache.wrap(
@@ -61,7 +63,10 @@ export class MoralisService {
             }
 
             return {
-              ...result[0],
+              ...{
+                ...result[0],
+                chain_id: chainId,
+              },
             };
           }),
           {
@@ -242,7 +247,7 @@ export class MoralisService {
     chainId: ChainList,
     ownerAddress: string,
     offset = 0,
-  ): Promise<NftTransfer[]> {
+  ): Promise<TokenTransfer[]> {
     validate([chainId, ownerAddress, offset], ['string', 'string', 'number']);
 
     const cacheKey = `moralis.transfersOf['${chainId}']['${ownerAddress}'][${offset}]`;
@@ -282,11 +287,81 @@ export class MoralisService {
     );
   }
 
+  async allTransactionsOf(
+    chainId: ChainList,
+    ownerAddress: string,
+  ): Promise<Transaction[]> {
+    validate([chainId, ownerAddress], ['string', 'string']);
+
+    const transactions = [];
+
+    const cacheKey = `moralis.allTransactionsOf['${chainId}']['${ownerAddress}']`;
+
+    return this.cache.wrap(
+      cacheKey,
+      async () => {
+        while (true) {
+          const nextTransactions = await this.transactionsOf(
+            chainId,
+            ownerAddress,
+            transactions.length,
+          );
+
+          if (nextTransactions.length === 0) {
+            break;
+          }
+
+          transactions.push(...nextTransactions);
+        }
+
+        return transactions;
+      },
+      {
+        ttl: 3600000,
+      },
+    );
+  }
+
+  async allTokenTransfersOf(
+    chainId: ChainList,
+    ownerAddress: string,
+  ): Promise<TokenTransfer[]> {
+    validate([chainId, ownerAddress], ['string', 'string']);
+
+    const transfers = [];
+
+    const cacheKey = `moralis.allTokenTransfersOf['${chainId}']['${ownerAddress}']`;
+
+    return this.cache.wrap(
+      cacheKey,
+      async () => {
+        while (true) {
+          const nextTransfers = await this.tokenTransfersOf(
+            chainId,
+            ownerAddress,
+            transfers.length,
+          );
+
+          if (nextTransfers.length === 0) {
+            break;
+          }
+
+          transfers.push(...nextTransfers);
+        }
+
+        return transfers;
+      },
+      {
+        ttl: 3600000,
+      },
+    );
+  }
+
   async transactionsOf(
     chainId: ChainList,
     ownerAddress: string,
     offset = 0,
-  ): Promise<NftTransfer[]> {
+  ): Promise<Transaction[]> {
     validate([chainId, ownerAddress, offset], ['string', 'string', 'number']);
 
     const cacheKey = `moralis.transactionsOf['${chainId}']['${ownerAddress}'][${offset}]`;

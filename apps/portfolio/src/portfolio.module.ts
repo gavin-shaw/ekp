@@ -1,7 +1,7 @@
 import { GlobalModule } from '@app/sdk';
 import { Module } from '@nestjs/common';
 import { NftModule } from './nft/nft.module';
-import { TokenStatementClientService } from './token/token-statement-client.service';
+import { TokenStatementClientService } from './token/token-pnl-client.service';
 import { TokenModule } from './token/token.module';
 import { UiModule } from './ui/ui.module';
 

@@ -1,6 +1,7 @@
 import { nftList } from './nfts';
 import { portfolioStats } from './portfolio-stats.element';
 import { tokenList } from './tokens';
+import { pnlTable } from './tokens/pnl-table.element';
 
 export const homeElement = [
   {
@@ -13,7 +14,16 @@ export const homeElement = [
       {
         view: 'tabs',
         children: {
-          Tokens: [tokenList],
+          // TODO: use a list here, not a map, to be more consistent
+          Tokens: [
+            {
+              view: 'tabs',
+              children: {
+                Balances: [tokenList],
+                'P & L': [pnlTable],
+              },
+            },
+          ],
           NFTs: [nftList],
         },
       },

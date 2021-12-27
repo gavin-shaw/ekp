@@ -66,7 +66,7 @@ export const tokenList = {
             value: '$.balance',
             formatter: 'token',
           },
-          right: true,
+          right: true, // TODO: remove the need for this duplicate "right" attribute
         },
       ],
     },

@@ -14,7 +14,12 @@ export type TokenBalance = components['schemas']['erc20TokenBalance'] & {
 export type Transaction = components['schemas']['transaction'];
 export type TransactionCollection =
   components['schemas']['transactionCollection'];
+export type TokenTransfer = components['schemas']['erc20Transaction'] & {
+  chain_id: ChainId;
+};
+
 export interface TokenMetadata {
+  chain_id: string;
   address: string;
   decimals: string;
   logo?: string;

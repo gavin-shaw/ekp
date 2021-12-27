@@ -22,7 +22,12 @@ export class CoingeckoService {
     @Inject(CACHE_MANAGER) private cache: Cache,
     limiterService: LimiterService,
   ) {
-    this.limiter = limiterService.createLimiter('coingecko-limiter', 10);
+    this.limiter = limiterService.createLimiter('coingecko-limiter', {
+      minTime: 250,
+      reservoir: 50,
+      reservoirRefreshAmount: 50,
+      reservoirRefreshInterval: 60000,
+    });
   }
 
   limiter: Bottleneck;
@@ -51,10 +56,6 @@ export class CoingeckoService {
       () =>
         retry(
           this.limiter.wrap(async () => {
-            if (!coinId) {
-              return null;
-            }
-
             logger.debug('GET ' + url);
 
             const response = await axios.get(url);
@@ -71,6 +72,55 @@ export class CoingeckoService {
           },
         ),
       { ttl: 3600000 },
+    );
+  }
+
+  async historicPriceOf(
+    coinId: string,
+    fiatId: string,
+    date: string,
+  ): Promise<CoinPrice> {
+    validate([coinId, fiatId, date], ['string', 'string', 'string']);
+
+    const url = `${BASE_URL}/coins/${coinId}/history?date=${date}`;
+    const cacheKey = `coingecko.historicPriceOf['${coinId}']['${fiatId}']['${date}']`;
+
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            logger.debug('GET ' + url);
+
+            const response = await axios.get(url);
+
+            if (!response?.data) {
+              throw new Error('Failed to fetch currency rates from coingecko');
+            }
+
+            if (!response.data?.market_data?.current_price[fiatId]) {
+              return null;
+            }
+
+            const id = `${coinId}_${fiatId}_${date}`;
+
+            const price = response.data.market_data.current_price[fiatId];
+
+            return {
+              id,
+              coinId,
+              fiatId,
+              price,
+            };
+          }),
+          {
+            onRetry: (error) =>
+              logger.warn(`Retry due to ${error.message}: ${url}`),
+          },
+        ),
+      {
+        ttl: 0,
+      },
     );
   }
 
