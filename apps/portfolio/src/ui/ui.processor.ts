@@ -9,7 +9,7 @@ import { Job } from 'bull';
 import { validate } from 'bycontract';
 import moment from 'moment';
 import { UI_QUEUE } from '../queues';
-import { homeElement } from './elements/home/home.element';
+import homeElement from './elements/home.element';
 
 @Processor(UI_QUEUE)
 export class UiProcessor {
@@ -57,7 +57,7 @@ export class UiProcessor {
         id: 'portfolio',
         created: now,
         updated: now,
-        elements: homeElement,
+        elements: homeElement(),
       },
     ];
   }

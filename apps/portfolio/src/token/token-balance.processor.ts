@@ -1,16 +1,16 @@
 import {
-  chainIds,
+  ChainId,
   chains,
   ClientStateChangedEvent,
   CoingeckoService,
   CoinPrice,
   CurrencyDto,
   EventService,
-  formatters,
   LayerDto,
   logger,
   moralis,
   MoralisService,
+  TokenMetadata,
 } from '@app/sdk';
 import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
@@ -18,9 +18,10 @@ import { validate } from 'bycontract';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
+import * as Rx from 'rxjs';
 import { TOKEN_BALANCE_QUEUE } from '../queues';
-import { defaultLogo } from '../util/constants';
-import { TokenContractDocument } from './dtos';
+import { TokenBalanceDocument } from './dtos';
+import { TokenStatsDocument } from './dtos/token-stats.document';
 
 @Processor(TOKEN_BALANCE_QUEUE)
 export class TokenBalanceProcessor {
@@ -59,119 +60,154 @@ export class TokenBalanceProcessor {
 
       logger.log(`Processing TOKEN_BALANCE_QUEUE for ${clientId}`);
 
-      //#region get token balances
-      const requestPromises = [];
+      await Rx.lastValueFrom(
+        Rx.combineLatest([this.getAllBalancesOf(watchedWallets)]).pipe(
+          Rx.mergeMap(async ([tokenBalances]) => ({
+            tokenBalances,
+            coinPrices: await this.getCoinPricesOf(
+              tokenBalances,
+              selectedCurrency,
+            ),
+            tokenMetadata: await this.getTokenMetadata(tokenBalances),
+          })),
 
-      for (const chainId of chainIds) {
-        for (const watchedWallet of watchedWallets) {
-          const address = validate(watchedWallet.address, 'string');
+          Rx.map(({ tokenBalances, coinPrices, tokenMetadata }) =>
+            this.mapTokenBalanceDocuments(
+              tokenBalances,
+              tokenMetadata,
+              coinPrices,
+              selectedCurrency,
+            ),
+          ),
 
-          requestPromises.push(this.moralisService.tokensOf(chainId, address));
-        }
-      }
+          Rx.tap((documents) => this.emitTokenBalances(clientId, documents)),
 
-      const tokenBalances: moralis.TokenBalance[] = _.flatten(
-        await Promise.all(requestPromises),
+          Rx.map((documents) =>
+            this.mapTokenStats(documents, selectedCurrency),
+          ),
+
+          Rx.tap((document) => this.emitTokenStats(clientId, document)),
+        ),
       );
-      //#endregion
-
-      //#region get fiat prices
-      const coinIds = tokenBalances
-        .map((it) =>
-          this.coingeckoService.coinIdOf(it.chain_id, it.token_address),
-        )
-        .filter((it) => !!it);
-
-      const coinPrices = await this.coingeckoService.latestPricesOf(
-        coinIds,
-        selectedCurrency.id,
-      );
-      //#endregion
-
-      //#region format tokens
-      const tokens = this.mapTokenContractDocuments(
-        tokenBalances,
-        selectedCurrency,
-        coinPrices,
-      );
-      //#endregion
-
-      //#region emit tokens
-      for (const token of tokens) {
-        this.fillAndEmitContract(clientId, token);
-      }
-      //#endregion
-
-      //#region remove old tokens
-      //#endregion
-
-      //#region emit token stats
-      const totalValue = _.sumBy(
-        tokens,
-        (token) => token.priceFiat * token.balance,
-      );
-
-      const now = moment().unix();
-
-      const layers = <LayerDto[]>[
-        {
-          id: `token-stats`,
-          collectionName: 'portfolioStats',
-          timestamp: now,
-          set: [
-            {
-              id: 'token_value',
-              created: now,
-              updated: now,
-              name: 'Token Value',
-              value: formatters.currencyValue(
-                totalValue,
-                selectedCurrency.symbol,
-              ),
-            },
-          ],
-        },
-      ];
-
-      this.eventService.addLayers(clientId, layers);
-      //#endregion
     } catch (error) {
-      logger.error(
-        `(TokenClientService) Error occurred handling client state.`,
-      );
       logger.error(error);
     }
   }
 
-  private async fillAndEmitContract(
-    clientId: string,
-    token: TokenContractDocument,
-  ) {
-    const imageUrl = !!token.coinId
-      ? await this.coingeckoService.getImageUrl(token.coinId)
-      : undefined;
+  private async getAllBalancesOf(
+    watchedWallets: { address: string }[],
+  ): Promise<moralis.TokenBalance[]> {
+    validate(watchedWallets, 'Array.<object>');
 
-    const updatedToken = {
-      ...token,
-      logo: imageUrl ?? defaultLogo,
-    };
+    const promises = [];
 
+    for (const chain of _.keys(chains)) {
+      for (const wallet of watchedWallets.map((it) => it.address)) {
+        promises.push(this.moralisService.tokensOf(chain as ChainId, wallet));
+      }
+    }
+
+    return _.flatten(await Promise.all<moralis.TokenBalance[]>(promises));
+  }
+
+  private async getCoinPricesOf(
+    tokenBalances: moralis.TokenBalance[],
+    selectedCurrency: CurrencyDto,
+  ): Promise<CoinPrice[]> {
+    return await _.chain(tokenBalances)
+      .map((tokenBalance) =>
+        this.coingeckoService.coinIdOf(
+          tokenBalance.chain_id,
+          tokenBalance.token_address,
+        ),
+      )
+      .filter((it) => !!it)
+      .thru((coinIds) =>
+        this.coingeckoService.latestPricesOf(coinIds, selectedCurrency.id),
+      )
+      .value();
+  }
+
+  private async getTokenMetadata(
+    tokenBalances: moralis.TokenBalance[],
+  ): Promise<TokenMetadata[]> {
+    return _.chain(tokenBalances)
+      .map(async (tokenBalance) => {
+        const coinId = this.coingeckoService.coinIdOf(
+          tokenBalance.chain_id,
+          tokenBalance.token_address,
+        );
+
+        const logo = !!coinId
+          ? await this.coingeckoService.getImageUrl(coinId)
+          : undefined;
+
+        return <TokenMetadata>{
+          chainId: tokenBalance.chain_id,
+          address: tokenBalance.token_address,
+          coinId,
+          decimals: Number(tokenBalance.decimals),
+          logo,
+          name: tokenBalance.name,
+          symbol: tokenBalance.symbol,
+        };
+      })
+      .thru((promises) => Promise.all(promises))
+      .value();
+  }
+
+  private emitTokenStats(clientId: any, document: TokenStatsDocument) {
     const layers = <LayerDto[]>[
       {
-        id: `token-contract-${token.id}`,
-        collectionName: 'tokens',
-        set: [updatedToken],
+        id: `token-stats-layer`,
+        collectionName: 'stats',
+        set: [document],
       },
     ];
 
     this.eventService.addLayers(clientId, layers);
   }
 
-  private mapTokenContractDocuments(
-    tokenBalances: moralis.TokenBalance[],
+  private mapTokenStats(
+    documents: TokenBalanceDocument[],
     selectedCurrency: CurrencyDto,
+  ): TokenStatsDocument {
+    return {
+      id: 'token_balance',
+      fiatSymbol: selectedCurrency.symbol,
+      totalValue: _.sumBy(
+        documents,
+        (document) => document.priceFiat * document.balance,
+      ),
+    };
+  }
+
+  private emitTokenBalances(
+    clientId: string,
+    tokenBalances: TokenBalanceDocument[],
+  ) {
+    const layers = <LayerDto[]>[
+      {
+        id: `token-balances-layer`,
+        collectionName: 'token_balances',
+        set: tokenBalances,
+      },
+    ];
+
+    this.eventService.addLayers(clientId, layers);
+  }
+
+  private mapTokenBalanceDocuments(
+    tokenBalances: moralis.TokenBalance[],
+    tokenMetadatas: TokenMetadata[],
     coinPrices: CoinPrice[],
-  ): TokenContractDocument[] {
+    selectedCurrency: CurrencyDto,
+  ): TokenBalanceDocument[] {
+    validate(
+      [tokenBalances, coinPrices, tokenMetadatas, selectedCurrency],
+      ['Array.<object>', 'Array.<object>', 'Array.<object>', 'object'],
+    );
+
     const tokensById = _.groupBy(
       tokenBalances,
       (tokenBalance) =>
@@ -188,17 +224,16 @@ export class TokenBalanceProcessor {
 
         const chainMetadata = chains[tokens[0].chain_id];
 
-        const coinId = this.coingeckoService.coinIdOf(
-          tokens[0].chain_id,
-          tokens[0].token_address,
+        const tokenMetadata = tokenMetadatas.find(
+          (it) => `${it.chainId}_${it.address}` === id,
         );
 
-        if (!coinId) {
+        if (!tokenMetadata?.coinId) {
           return undefined;
         }
 
         const coinPrice = coinPrices.find(
-          (it) => it.coinId.toLowerCase() === coinId,
+          (it) => it.coinId.toLowerCase() === tokenMetadata.coinId,
         );
 
         return {
@@ -213,17 +248,15 @@ export class TokenBalanceProcessor {
             logo: chainMetadata.logo,
             name: chainMetadata.name,
           },
-          coinId,
+          coinId: tokenMetadata.coinId,
           contractAddress: tokens[0].token_address,
           decimals: Number(tokens[0].decimals),
           fiatSymbol: selectedCurrency.symbol,
           links: {
             swap: `${chainMetadata.swap}?inputCurrency=${tokens[0].token_address}`,
-            token: !!coinId
-              ? `https://www.coingecko.com/en/coins/${coinId}`
-              : `${chainMetadata}token/${tokens[0].token_address}`,
+            token: `${chainMetadata.explorer}token/${tokens[0].token_address}`,
           },
-          logo: tokens[0].logo,
+          logo: tokenMetadata.logo,
           name: tokens[0].name,
           priceFiat: coinPrice?.price,
           symbol: tokens[0].symbol,

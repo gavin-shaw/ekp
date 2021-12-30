@@ -153,16 +153,13 @@ export class NftBalanceProcessor {
           patch: contracts,
         },
         {
-          id: `nft-stats`,
-          collectionName: 'portfolioStats',
+          id: `nft-stats-layer`,
+          collectionName: 'stats',
           set: [
             {
-              id: 'nft_value',
-              name: 'Nft Value',
-              value: formatters.currencyValue(
-                totalValue,
-                selectedCurrency.symbol,
-              ),
+              id: 'nft_balance',
+              fiatSymbol: selectedCurrency.symbol,
+              totalValue,
             },
           ],
         },

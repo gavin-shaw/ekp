@@ -1,6 +1,6 @@
 import { DocumentDto, ChainId } from '@app/sdk';
 
-export interface TokenContractDocument extends DocumentDto {
+export interface TokenBalanceDocument extends DocumentDto {
   readonly allowBurnToken?: boolean;
   readonly allowSwap?: boolean;
   readonly balance: number;

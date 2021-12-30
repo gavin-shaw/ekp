@@ -7,6 +7,7 @@ import {
   CurrencyDto,
   EventService,
   formatters,
+  LayerDto,
   logger,
   MilestoneDocumentDto,
   moralis,
@@ -22,8 +23,9 @@ import _ from 'lodash';
 import moment from 'moment';
 import * as Rx from 'rxjs';
 import { TOKEN_PNL_QUEUE } from '../queues';
-import { TokenPnlEvent, TokenPnlSummary } from './dtos';
 import { defaultLogo } from '../util/constants';
+import { TokenPnlEvent, TokenPnlSummary } from './dtos';
+import { TokenPnlStatsDocument } from './dtos/token-pnl-stats.document';
 
 @Processor(TOKEN_PNL_QUEUE)
 export class TokenPnlProcessor {
@@ -101,7 +103,7 @@ export class TokenPnlProcessor {
             transactions,
             tokens: await this.getTokenMetadata(transfers),
           })),
-          // Rx.tap(({ tokens }) => console.log(tokens.filter((it) => !!it.coinId))),
+
           Rx.tap(({ tokens }) =>
             this.emitMilestones(clientId, [
               {
@@ -150,20 +152,40 @@ export class TokenPnlProcessor {
             this.emitPnlSummaries(pnlSummaries, clientId),
           ),
 
-          Rx.tap(() => this.removeMilestones(clientId)),
+          Rx.map((pnlEvents) => this.mapPnlStats(selectedCurrency, pnlEvents)),
 
-          Rx.catchError((error) => {
-            logger.error(
-              `(TpkenPnlClient) Error occurred handling client state. ${error}`,
-            );
-            console.error(error);
-            return Rx.of(error);
-          }),
+          Rx.tap((pnlStats) => this.emitPnlStats(clientId, pnlStats)),
+
+          Rx.tap(() => this.removeMilestones(clientId)),
         ),
       );
     } catch (error) {
       logger.error(error);
     }
+  }
+  emitPnlStats(clientId: string, document: TokenPnlStatsDocument): void {
+    const layers = <LayerDto[]>[
+      {
+        id: `token-pnl-stats-layer`,
+        collectionName: 'stats',
+        set: [document],
+      },
+    ];
+
+    this.eventService.addLayers(clientId, layers);
+  }
+
+  private mapPnlStats(
+    selectedCurrency: CurrencyDto,
+    pnlEvents: TokenPnlEvent[],
+  ): TokenPnlStatsDocument {
+    return {
+      id: 'token_pnl',
+      costBasis: _.sumBy(pnlEvents, (it) => it.costBasis.fiat || 0),
+      realizedValue: _.sumBy(pnlEvents, (it) => it.realizedValue || 0),
+      realizedGain: _.sumBy(pnlEvents, (it) => it.realizedGain || 0),
+      fiatSymbol: selectedCurrency.symbol,
+    };
   }
 
   private mapPnlEvents(
