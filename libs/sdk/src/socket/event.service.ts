@@ -14,16 +14,22 @@ export class EventService {
   private readonly publishClient: Redis;
 
   addLayers(channelId: string, layers: LayerDto[]) {
-    this.publishClient.emit(ADD_LAYERS, {
-      channelId,
-      layers,
-    });
+    this.publishClient.publish(
+      ADD_LAYERS,
+      JSON.stringify({
+        channelId,
+        layers,
+      }),
+    );
   }
 
   removeLayers(channelId: string, query: LayerQueryDto) {
-    this.publishClient.emit(REMOVE_LAYERS, {
-      channelId,
-      query,
-    });
+    this.publishClient.publish(
+      REMOVE_LAYERS,
+      JSON.stringify({
+        channelId,
+        query,
+      }),
+    );
   }
 }

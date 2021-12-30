@@ -1,24 +1,33 @@
 import {
-  ADD_LAYERS,
   ClientStateChangedEvent,
-  CLIENT_STATE_CHANGED,
+  EventService,
   LayerDto,
+  logger,
 } from '@app/sdk';
-import { Injectable } from '@nestjs/common';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { Process, Processor } from '@nestjs/bull';
+import { Job } from 'bull';
 import { validate } from 'bycontract';
 import moment from 'moment';
+import { UI_QUEUE } from '../queues';
 import { homeElement } from './elements/home/home.element';
 
-@Injectable()
-export class UiClientService {
-  constructor(private eventEmitter: EventEmitter2) {}
+@Processor(UI_QUEUE)
+export class UiProcessor {
+  constructor(private eventService: EventService) {}
 
-  @OnEvent(CLIENT_STATE_CHANGED)
-  async handleClientStateChangedEvent(
-    clientStateChangedEvent: ClientStateChangedEvent,
-  ) {
-    const clientId = validate(clientStateChangedEvent.clientId, 'string');
+  private validateEvent(event: ClientStateChangedEvent) {
+    const clientId = validate(event.clientId, 'string');
+
+    return {
+      clientId,
+    };
+  }
+
+  @Process()
+  async handleClientStateChangedEvent(job: Job<ClientStateChangedEvent>) {
+    const { clientId } = this.validateEvent(job.data);
+
+    logger.log(`Processing UI_QUEUE for ${clientId}`);
 
     const layers = <LayerDto[]>[
       {
@@ -33,10 +42,7 @@ export class UiClientService {
       },
     ];
 
-    this.eventEmitter.emit(ADD_LAYERS, {
-      channelId: clientId,
-      layers,
-    });
+    this.eventService.addLayers(clientId, layers);
   }
 
   getMenus() {

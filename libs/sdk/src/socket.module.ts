@@ -1,20 +1,20 @@
-import { Module } from "@nestjs/common";
-import { EventEmitterModule } from "@nestjs/event-emitter";
-import { RedisModule } from "nestjs-redis";
-import { SocketGateway } from "./socket/socket.gateway";
+import { BullModule } from '@nestjs/bull';
+import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { EkConfigService } from "./config/ek-config.service";
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { RedisModule } from 'nestjs-redis';
+import { EkConfigService } from './config/ek-config.service';
+import { SocketGateway } from './socket/socket.gateway';
 
+@Global()
 @Module({
-    imports: [
-        ConfigModule.forRoot({ isGlobal: true }),
-        EventEmitterModule.forRoot(),
-        RedisModule.forRootAsync(EkConfigService.createRedisAsyncOptions()),
-    ],
-    providers: [
-        SocketGateway,
-    ],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    EventEmitterModule.forRoot(),
+    BullModule.forRootAsync({ useClass: EkConfigService }),
+    RedisModule.forRootAsync(EkConfigService.createRedisAsyncOptions()),
+  ],
+  providers: [SocketGateway, EkConfigService],
+  exports: [EkConfigService],
 })
-export class SocketModule {
-
-}
+export class SocketModule {}

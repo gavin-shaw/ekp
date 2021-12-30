@@ -1,2 +1,2 @@
 export * from './elements';
-export * from './ui-client.service';
+export * from './ui.processor';

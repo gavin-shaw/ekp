@@ -1,54 +1,66 @@
 import {
-  ADD_LAYERS,
   chainIds,
   chains,
   ClientStateChangedEvent,
-  CLIENT_STATE_CHANGED,
   CoingeckoService,
   CoinPrice,
   CurrencyDto,
+  EventService,
   formatters,
   logger,
   moralis,
   MoralisService,
   OpenseaService,
 } from '@app/sdk';
-import { Injectable } from '@nestjs/common';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { Process, Processor } from '@nestjs/bull';
+import { Job } from 'bull';
 import { validate } from 'bycontract';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
+import { NFT_BALANCE_QUEUE } from '../queues';
 import { defaultLogo } from '../util/constants';
 import { NftContractDocument } from './dto';
 
-@Injectable()
-export class NftClientService {
+@Processor(NFT_BALANCE_QUEUE)
+export class NftBalanceProcessor {
   constructor(
     private coingeckoService: CoingeckoService,
-    private eventEmitter: EventEmitter2,
+    private eventService: EventService,
     private moralisService: MoralisService,
     private openseaService: OpenseaService,
   ) {}
 
-  @OnEvent(CLIENT_STATE_CHANGED)
-  async handleClientStateChangedEvent(
-    clientStateChangedEvent: ClientStateChangedEvent,
-  ) {
+  private validateEvent(event: ClientStateChangedEvent) {
+    const clientId = validate(event.clientId, 'string');
+
+    const selectedCurrency = validate(
+      event.state?.client.selectedCurrency,
+      'object',
+    );
+
+    const watchedWallets = validate(
+      event.state?.client.watchedWallets,
+      'Array.<object>',
+    );
+
+    return {
+      clientId,
+      selectedCurrency,
+      watchedWallets,
+    };
+  }
+
+  @Process()
+  async handleClientStateChangedEvent(job: Job<ClientStateChangedEvent>) {
     try {
       //#region validate input
-      const clientId = validate(clientStateChangedEvent.clientId, 'string');
-
-      const selectedCurrency = validate(
-        clientStateChangedEvent.state?.client.selectedCurrency,
-        'object',
-      );
-
-      const watchedWallets = validate(
-        clientStateChangedEvent.state?.client.watchedWallets,
-        'Array.<object>',
+      const { clientId, selectedCurrency, watchedWallets } = this.validateEvent(
+        job.data,
       );
       //#endregion
+
+      logger.log(`Processing NFT_BALANCE_QUEUE for ${clientId}`);
 
       //#region get contracts for client
       const requestPromises = [];
@@ -156,10 +168,7 @@ export class NftClientService {
         },
       ];
 
-      this.eventEmitter.emit(ADD_LAYERS, {
-        channelId: clientId,
-        layers,
-      });
+      this.eventService.addLayers(clientId, layers);
       //#endregion
     } catch (error) {
       logger.error(`(NftClientService) Error occurred handling client state.`);

@@ -1,5 +1,5 @@
 export * from './global.module';
-export * from './bootstrap';
+export * from './runCluster';
 export * from './coingecko';
 export * from './config';
 export * from './evm';
@@ -7,3 +7,4 @@ export * from './moralis';
 export * from './opensea';
 export * from './socket';
 export * from './utils';
+export * from './socket.module';

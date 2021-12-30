@@ -1,4 +1,5 @@
-import { ekpbootstrap } from '@app/sdk';
-import { PortfolioModule } from './portfolio.module';
+import { runCluster } from '@app/sdk';
+import { PrimaryModule } from './primary.module';
+import { WorkerModule } from './worker.module';
 
-ekpbootstrap(PortfolioModule);
+runCluster(PrimaryModule, WorkerModule);

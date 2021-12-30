@@ -132,12 +132,14 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     const now = moment().unix();
 
-    const updatedLayers = layers.map((layer: LayerDto) => ({
-      ...layer,
-      timestamp: layer.timestamp || now,
-    }));
+    const updatedLayers = layers.map((layer: LayerDto) => {
+      logger.log(`Emit ADD_LAYER ${layer.id} to ${channelId}`);
 
-    logger.log(`Emit ADD_LAYERS to ${channelId}`);
+      return {
+        ...layer,
+        timestamp: layer.timestamp || now,
+      };
+    });
 
     this.socketServer.to(channelId).emit(
       ADD_LAYERS,

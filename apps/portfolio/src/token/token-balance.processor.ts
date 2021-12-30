@@ -1,32 +1,32 @@
 import {
-  ADD_LAYERS,
   chainIds,
   chains,
   ClientStateChangedEvent,
-  CLIENT_STATE_CHANGED,
   CoingeckoService,
   CoinPrice,
   CurrencyDto,
+  EventService,
   formatters,
   LayerDto,
   logger,
   moralis,
   MoralisService,
 } from '@app/sdk';
-import { Injectable } from '@nestjs/common';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { Process, Processor } from '@nestjs/bull';
+import { Job } from 'bull';
 import { validate } from 'bycontract';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
+import { TOKEN_BALANCE_QUEUE } from '../queues';
 import { defaultLogo } from '../util/constants';
 import { TokenContractDocument } from './dtos';
 
-@Injectable()
-export class TokenClientService {
+@Processor(TOKEN_BALANCE_QUEUE)
+export class TokenBalanceProcessor {
   constructor(
     private coingeckoService: CoingeckoService,
-    private eventEmitter: EventEmitter2,
+    private eventService: EventService,
     private moralisService: MoralisService,
   ) {}
 
@@ -50,14 +50,14 @@ export class TokenClientService {
     };
   }
 
-  @OnEvent(CLIENT_STATE_CHANGED)
-  async handleClientStateChangedEvent(
-    clientStateChangedEvent: ClientStateChangedEvent,
-  ) {
+  @Process()
+  async handleClientStateChangedEvent(job: Job<ClientStateChangedEvent>) {
     try {
       const { clientId, selectedCurrency, watchedWallets } = this.validateEvent(
-        clientStateChangedEvent,
+        job.data,
       );
+
+      logger.log(`Processing TOKEN_BALANCE_QUEUE for ${clientId}`);
 
       //#region get token balances
       const requestPromises = [];
@@ -133,10 +133,7 @@ export class TokenClientService {
         },
       ];
 
-      this.eventEmitter.emit(ADD_LAYERS, {
-        channelId: clientId,
-        layers,
-      });
+      this.eventService.addLayers(clientId, layers);
       //#endregion
     } catch (error) {
       logger.error(
@@ -167,10 +164,7 @@ export class TokenClientService {
       },
     ];
 
-    this.eventEmitter.emit(ADD_LAYERS, {
-      channelId: clientId,
-      layers,
-    });
+    this.eventService.addLayers(clientId, layers);
   }
 
   private mapTokenContractDocuments(

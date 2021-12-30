@@ -1,6 +1,6 @@
 import winston from 'winston';
 import { LoggerService, LogLevel } from '@nestjs/common';
-
+import * as cluster from 'cluster';
 export class DefaultLogger implements LoggerService {
   private logger: winston.Logger;
 
@@ -16,7 +16,10 @@ export class DefaultLogger implements LoggerService {
       transports: [
         new winston.transports.Console({
           format: winston.format.printf(
-            (info) => `${info.timestamp} ${info.level}: ${info.message}`,
+            (info) =>
+              `${info.timestamp} [${cluster.default.worker?.id ?? 'primary'}] ${
+                info.level
+              }: ${info.message}`,
           ),
         }),
       ],

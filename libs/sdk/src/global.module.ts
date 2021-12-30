@@ -10,7 +10,6 @@ import { LimiterService } from './limiter.service';
 import { MoralisService } from './moralis/moralis.service';
 import { OpenseaService } from './opensea/opensea.service';
 import { EventService } from './socket/event.service';
-import { SocketGateway } from './socket/socket.gateway';
 
 @Global()
 @Module({
@@ -39,4 +38,4 @@ import { SocketGateway } from './socket/socket.gateway';
     OpenseaService,
   ],
 })
-export class GlobalModule { }
+export class GlobalModule {}

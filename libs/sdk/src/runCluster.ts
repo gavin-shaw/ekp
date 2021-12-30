@@ -1,25 +1,18 @@
 import { NestFactory } from '@nestjs/core';
-import { DefaultLogger } from './utils';
 import * as cluster from 'cluster';
 import * as os from 'os';
-import { SocketModule } from './socket.module';
 
-export async function ekpbootstrap(module: any) {
+export async function runCluster(primaryModule: any, workerModule: any) {
   const bootstrap = async () => {
     if (cluster.default.isPrimary) {
-      const app = await NestFactory.create(SocketModule, {
-        logger: new DefaultLogger(),
-      });
+      const app = await NestFactory.create(primaryModule, { logger: false });
 
       await app.listen(3001);
     } else {
-      const app = await NestFactory.create(module, {
-        logger: new DefaultLogger()
-      });
+      const app = await NestFactory.create(workerModule, { logger: false });
 
-      await app.init()
+      await app.init();
     }
-
   };
 
   Cluster.register(16, bootstrap);
@@ -28,8 +21,6 @@ export async function ekpbootstrap(module: any) {
 class Cluster {
   static register(workers: number, callback: () => Promise<void>): void {
     if (cluster.default.isPrimary) {
-      console.log(`Primary server started on ${process.pid}`);
-
       //ensure workers exit cleanly
       process.on('SIGINT', function () {
         console.log('Cluster shutting down...');
@@ -48,17 +39,15 @@ class Cluster {
         cluster.default.fork();
       }
 
-      cluster.default.on('online', function (worker) {
-        console.log('Worker %s is online', worker.process.pid);
-      });
+      // cluster.default.on('online', function (worker) {
+      //   console.log('Worker %s is online', worker.process.pid);
+      // });
 
       cluster.default.on('exit', (worker, code, signal) => {
         console.log(`Worker ${worker.process.pid} died. Restarting`);
         cluster.default.fork();
       });
-
     }
-
     callback();
   }
 }

@@ -37,6 +37,7 @@ export const realizedPnlTab = [
         id: 'costBasis',
         value: '$.costBasis.fiat',
         grow: 0,
+        sortable: true,
         label: {
           value: '$.costBasis.fiat',
           formatter: 'currency',
@@ -46,6 +47,7 @@ export const realizedPnlTab = [
       {
         id: 'realizedValue',
         value: '$.realizedValue',
+        sortable: true,
         grow: 0,
         label: {
           value: '$.realizedValue',
@@ -56,6 +58,7 @@ export const realizedPnlTab = [
       {
         id: 'realizedGain',
         value: '$.realizedGain',
+        sortable: true,
         grow: 0,
         label: {
           value: '$.realizedGain',

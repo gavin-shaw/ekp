@@ -1,2 +1,2 @@
-export * from './nft-client.service';
+export * from './nft-balance.processor';
 export * from './dto';
