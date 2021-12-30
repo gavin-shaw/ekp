@@ -22,13 +22,13 @@ import {
   CLIENT_STATE_CHANGED,
   JoinRoomEvent,
   JOIN_ROOM,
+  REMOVE_LAYERS,
   UPDATE_METADATA,
 } from './events';
+import { RemoveLayersEvent } from './events/remove-layers.event';
 
 @WebSocketGateway({ cors: true })
-export class SocketsGateway
-  implements OnGatewayConnection, OnGatewayDisconnect
-{
+export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private eventEmitter: EventEmitter2,
     private configService: EkConfigService,
@@ -45,11 +45,25 @@ export class SocketsGateway
       logger.log(`SocketsGateway subscribed to the "add-layers" redis message`);
     });
 
+    this.subscribeClient.subscribe(REMOVE_LAYERS, (err, count) => {
+      if (err) {
+        throw err;
+      }
+      logger.log(
+        `SocketsGateway subscribed to the "remove-layers" redis message`,
+      );
+    });
+
     this.subscribeClient.on('message', (channel, message) => {
       const payload = JSON.parse(message);
 
       if (channel === ADD_LAYERS) {
         this.handleAddLayersEvent(payload);
+      }
+
+      // TODO: I don't think this is the right place for this handler
+      if (channel === REMOVE_LAYERS) {
+        this.handleRemoveLayersEvent(payload);
       }
     });
   }
@@ -130,6 +144,22 @@ export class SocketsGateway
       JSON.stringify({
         pluginId: this.pluginId,
         layers: updatedLayers,
+      }),
+    );
+  }
+
+  @OnEvent(REMOVE_LAYERS)
+  async handleRemoveLayersEvent(removeLayersEvent: RemoveLayersEvent) {
+    const channelId = validate(removeLayersEvent.channelId, 'string');
+    const query = validate(removeLayersEvent.query, 'object');
+
+    logger.log(`Emit REMOVE_LAYERS to ${channelId}`);
+
+    this.socketServer.to(channelId).emit(
+      REMOVE_LAYERS,
+      JSON.stringify({
+        pluginId: this.pluginId,
+        query,
       }),
     );
   }

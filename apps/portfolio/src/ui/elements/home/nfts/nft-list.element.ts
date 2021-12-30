@@ -11,7 +11,7 @@ export const nftList = {
   },
   columns: [
     {
-      id: 'asset',
+      id: 'collection',
       value: '$.name',
       filterable: true,
       sortable: true,

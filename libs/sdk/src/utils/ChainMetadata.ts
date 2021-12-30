@@ -1,4 +1,5 @@
 import { ChainId } from './ChainId';
+import { TokenMetadata } from './TokenMetadata';
 
 export interface ChainMetadata {
   readonly id: ChainId;
@@ -6,11 +7,5 @@ export interface ChainMetadata {
   readonly name: string;
   readonly explorer: string;
   readonly swap: string;
-  readonly token: {
-    readonly coinId: string;
-    readonly contractAddress: string;
-    readonly decimals: number;
-    readonly name: string;
-    readonly symbol: string;
-  };
+  readonly token: TokenMetadata;
 }

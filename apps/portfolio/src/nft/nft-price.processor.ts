@@ -1,10 +1,4 @@
-import {
-  ADD_LAYERS,
-  logger,
-  moralis,
-  MoralisService,
-  PUBLISH_CLIENT,
-} from '@app/sdk';
+import { ADD_LAYERS, logger, moralis, MoralisService } from '@app/sdk';
 import { validate } from 'bycontract';
 import { Redis } from 'ioredis';
 import { RedisService } from 'nestjs-redis';

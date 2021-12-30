@@ -29,7 +29,7 @@ export const tokenTable = {
     },
     {
       id: 'name',
-      name: 'Asset',
+      name: 'Token',
       value: '$.name',
       cell: [
         {

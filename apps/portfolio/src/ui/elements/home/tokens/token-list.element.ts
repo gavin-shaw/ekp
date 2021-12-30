@@ -12,7 +12,7 @@ export const tokenList = {
   },
   columns: [
     {
-      id: 'asset',
+      id: 'token',
       value: '$.symbol',
       filterable: true,
       sortable: true,

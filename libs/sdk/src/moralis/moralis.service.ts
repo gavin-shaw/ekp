@@ -13,10 +13,10 @@ import {
   NftOwner,
   NftTransfer,
   TokenBalance,
-  TokenMetadata,
   TokenTransfer,
   Transaction,
 } from './model/types';
+import { TokenMetadata } from '../utils/TokenMetadata';
 
 @Injectable()
 export class MoralisService {
@@ -25,7 +25,7 @@ export class MoralisService {
     limiterService: LimiterService,
     private configService: EkConfigService,
   ) {
-    this.limiter = limiterService.createLimiter('moralis-limiter', 5);
+    this.limiter = limiterService.createLimiter('moralis-limiter', 10);
   }
 
   async onModuleInit() {
@@ -43,7 +43,7 @@ export class MoralisService {
   ): Promise<TokenMetadata> {
     validate([chainId, contractAddress], ['string', 'string']);
 
-    const cacheKey = `moralis.tokenMetadataOf['${chainId}']['${contractAddress}']`;
+    const cacheKey = `moralis.tokenMetadataOf_['${chainId}']['${contractAddress}']`;
     const debugMessage = `Web3API > getTokenMetadata('${chainId}', '${contractAddress}')`;
 
     return this.cache.wrap(
@@ -62,11 +62,10 @@ export class MoralisService {
               return undefined;
             }
 
-            return {
-              ...{
-                ...result[0],
-                chain_id: chainId,
-              },
+            return <TokenMetadata>{
+              ...result[0],
+              decimals: Number(result[0].decimals),
+              chainId,
             };
           }),
           {
@@ -172,7 +171,7 @@ export class MoralisService {
         name: chainMetadata.token.name,
         symbol: chainMetadata.token.symbol,
         thumbnail: chainMetadata.logo,
-        token_address: chainMetadata.token.contractAddress,
+        token_address: chainMetadata.token.address,
       });
     }
 
@@ -311,7 +310,9 @@ export class MoralisService {
             break;
           }
 
-          transactions.push(...nextTransactions);
+          transactions.push(
+            ...nextTransactions.map((it) => ({ ...it, chain_id: chainId })),
+          );
         }
 
         return transactions;

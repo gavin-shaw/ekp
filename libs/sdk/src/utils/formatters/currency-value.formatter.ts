@@ -1,6 +1,10 @@
 import { commify } from '@ethersproject/units';
 
 export function currencyValue(value: number, symbol: string) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
   if (isNaN(value)) {
     return `?`;
   }
@@ -9,26 +13,30 @@ export function currencyValue(value: number, symbol: string) {
     return `${symbol} 0`;
   }
 
-  if (value < 0.0001) {
+  if (value > 0 && value < 0.0001) {
     return `${symbol} ~0`;
   }
+
+  const negative = value < 0;
+
+  const absValue = Math.abs(value);
 
   // TODO: find a better way to implement significant figures
   // I tried a couple of libraries and toPrecision() but they didn't work very well
 
   let c: string;
 
-  if (value < 1) {
-    c = value.toFixed(2);
-  } else if (value < 10) {
-    c = value.toFixed(2);
-  } else if (value < 100) {
-    c = value.toFixed(1);
-  } else if (value < 1000) {
-    c = value.toFixed(0);
+  if (absValue < 1) {
+    c = absValue.toFixed(2);
+  } else if (absValue < 10) {
+    c = absValue.toFixed(2);
+  } else if (absValue < 100) {
+    c = absValue.toFixed(1);
+  } else if (absValue < 1000) {
+    c = absValue.toFixed(0);
   } else {
-    c = commify(Math.floor(value));
+    c = commify(Math.floor(absValue));
   }
 
-  return `${symbol} ${c}`;
+  return `${negative ? '- ' : ''} ${symbol} ${c}`;
 }

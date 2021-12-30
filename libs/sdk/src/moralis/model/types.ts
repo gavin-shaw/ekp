@@ -11,19 +11,11 @@ export type NftTransfer = components['schemas']['nftTransfer'] & {
 export type TokenBalance = components['schemas']['erc20TokenBalance'] & {
   chain_id: ChainId;
 };
-export type Transaction = components['schemas']['transaction'];
+export type Transaction = components['schemas']['transaction'] & {
+  chain_id: ChainId;
+};
 export type TransactionCollection =
   components['schemas']['transactionCollection'];
 export type TokenTransfer = components['schemas']['erc20Transaction'] & {
   chain_id: ChainId;
 };
-
-export interface TokenMetadata {
-  chain_id: string;
-  address: string;
-  decimals: string;
-  logo?: string;
-  name: string;
-  symbol: string;
-  validated?: string;
-}

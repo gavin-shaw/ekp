@@ -9,7 +9,7 @@ import { EkConfigService } from './config/ek-config.service';
 import { LimiterService } from './limiter.service';
 import { MoralisService } from './moralis/moralis.service';
 import { OpenseaService } from './opensea/opensea.service';
-import { SocketsGateway } from './sockets/sockets.gateway';
+import { SocketGateway } from './socket/socket.gateway';
 
 @Global()
 @Module({
@@ -27,7 +27,7 @@ import { SocketsGateway } from './sockets/sockets.gateway';
     LimiterService,
     MoralisService,
     OpenseaService,
-    SocketsGateway,
+    SocketGateway,
   ],
   exports: [
     CoingeckoService,

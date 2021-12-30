@@ -1,7 +1,7 @@
 import { nftList } from './nfts';
 import { portfolioStats } from './portfolio-stats.element';
 import { tokenList } from './tokens';
-import { pnlTable } from './tokens/pnl-table.element';
+import { realizedPnlTab } from './tokens/realized-pnl-tab.element';
 
 export const homeElement = [
   {
@@ -20,7 +20,7 @@ export const homeElement = [
               view: 'tabs',
               children: {
                 Balances: [tokenList],
-                'P & L': [pnlTable],
+                'Realized P & L': realizedPnlTab,
               },
             },
           ],

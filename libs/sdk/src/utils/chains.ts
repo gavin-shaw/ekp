@@ -9,7 +9,7 @@ export const chains: { [chainId: string]: ChainMetadata } = {
     swap: 'https://poocoin.app/swap',
     token: {
       coinId: 'binancecoin',
-      contractAddress: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
+      address: '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
       decimals: 18,
       name: 'Binance Coin',
       symbol: 'BNB',
@@ -23,7 +23,7 @@ export const chains: { [chainId: string]: ChainMetadata } = {
     swap: 'https://quickswap.exchange/#/swap',
     token: {
       coinId: 'matic-network',
-      contractAddress: '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0',
+      address: '0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0',
       decimals: 18,
       name: 'Polygon',
       symbol: 'MATIC',
@@ -37,7 +37,7 @@ export const chains: { [chainId: string]: ChainMetadata } = {
     swap: 'https://app.uniswap.org/#/swap',
     token: {
       coinId: 'ethereum',
-      contractAddress: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+      address: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
       decimals: 18,
       name: 'Ethereum',
       symbol: 'ETH',
