@@ -1,19 +1,16 @@
 export default function element() {
   return [
     {
-      view: 'progressCard',
-      description: 'We are fetching your transaction data, hang tight!',
-      when: { not: '$.token_pnl_summaries' },
-      milestones: '$.token_pnl_milestones',
-    },
-    {
       view: 'datatable',
-      items: '$.token_pnl_summaries',
-      when: '$.token_pnl_summaries',
+      items: '$.token_pnl_summaries.*',
       options: {
         defaultSortFieldId: 'realizedGain',
         defaultSortAsc: false,
         filterable: false,
+        onRowClicked: {
+          method: 'ek_navigate',
+          params: ['$.links.pnlDetails'],
+        },
       },
       columns: [
         {

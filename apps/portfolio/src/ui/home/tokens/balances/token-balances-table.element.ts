@@ -5,7 +5,7 @@ export default function element() {
     {
       view: 'datatable',
       title: 'Portfolio',
-      items: '$.tokens',
+      items: '$.tokens.*',
       className: 'd-none d-sm-block',
       options: {
         pagination: false,

@@ -384,7 +384,7 @@ export class TokenPnlProcessor {
         }
 
         return <TokenPnlEvent>{
-          id: `transaction.hash`,
+          id: transaction.hash,
           blockNumber: Number(transaction.block_number),
           chain: {
             id: chain.id,
@@ -456,6 +456,9 @@ export class TokenPnlProcessor {
           chain,
           costBasis,
           fiatSymbol: selectedCurrency.symbol,
+          links: {
+            pnlDetails: `tokens/realizedpnl/${chain.id}/${token.address}`,
+          },
           realizedGain,
           realizedGainPc,
           realizedValue,

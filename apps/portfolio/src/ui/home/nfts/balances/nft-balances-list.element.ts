@@ -1,11 +1,10 @@
-import tokenBalanceActions from './token-balance.actions';
+import nftBalanceActions from './nft-balance.actions';
 
 export default function element() {
   return [
     {
       view: 'datatable',
-      title: 'Portfolio',
-      items: '$.token_balances',
+      items: '$.nfts.*',
       options: {
         pagination: false,
         defaultSortFieldId: 'value',
@@ -14,8 +13,8 @@ export default function element() {
       },
       columns: [
         {
-          id: 'token',
-          value: '$.symbol',
+          id: 'collection',
+          value: '$.name',
           filterable: true,
           sortable: true,
           cell: [
@@ -28,11 +27,18 @@ export default function element() {
                   size: 28,
                 },
               ],
-              title: '$.symbol',
+              title: '$.name',
               subtitle: {
-                value: '$.priceFiat',
-                formatter: 'currency',
-                symbol: '$.fiatSymbol',
+                value: '{{ price }} {{ symbol }} - {{ balance }} nfts',
+                formatter: 'template',
+                scope: {
+                  balance: '$.balance',
+                  symbol: '$.priceSymbol',
+                  price: {
+                    value: '$.price',
+                    formatter: 'token',
+                  },
+                },
               },
             },
           ],
@@ -42,6 +48,7 @@ export default function element() {
           value: '$.valueFiat',
           filterable: true,
           sortable: true,
+          alignTitle: 'right',
           right: true,
           cell: [
             {
@@ -65,10 +72,16 @@ export default function element() {
                 },
               ],
               subtitle: {
-                value: '$.balance',
-                formatter: 'token',
+                value: '{{ age }}',
+                formatter: 'template',
+                scope: {
+                  age: {
+                    value: '$.fetchTimestamp',
+                    formatter: 'age',
+                  },
+                },
               },
-              right: true, // TODO: remove the need for this duplicate "right" attribute
+              right: true,
             },
           ],
         },
@@ -77,7 +90,7 @@ export default function element() {
           compact: true,
           name: '',
           width: '22px',
-          actions: tokenBalanceActions(),
+          actions: nftBalanceActions(),
         },
       ],
     },

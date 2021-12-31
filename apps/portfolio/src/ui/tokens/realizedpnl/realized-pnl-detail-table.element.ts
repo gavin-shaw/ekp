@@ -1,20 +1,17 @@
 export default function element() {
   return [
     {
-      view: 'progressCard',
-      description: 'We are fetching your transaction data, hang tight!',
-      when: { not: '$.token_pnl_events' },
-      milestones: '$.token_pnl_milestones',
-    },
-    {
       view: 'datatable',
       title: 'Realized P & L',
-      items: '$.token_pnl_events',
-      when: '$.token_pnl_events',
+      items: '$.*',
       options: {
         defaultSortFieldId: 'timestamp',
         defaultSortAsc: false,
         filterable: false,
+        onRowClicked: {
+          method: 'ek_openLink',
+          params: ['$.links.transaction'],
+        },
       },
       columns: [
         {

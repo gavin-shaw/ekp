@@ -1,10 +1,11 @@
-import nftBalanceActions from './nft-balance.actions';
+import tokenBalanceActions from './token-balance.actions';
 
 export default function element() {
   return [
     {
       view: 'datatable',
-      items: '$.nfts',
+      title: 'Portfolio',
+      items: '$.token_balances.*',
       options: {
         pagination: false,
         defaultSortFieldId: 'value',
@@ -13,8 +14,8 @@ export default function element() {
       },
       columns: [
         {
-          id: 'collection',
-          value: '$.name',
+          id: 'token',
+          value: '$.symbol',
           filterable: true,
           sortable: true,
           cell: [
@@ -27,18 +28,11 @@ export default function element() {
                   size: 28,
                 },
               ],
-              title: '$.name',
+              title: '$.symbol',
               subtitle: {
-                value: '{{ price }} {{ symbol }} - {{ balance }} nfts',
-                formatter: 'template',
-                scope: {
-                  balance: '$.balance',
-                  symbol: '$.priceSymbol',
-                  price: {
-                    value: '$.price',
-                    formatter: 'token',
-                  },
-                },
+                value: '$.priceFiat',
+                formatter: 'currency',
+                symbol: '$.fiatSymbol',
               },
             },
           ],
@@ -48,7 +42,6 @@ export default function element() {
           value: '$.valueFiat',
           filterable: true,
           sortable: true,
-          alignTitle: 'right',
           right: true,
           cell: [
             {
@@ -72,16 +65,10 @@ export default function element() {
                 },
               ],
               subtitle: {
-                value: '{{ age }}',
-                formatter: 'template',
-                scope: {
-                  age: {
-                    value: '$.fetchTimestamp',
-                    formatter: 'age',
-                  },
-                },
+                value: '$.balance',
+                formatter: 'token',
               },
-              right: true,
+              right: true, // TODO: remove the need for this duplicate "right" attribute
             },
           ],
         },
@@ -90,7 +77,7 @@ export default function element() {
           compact: true,
           name: '',
           width: '22px',
-          actions: nftBalanceActions(),
+          actions: tokenBalanceActions(),
         },
       ],
     },

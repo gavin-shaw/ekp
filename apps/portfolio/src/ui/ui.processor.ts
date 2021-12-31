@@ -7,9 +7,9 @@ import {
 import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { validate } from 'bycontract';
-import moment from 'moment';
 import { UI_QUEUE } from '../queues';
-import homeElement from './elements/home.element';
+import pages from './portfolio.pages';
+import menus from './portfolio.menus';
 
 @Processor(UI_QUEUE)
 export class UiProcessor {
@@ -33,32 +33,15 @@ export class UiProcessor {
       {
         id: 'menu-layer',
         collectionName: 'menus',
-        set: this.getMenus(),
+        set: menus(),
       },
       {
         id: 'pages-layer',
         collectionName: 'pages',
-        set: this.getPages(),
+        set: pages(),
       },
     ];
 
     this.eventService.addLayers(clientId, layers);
-  }
-
-  getMenus() {
-    return [];
-  }
-
-  getPages() {
-    const now = moment().unix();
-
-    return [
-      {
-        id: 'portfolio',
-        created: now,
-        updated: now,
-        elements: homeElement(),
-      },
-    ];
   }
 }

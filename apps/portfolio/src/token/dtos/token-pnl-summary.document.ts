@@ -10,6 +10,9 @@ export interface TokenPnlSummary extends DocumentDto {
     readonly token: number;
     readonly fiat: number;
   };
+  readonly links: {
+    readonly pnlDetails: string;
+  };
   readonly realizedGain: number;
   readonly realizedGainPc: number;
   readonly realizedValue: number;
