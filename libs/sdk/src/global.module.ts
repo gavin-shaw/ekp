@@ -10,6 +10,7 @@ import { LimiterService } from './limiter.service';
 import { MoralisService } from './moralis/moralis.service';
 import { OpenseaService } from './opensea/opensea.service';
 import { EventService } from './socket/event.service';
+import { EthersService } from './ethers/ethers.service';
 
 @Global()
 @Module({
@@ -24,6 +25,7 @@ import { EventService } from './socket/event.service';
   providers: [
     CoingeckoService,
     EkConfigService,
+    EthersService,
     EventService,
     LimiterService,
     MoralisService,
@@ -32,6 +34,7 @@ import { EventService } from './socket/event.service';
   exports: [
     CoingeckoService,
     EkConfigService,
+    EthersService,
     LimiterService,
     EventService,
     MoralisService,

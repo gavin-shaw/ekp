@@ -4,7 +4,6 @@ export default function element() {
   return [
     {
       view: 'datatable',
-      title: 'Portfolio',
       items: '$.token_balances.*',
       options: {
         pagination: false,
@@ -15,7 +14,7 @@ export default function element() {
       columns: [
         {
           id: 'token',
-          value: '$.symbol',
+          value: '$.token.symbol',
           filterable: true,
           sortable: true,
           cell: [
@@ -24,22 +23,22 @@ export default function element() {
               left: [
                 {
                   view: 'image',
-                  src: '$.logo',
+                  src: '$.token.logo',
                   size: 28,
                 },
               ],
-              title: '$.symbol',
+              title: '$.token.symbol',
               subtitle: {
-                value: '$.priceFiat',
+                value: '$.tokenValue.tokenPrice',
                 formatter: 'currency',
-                symbol: '$.fiatSymbol',
+                symbol: '$.tokenValue.fiatSymbol',
               },
             },
           ],
         },
         {
           id: 'value',
-          value: '$.valueFiat',
+          value: '$.tokenValue.fiatAmount',
           filterable: true,
           sortable: true,
           right: true,
@@ -50,9 +49,9 @@ export default function element() {
                 {
                   view: 'tile',
                   title: {
-                    value: '$.valueFiat',
+                    value: '$.tokenValue.fiatAmount',
                     formatter: 'currency',
-                    symbol: '$.fiatSymbol',
+                    symbol: '$.tokenValue.fiatSymbol',
                   },
                   right: [
                     {
@@ -65,7 +64,7 @@ export default function element() {
                 },
               ],
               subtitle: {
-                value: '$.balance',
+                value: '$.tokenValue.tokenAmount',
                 formatter: 'token',
               },
               right: true, // TODO: remove the need for this duplicate "right" attribute

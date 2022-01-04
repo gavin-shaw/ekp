@@ -14,7 +14,6 @@ export default function element() {
       children: [
         {
           view: 'row',
-
           children: [...realizedPnlStats(), {}],
         },
         ...realizedPnlList(),

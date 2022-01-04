@@ -8,10 +8,10 @@ export default function element() {
         params: {
           type: 'ERC20',
           options: {
-            address: '$.contractAddress',
-            symbol: '$.symbol',
-            decimals: '$.decimals',
-            image: '$.logo',
+            address: '$.token.address',
+            symbol: '$.token.symbol',
+            decimals: '$.token.decimals',
+            image: '$.token.logo',
           },
         },
       },
@@ -19,7 +19,7 @@ export default function element() {
     {
       icon: 'cil-swap-horizontal',
       name: 'Swap Token',
-      when: '$.allowSwap',
+      when: '$.tokenValue.tokenPrice',
       rpc: {
         method: 'ek_openLink',
         params: ['$.links.swap'],
@@ -27,10 +27,10 @@ export default function element() {
     },
     {
       icon: 'cil-external-link',
-      name: 'Token Details',
+      name: 'View in Explorer',
       rpc: {
         method: 'ek_openLink',
-        params: ['$.links.token'],
+        params: ['$.links.explorer'],
       },
     },
   ];

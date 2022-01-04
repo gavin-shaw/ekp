@@ -4,7 +4,7 @@ export default function element() {
       context: {
         formatter: 'jsonpath',
         array: true,
-        value: '$.token_pnl_summaries',
+        value: '$.nft_pnl_summaries',
       },
       children: [
         {

@@ -4,12 +4,16 @@ export default function element() {
   return [
     {
       view: 'datatable',
-      items: '$.nfts.*',
+      items: '$.nft_balances.*',
       options: {
         pagination: false,
         defaultSortFieldId: 'value',
         defaultSortAsc: false,
         filterable: false,
+        onRowClicked: {
+          method: 'ek_openLink',
+          params: ['$.links.explorer'],
+        },
       },
       columns: [
         {
@@ -33,9 +37,9 @@ export default function element() {
                 formatter: 'template',
                 scope: {
                   balance: '$.balance',
-                  symbol: '$.priceSymbol',
+                  symbol: '$.tokenValue.tokenSymbol',
                   price: {
-                    value: '$.price',
+                    value: '$.tokenValue.tokenAmount',
                     formatter: 'token',
                   },
                 },
@@ -45,7 +49,7 @@ export default function element() {
         },
         {
           id: 'value',
-          value: '$.valueFiat',
+          value: '$.tokenValue.fiatAmount',
           filterable: true,
           sortable: true,
           alignTitle: 'right',
@@ -57,9 +61,9 @@ export default function element() {
                 {
                   view: 'tile',
                   title: {
-                    value: '$.valueFiat',
+                    value: '$.tokenValue.fiatAmount',
                     formatter: 'currency',
-                    symbol: '$.fiatSymbol',
+                    symbol: '$.tokenValue.fiatSymbol',
                   },
                   right: [
                     {
@@ -76,7 +80,7 @@ export default function element() {
                 formatter: 'template',
                 scope: {
                   age: {
-                    value: '$.fetchTimestamp',
+                    value: '$.updated',
                     formatter: 'age',
                   },
                 },
@@ -84,13 +88,6 @@ export default function element() {
               right: true,
             },
           ],
-        },
-        {
-          id: 'actions',
-          compact: true,
-          name: '',
-          width: '22px',
-          actions: nftBalanceActions(),
         },
       ],
     },

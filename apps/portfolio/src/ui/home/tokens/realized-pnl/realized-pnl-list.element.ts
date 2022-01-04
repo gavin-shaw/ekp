@@ -9,7 +9,7 @@ export default function element() {
         filterable: false,
         onRowClicked: {
           method: 'ek_navigate',
-          params: ['$.links.pnlDetails'],
+          params: ['$.links.details'],
         },
       },
       columns: [

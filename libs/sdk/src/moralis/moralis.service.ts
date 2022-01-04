@@ -6,17 +6,18 @@ import { Cache } from 'cache-manager';
 import Moralis from 'moralis/node';
 import { EkConfigService } from '../config/ek-config.service';
 import { LimiterService } from '../limiter.service';
-import { ChainId, chains, logger } from '../utils';
+import { ChainId, chains, logger } from '../util';
 import {
   ChainList,
   NativeBalance,
   NftOwner,
+  NftContractMetadata,
   NftTransfer,
   TokenBalance,
   TokenTransfer,
   Transaction,
-} from './model/types';
-import { TokenMetadata } from '../utils/TokenMetadata';
+} from './types';
+import { TokenMetadata } from '../util/TokenMetadata';
 
 @Injectable()
 export class MoralisService {
@@ -214,7 +215,10 @@ export class MoralisService {
     );
   }
 
-  async nftMetadataOf(chainId: ChainList, contractAddress: string) {
+  async nftMetadataOf(
+    chainId: ChainList,
+    contractAddress: string,
+  ): Promise<NftContractMetadata> {
     validate([chainId, contractAddress], ['string', 'string']);
 
     const cacheKey = `moralis.metadata['${chainId}']['${contractAddress}']`;
@@ -228,10 +232,15 @@ export class MoralisService {
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
 
-            return await Moralis.Web3API.token.getNFTMetadata({
+            const nftMetadata = await Moralis.Web3API.token.getNFTMetadata({
               address: contractAddress,
               chain: chainId,
             });
+
+            return <NftContractMetadata>{
+              ...nftMetadata,
+              chain_id: chainId,
+            };
           }),
           {
             onRetry: (error) =>
@@ -402,7 +411,7 @@ export class MoralisService {
     );
   }
 
-  async nftTransfersOf(
+  async nftContractTransfersOf(
     chainId: ChainList,
     contractAddress: string,
     offset = 0,
@@ -412,7 +421,7 @@ export class MoralisService {
       ['string', 'string', 'number'],
     );
 
-    const cacheKey = `moralis.nftTransfersOf['${chainId}']['${contractAddress}'][${offset}]`;
+    const cacheKey = `moralis.nftContractTransfersOf['${chainId}']['${contractAddress}'][${offset}]`;
     const debugMessage = `Web3API > getContractNFTTransfers('${chainId}', '${contractAddress}', ${offset})`;
 
     return this.cache.wrap(
@@ -434,6 +443,53 @@ export class MoralisService {
             }
 
             return response.result.map((it) => ({ ...it, chain_id: chainId }));
+          }),
+          {
+            onRetry: (error: any) => {
+              console.error(error);
+              logger.warn(
+                `Retry due to ${error.message ?? error.error}: ${debugMessage}`,
+              );
+            },
+          },
+        ),
+      {
+        ttl: 900000,
+      },
+    );
+  }
+
+  async nftTransfersOf(
+    chainId: ChainList,
+    ownerAddress: string,
+  ): Promise<NftTransfer[]> {
+    validate([chainId, ownerAddress], ['string', 'string']);
+
+    const cacheKey = `moralis.nftTransfersOf_a['${chainId}']['${ownerAddress}']`;
+    const debugMessage = `Web3API > getNFTTransfers('${chainId}', '${ownerAddress}'`;
+
+    // // TODO: once moralis has fixed ERC20 contracts appearing in the NFT list, can remove this
+    const bannedContracts = ['0xe9e7cea3dedca5984780bafc599bd69add087d56'];
+
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            logger.debug(debugMessage);
+
+            const response = await Moralis.Web3API.account.getNFTTransfers({
+              address: ownerAddress,
+              chain: chainId,
+            });
+
+            if (!Array.isArray(response?.result)) {
+              return [];
+            }
+
+            return response.result
+              .filter((it) => !bannedContracts.includes(it.token_address))
+              .map((it) => ({ ...it, chain_id: chainId }));
           }),
           {
             onRetry: (error: any) => {

@@ -7,7 +7,7 @@ import { Cache } from 'cache-manager';
 import _ from 'lodash';
 import moment from 'moment';
 import { LimiterService } from '../limiter.service';
-import { ChainId, logger } from '../utils';
+import { ChainId, logger } from '../util';
 import { CoinPrice } from './model/coin-price';
 const BASE_URL = 'https://api.coingecko.com/api/v3';
 

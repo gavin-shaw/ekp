@@ -6,7 +6,7 @@ import {
   CoinPrice,
   CurrencyDto,
   EventService,
-  formatters,
+  LayerDto,
   logger,
   moralis,
   MoralisService,
@@ -18,9 +18,20 @@ import { validate } from 'bycontract';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
+import * as Rx from 'rxjs';
 import { NFT_BALANCE_QUEUE } from '../queues';
 import { defaultLogo } from '../util/constants';
-import { NftContractDocument } from './dto';
+import { logErrors } from '../util/logErrors';
+import { NftBalanceDocument } from './documents/nft-balance.document';
+
+interface Context {
+  readonly clientId: string;
+  readonly coinPrices?: CoinPrice[];
+  readonly documents?: NftBalanceDocument[];
+  readonly selectedCurrency: CurrencyDto;
+  readonly nftOwners?: moralis.NftOwner[];
+  readonly watchedAddresses: string[];
+}
 
 @Processor(NFT_BALANCE_QUEUE)
 export class NftBalanceProcessor {
@@ -30,6 +41,24 @@ export class NftBalanceProcessor {
     private moralisService: MoralisService,
     private openseaService: OpenseaService,
   ) {}
+
+  @Process()
+  async handleClientStateChangedEvent(job: Job<ClientStateChangedEvent>) {
+    try {
+      await Rx.lastValueFrom(
+        this.validateEvent(job.data).pipe(
+          this.addNftOwners(),
+          this.addCoinPrices(),
+          this.mapNftBalanceDocuments(),
+          this.addLogosAndLatestPricing(),
+          this.emitNftBalanceDocuments(),
+          logErrors(),
+        ),
+      );
+    } catch (error) {
+      logger.error(error, error.stack);
+    }
+  }
 
   private validateEvent(event: ClientStateChangedEvent) {
     const clientId = validate(event.clientId, 'string');
@@ -44,78 +73,93 @@ export class NftBalanceProcessor {
       'Array.<object>',
     );
 
-    return {
-      clientId,
-      selectedCurrency,
-      watchedWallets,
-    };
+    return Rx.from([
+      {
+        clientId,
+        selectedCurrency,
+        watchedAddresses: watchedWallets.map((it: { address: string }) =>
+          it.address.toLowerCase(),
+        ),
+      },
+    ]);
   }
 
-  @Process()
-  async handleClientStateChangedEvent(job: Job<ClientStateChangedEvent>) {
-    try {
-      //#region validate input
-      const { clientId, selectedCurrency, watchedWallets } = this.validateEvent(
-        job.data,
-      );
-      //#endregion
-
-      logger.log(`Processing NFT_BALANCE_QUEUE for ${clientId}`);
-
-      //#region get contracts for client
+  private addNftOwners() {
+    return Rx.mergeMap(async (context: Context) => {
       const requestPromises = [];
 
       for (const chainId of chainIds) {
-        for (const watchedWallet of watchedWallets) {
-          const address = validate(watchedWallet.address, 'string');
-
+        for (const address of context.watchedAddresses) {
           requestPromises.push(this.moralisService.nftsOf(chainId, address));
         }
       }
 
-      const nfts: moralis.NftOwner[] = _.flatten(
+      const nftOwners: moralis.NftOwner[] = _.flatten(
         await Promise.all(requestPromises),
       );
-      //#endregion
 
-      //#region get coin pricing TODO: move this into its own client service
+      return <Context>{
+        ...context,
+        nftOwners,
+      };
+    });
+  }
+
+  private addCoinPrices() {
+    return Rx.mergeMap(async (context: Context) => {
       const chainCoinIds = Object.values(chains).map((it) => it.token.coinId);
 
-      const chainCoinPrices = await this.coingeckoService.latestPricesOf(
+      const coinPrices = await this.coingeckoService.latestPricesOf(
         chainCoinIds,
-        selectedCurrency.id,
+        context.selectedCurrency.id,
       );
-      //#endregion
 
-      //#region map the nfts into contract documents
-      let contracts = this.mapNftContractDocuments(
-        nfts,
-        selectedCurrency,
-        chainCoinPrices,
-      );
-      //#endregion
+      return <Context>{
+        ...context,
+        coinPrices,
+      };
+    });
+  }
 
-      //#region add logos and latest pricing to contracts
-      contracts = await Promise.all(
-        contracts.map(async (contract: NftContractDocument) => {
+  private addLogosAndLatestPricing() {
+    return Rx.mergeMap(async (context: Context) => {
+      const updatedDocuments = await Promise.all(
+        context.documents.map(async (contract: NftBalanceDocument) => {
           let updatedContract = contract;
 
-          const latestTransfers = await this.moralisService.nftTransfersOf(
-            contract.chain.id,
-            contract.contractAddress,
-          );
+          const latestTransfers =
+            await this.moralisService.nftContractTransfersOf(
+              contract.chain.id,
+              contract.contractAddress,
+            );
 
           if (!!Array.isArray(latestTransfers) && latestTransfers.length > 0) {
-            const price = _.min(
+            const nativePrice = _.min(
               latestTransfers
                 .filter((it) => !!it.value && it.value !== '0')
                 .map((it) => Number(ethers.utils.formatEther(it.value))),
             );
 
+            const chainMetadata = chains[contract.chain.id];
+
+            const chainCoinPrice = context.coinPrices.find(
+              (it) => it.coinId === chainMetadata.token.coinId,
+            );
+
             updatedContract = {
               ...updatedContract,
-              fetchTimestamp: moment(latestTransfers[0].block_timestamp).unix(),
-              price,
+              updated: moment(latestTransfers[0].block_timestamp).unix(),
+              nativePrice,
+              tokenValue: {
+                tokenAmount: updatedContract.balance * nativePrice,
+                tokenSymbol: chainMetadata.token.symbol,
+                tokenPrice: chainCoinPrice.price,
+                fiatSymbol: context.selectedCurrency.symbol,
+                fiatAmount:
+                  updatedContract.balance *
+                    nativePrice *
+                    chainCoinPrice.price || 0,
+              },
             };
           }
 
@@ -138,108 +182,61 @@ export class NftBalanceProcessor {
           return updatedContract;
         }),
       );
-      //#endregion
 
-      //#region emit nft contracts to the client
-      const totalValue = _.sumBy(
-        contracts.filter((it) => !!it.balance && !!it.price && !!it.rateFiat),
-        (it) => it.balance * it.price * it.rateFiat,
-      );
+      return <Context>{
+        ...context,
+        documents: updatedDocuments,
+      };
+    });
+  }
 
-      const layers = [
+  private emitNftBalanceDocuments() {
+    return Rx.tap((context: Context) => {
+      const layers = <LayerDto[]>[
         {
-          id: 'nft-contracts-layer',
-          collectionName: 'nfts',
-          patch: contracts,
-        },
-        {
-          id: `nft-stats-layer`,
-          collectionName: 'stats',
-          set: [
-            {
-              id: 'nft_balance',
-              fiatSymbol: selectedCurrency.symbol,
-              totalValue,
-            },
-          ],
+          id: `nft-balances-layer`,
+          collectionName: 'nft_balances',
+          set: context.documents,
         },
       ];
 
-      this.eventService.addLayers(clientId, layers);
-      //#endregion
-    } catch (error) {
-      logger.error(`(NftClientService) Error occurred handling client state.`);
-      logger.error(error);
-    }
+      this.eventService.addLayers(context.clientId, layers);
+    });
   }
 
-  private mapNftContractDocuments(
-    nfts: moralis.NftOwner[],
-    selectedCurrency: CurrencyDto,
-    chainCoinPrices: CoinPrice[],
-  ): NftContractDocument[] {
-    const byContractAddress = _.groupBy(
-      nfts,
-      (nft) => `${nft.chain_id}_${nft.token_address}`,
-    );
-
-    const now = moment().unix();
-
-    return Object.entries(byContractAddress).map(([id, nfts]) => {
-      const balance = _.sumBy(nfts, (it) => Number(it.amount));
-
-      const chainMetadata = chains[nfts[0].chain_id];
-
-      const chainCoinPrice = chainCoinPrices.find(
-        (it) => it.coinId === chains[nfts[0].chain_id].token.coinId,
+  private mapNftBalanceDocuments() {
+    return Rx.map((context: Context) => {
+      const byContractAddress = _.groupBy(
+        context.nftOwners,
+        (nft) => `${nft.chain_id}_${nft.token_address}`,
       );
 
-      return {
-        id,
-        created: now, // TODO: set this according to the contract created date
-        updated: now, // TODO: set this according to the contract last transfer timestamp
-        balance,
-        balanceFormatted: `${Math.floor(balance)} nfts`,
-        chain: {
-          id: chainMetadata.id,
-          logo: chainMetadata.logo,
-          name: chainMetadata.name,
-        },
-        contractAddress: nfts[0].token_address,
-        fiatSymbol: selectedCurrency.symbol,
-        links: {
-          token: `${chainMetadata.explorer}token/${nfts[0].token_address}`,
-        },
-        nfts: nfts.map((nft) => ({ tokenId: nft.token_id })),
-        name: nfts[0].name,
-        ownerAddresses: nfts.map((nft) => nft.owner_of),
-        symbol: nfts[0].symbol,
-        rateFiat: chainCoinPrice.price,
-        priceSymbol: chainMetadata.token.symbol,
-        priceFiat: {
-          _eval: true,
-          scope: {
-            price: '$.price',
-            rate: '$.rateFiat',
+      const documents = Object.entries(byContractAddress).map(([id, nfts]) => {
+        const balance = _.sumBy(nfts, (it) => Number(it.amount));
+
+        const chainMetadata = chains[nfts[0].chain_id];
+
+        return <NftBalanceDocument>{
+          id,
+          balance,
+          chain: {
+            id: chainMetadata.id,
+            logo: chainMetadata.logo,
+            name: chainMetadata.name,
           },
-          expression: 'rate * price',
-        },
-        value: {
-          _eval: true,
-          scope: {
-            price: '$.price',
-            balance: '$.balance',
+          contractAddress: nfts[0].token_address,
+          links: {
+            details: '',
+            explorer: `${chainMetadata.explorer}token/${nfts[0].token_address}`,
           },
-          expression: 'balance * price',
-        },
-        valueFiat: {
-          _eval: true,
-          scope: {
-            value: '$.value',
-            rate: '$.rateFiat',
-          },
-          expression: 'rate * value',
-        },
+          name: nfts[0].name,
+          symbol: nfts[0].symbol,
+        };
+      });
+
+      return <Context>{
+        ...context,
+        documents,
       };
     });
   }

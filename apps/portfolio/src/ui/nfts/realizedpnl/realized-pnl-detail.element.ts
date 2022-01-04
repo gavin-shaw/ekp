@@ -1,4 +1,3 @@
-import table from './realized-pnl-detail-table.element';
 import list from './realized-pnl-detail-list.element';
 import stats from './realized-pnl-detail-stats.element';
 
@@ -11,7 +10,7 @@ export default function element() {
         value: {
           formatter: 'template',
           value:
-            '$.token_pnl_events[?(@.chain.id == "{{ chainId }}" && @.token.address == "{{ tokenAddress }}")]',
+            '$.nft_pnl_events[?(@.chain.id == "{{ chainId }}" && @.nftCollection.contractAddress == "{{ tokenAddress }}")]',
           scope: {
             chainId: '$.location.pathParams[1]',
             tokenAddress: '$.location.pathParams[2]',
@@ -28,7 +27,7 @@ export default function element() {
               children: [
                 {
                   view: 'image',
-                  src: '$[0].token.logo',
+                  src: '$[0].nftCollection.logo',
                   size: 36,
                 },
               ],
@@ -39,7 +38,7 @@ export default function element() {
                 {
                   view: 'span',
                   className: 'font-large-1',
-                  value: '$[0].token.name',
+                  value: '$[0].nftCollection.name',
                 },
               ],
             },

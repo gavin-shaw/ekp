@@ -5,7 +5,7 @@ import Bottleneck from 'bottleneck';
 import { validate } from 'bycontract';
 import { Cache } from 'cache-manager';
 import { LimiterService } from '../limiter.service';
-import { logger } from '../utils';
+import { logger } from '../util';
 import { AssetContract } from './model';
 
 const BASE_URL = 'https://api.opensea.io/api/v1';

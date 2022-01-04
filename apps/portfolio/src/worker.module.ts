@@ -1,29 +1,22 @@
 import { GlobalModule } from '@app/sdk';
-import { BullModule } from '@nestjs/bull';
+import { BullModule, BullModuleOptions } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { NftBalanceProcessor } from './nft/nft-balance.processor';
-import {
-  NFT_BALANCE_QUEUE,
-  TOKEN_BALANCE_QUEUE,
-  TOKEN_PNL_QUEUE,
-  UI_QUEUE,
-} from './queues';
+import { NftPnlProcessor } from './nft/nft-pnl.processor';
+import { QUEUE_NAMES } from './queues';
 import { TokenBalanceProcessor } from './token/token-balance.processor';
 import { TokenPnlProcessor } from './token/token-pnl.processor';
 import { UiProcessor } from './ui/ui.processor';
-
 @Module({
   imports: [
     GlobalModule,
     BullModule.registerQueue(
-      { name: NFT_BALANCE_QUEUE },
-      { name: TOKEN_BALANCE_QUEUE },
-      { name: TOKEN_PNL_QUEUE },
-      { name: UI_QUEUE },
+      ...QUEUE_NAMES.map((name: string) => <BullModuleOptions>{ name }),
     ),
   ],
   providers: [
     NftBalanceProcessor,
+    NftPnlProcessor,
     TokenBalanceProcessor,
     TokenPnlProcessor,
     UiProcessor,

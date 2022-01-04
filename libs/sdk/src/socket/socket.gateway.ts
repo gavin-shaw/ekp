@@ -12,7 +12,7 @@ import moment from 'moment';
 import { RedisService } from 'nestjs-redis';
 import { Server, Socket } from 'socket.io';
 import { EkConfigService, SUBSCRIBE_CLIENT } from '../config/ek-config.service';
-import { logger } from '../utils/default-logger';
+import { logger } from '../util/default-logger';
 import { LayerDto } from './dtos/layer.dto';
 import {
   AddLayersEvent,

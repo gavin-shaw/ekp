@@ -2,12 +2,24 @@ export default function element() {
   return [
     {
       view: 'stats',
-      items: "$.stats[?(@.id == 'token_balance')]",
+      title: 'Summary',
       mappings: [
         {
           name: 'Total Value',
+          context: {
+            fiatSymbol: '$.token_balances..tokenValue.fiatSymbol',
+            sum: {
+              formatter: 'sum',
+              items: {
+                formatter: 'jsonpath',
+                array: true,
+                value: '$.token_balances..tokenValue',
+              },
+              value: '$.fiatAmount',
+            },
+          },
           value: {
-            value: '$.totalValue',
+            value: '$.sum',
             formatter: 'currency',
             symbol: '$.fiatSymbol',
           },
