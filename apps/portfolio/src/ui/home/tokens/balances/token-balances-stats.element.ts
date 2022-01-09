@@ -7,7 +7,7 @@ export default function element() {
         {
           name: 'Total Value',
           context: {
-            fiatSymbol: '$.token_balances..tokenValue.fiatSymbol',
+            fiatSymbol: '$.token_balances..fiatSymbol',
             sum: {
               formatter: 'sum',
               items: {

@@ -6,7 +6,6 @@ import {
   CoinPrice,
   CurrencyDto,
   EventService,
-  LayerDto,
   logger,
   moralis,
   MoralisService,
@@ -18,6 +17,7 @@ import { validate } from 'bycontract';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import * as Rx from 'rxjs';
+import { TOKEN_BALANCE_MILESTONES } from '../collectionNames';
 import { TOKEN_BALANCE_QUEUE } from '../queues';
 import { logErrors } from '../util/logErrors';
 import { TokenBalanceDocument } from './documents/token-balance.document';
@@ -35,11 +35,18 @@ export class TokenBalanceProcessor {
     try {
       await Rx.firstValueFrom(
         this.validateEvent(job.data).pipe(
+          Rx.tap((it) => console.log(it)),
+          this.emitMilestones(),
           this.addTokenBalances(),
+          this.emitMilestones(),
           this.addCoinPrices(),
+          this.emitMilestones(),
           this.addTokenMetadatas(),
+          this.emitMilestones(),
           this.mapTokenBalanceDocuments(),
+          this.emitMilestones(),
           this.emitTokenBalanceDocuments(),
+          this.removeMilestones(),
           logErrors(),
         ),
       );
@@ -65,9 +72,9 @@ export class TokenBalanceProcessor {
       {
         clientId,
         selectedCurrency,
-        watchedAddresses: watchedWallets.map(
-          (it: { address: string }) => it.address,
-        ),
+        watchedAddresses: watchedWallets
+          .filter((it) => it.hidden !== true)
+          .map((it: { address: string }) => it.address),
       },
     ]);
   }
@@ -213,11 +220,63 @@ export class TokenBalanceProcessor {
 
   private emitTokenBalanceDocuments() {
     return Rx.tap((context: Context) => {
-      const layers = <LayerDto[]>[
+      const addLayers = [
         {
           id: `token-balances-layer`,
           collectionName: 'token_balances',
           set: context.documents,
+        },
+      ];
+      this.eventService.addLayers(context.clientId, addLayers);
+    });
+  }
+
+  private removeMilestones() {
+    return Rx.tap((context: Context) => {
+      const removeMilestonesQuery = {
+        id: TOKEN_BALANCE_MILESTONES,
+      };
+
+      this.eventService.removeLayers(context.clientId, removeMilestonesQuery);
+    });
+  }
+
+  private emitMilestones() {
+    return Rx.tap((context: Context) => {
+      const documents = [
+        {
+          id: '1-balances',
+          status: !context.tokenBalances ? 'progressing' : 'complete',
+          label: !context.tokenBalances
+            ? 'Fetching your balances'
+            : `Fetched ${context.tokenBalances.length} balances`,
+        },
+        {
+          id: '2-prices',
+          status: !context.coinPrices ? 'progressing' : 'complete',
+          label: !context.coinPrices
+            ? 'Fetching token prices'
+            : `Fetched pricing for ${context.coinPrices.length} tokens`,
+        },
+        {
+          id: '3-metadata',
+          status: !context.tokenMetadatas ? 'pending' : 'complete',
+          label: !context.tokenMetadatas
+            ? 'Fetching token metadata'
+            : `Fetched metadata for ${context.tokenMetadatas.length} tokens`,
+        },
+        {
+          id: '4-final',
+          status: !context.documents ? 'pending' : 'complete',
+          label: !context.documents ? 'Combining the data' : `Done 👍`,
+        },
+      ];
+
+      const layers = [
+        {
+          id: TOKEN_BALANCE_MILESTONES,
+          collectionName: TOKEN_BALANCE_MILESTONES,
+          set: documents,
         },
       ];
 

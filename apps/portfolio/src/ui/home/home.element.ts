@@ -6,6 +6,9 @@ import nftRealizedPnl from './nfts/realized-pnl/realized-pnl.element';
 export default function element() {
   return [
     {
+      view: 'watchedWallets',
+    },
+    {
       view: 'tabs',
       tabs: [
         {

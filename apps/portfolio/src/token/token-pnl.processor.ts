@@ -86,21 +86,21 @@ export class TokenPnlProcessor {
           status: !context.transactions ? 'progressing' : 'complete',
           label: !context.transactions
             ? 'Fetching your transactions'
-            : `Fetched ${context.transactions.length}`,
+            : `Fetched ${context.transactions.length} transactions`,
         },
         {
           id: '2-metadata',
           status: !context.tokenMetadatas ? 'pending' : 'complete',
           label: !context.tokenMetadatas
             ? 'Fetching token metadata'
-            : `Fetched metadata for ${context.tokenMetadatas.length}`,
+            : `Fetched metadata for ${context.tokenMetadatas.length} tokens`,
         },
         {
           id: '3-prices',
           status: !context.coinPrices ? 'progressing' : 'complete',
           label: !context.coinPrices
             ? 'Fetching historic token prices'
-            : `Fetched pricing for ${context.coinPrices.length}`,
+            : `Fetched pricing for ${context.coinPrices.length} tokens`,
         },
       ];
 
