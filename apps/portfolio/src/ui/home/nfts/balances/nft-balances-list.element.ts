@@ -19,7 +19,6 @@ export default function element() {
         {
           id: 'collection',
           value: '$.name',
-          filterable: true,
           sortable: true,
           cell: [
             {

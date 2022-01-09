@@ -18,6 +18,7 @@ import { validate } from 'bycontract';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
+import { stringify } from 'querystring';
 import * as Rx from 'rxjs';
 import { NFT_BALANCE_QUEUE } from '../queues';
 import { defaultLogo } from '../util/constants';
@@ -40,7 +41,7 @@ export class NftBalanceProcessor {
     private eventService: EventService,
     private moralisService: MoralisService,
     private openseaService: OpenseaService,
-  ) {}
+  ) { }
 
   @Process()
   async handleClientStateChangedEvent(job: Job<ClientStateChangedEvent>) {
@@ -157,8 +158,8 @@ export class NftBalanceProcessor {
                 fiatSymbol: context.selectedCurrency.symbol,
                 fiatAmount:
                   updatedContract.balance *
-                    nativePrice *
-                    chainCoinPrice.price || 0,
+                  nativePrice *
+                  chainCoinPrice.price || 0,
               },
             };
           }
@@ -218,19 +219,17 @@ export class NftBalanceProcessor {
 
         return <NftBalanceDocument>{
           id,
-          balance,
-          chain: {
-            id: chainMetadata.id,
-            logo: chainMetadata.logo,
-            name: chainMetadata.name,
-          },
-          contractAddress: nfts[0].token_address,
+          balanceNfts: balance,
+          chainId: chainMetadata.id,
+          chainLogo: chainMetadata.logo,
+          chainName: chainMetadata.name,
           links: {
             details: '',
             explorer: `${chainMetadata.explorer}token/${nfts[0].token_address}`,
           },
-          name: nfts[0].name,
-          symbol: nfts[0].symbol,
+          nftCollectionAddress: nfts[0].token_address,
+          nftCollectionName: nfts[0].name,
+          nftCollectionSymbol: nfts[0].symbol,
         };
       });
 

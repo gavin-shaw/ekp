@@ -8,5 +8,5 @@ export type RpcOrPrimitive =
 
 export interface Rpc {
   method: string;
-  params?: RpcOrPrimitive[];
+  params?: any[];
 }
