@@ -1,16 +1,16 @@
-import { ClientStateChangedEvent, CurrencyDto } from '@app/sdk';
+import {
+  ChainId,
+  chains as allChains,
+  ClientStateChangedEvent,
+  CurrencyDto,
+} from '@app/sdk';
 import { Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { validate } from 'bycontract';
-
+import _ from 'lodash';
 import * as Rx from 'rxjs';
+import { ChainMetadata } from '../../../libs/sdk/src/util/ChainMetadata';
 import { logErrors } from './util/logErrors';
-
-export interface BaseContext {
-  readonly clientId: string;
-  readonly watchedAddresses: string[];
-  readonly selectedCurrency: CurrencyDto;
-}
 
 export abstract class AbstractProcessor<T extends BaseContext> {
   protected validateEvent(event: ClientStateChangedEvent): Rx.Observable<T> {
@@ -26,13 +26,24 @@ export abstract class AbstractProcessor<T extends BaseContext> {
       'Array.<object>',
     );
 
+    const hiddenChains =
+      validate(event.state?.client.hiddenChains, 'Array.<string>=') ?? [];
+
+    const chains = _.chain(allChains)
+      .filter((it) => !hiddenChains.includes(it.id))
+      .value();
+
+    const chainIds = chains.map((it) => it.id);
+
     return Rx.from([
       <T>{
+        chainIds,
+        chains,
         clientId,
         selectedCurrency,
-        watchedAddresses: watchedWallets.map((it: { address: string }) =>
-          it.address.toLowerCase(),
-        ),
+        watchedAddresses: watchedWallets
+          .filter((it: { hidden: boolean }) => it.hidden !== true)
+          .map((it: { address: string }) => it.address),
       },
     ]);
   }
@@ -47,4 +58,12 @@ export abstract class AbstractProcessor<T extends BaseContext> {
   }
 
   abstract pipe(source: Rx.Observable<T>): Rx.Observable<T>;
+}
+
+export interface BaseContext {
+  readonly chainIds: ChainId[];
+  readonly chains: ChainMetadata[];
+  readonly clientId: string;
+  readonly selectedCurrency: CurrencyDto;
+  readonly watchedAddresses: string[];
 }

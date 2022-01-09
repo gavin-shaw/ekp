@@ -1,24 +1,21 @@
 import { DocumentDto } from '@app/sdk';
 
 export interface NftPnlSummaryDocument extends DocumentDto {
-  readonly chain: {
-    readonly id: string;
-    readonly logo: string;
-    readonly name: string;
-  };
-  readonly costBasis: number;
+  readonly chainId: string;
+  readonly chainLogo: string;
+  readonly chainName: string;
+  readonly chainSymbol: string;
+  readonly costBasisFiat: number;
   readonly fiatSymbol: string;
   readonly links: {
-    readonly details: string;
+    readonly explorer: string;
   };
-  readonly nftCollection: {
-    readonly contractId: string;
-    readonly logo: string;
-    readonly name: string;
-    readonly symbol: string;
-  };
-  readonly realizedGain: number;
+  readonly nftCollectionId: string;
+  readonly nftCollectionLogo: string;
+  readonly nftCollectionName: string;
+  readonly nftCollectionSymbol: string;
+  readonly realizedGainFiat: number;
   readonly realizedGainPc: number;
-  readonly realizedValue: number;
-  readonly unrealizedCost: number;
+  readonly realizedValueFiat: number;
+  readonly unrealizedCostFiat: number;
 }

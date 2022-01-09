@@ -1,7 +1,7 @@
-import { DocumentDto, ChainId, TokenValue } from '@app/sdk';
+import { DocumentDto } from '@app/sdk';
 
 export interface NftBalanceDocument extends DocumentDto {
-  readonly balanceFiat?: number;
+  readonly balanceFiat: number;
   readonly balanceNfts: number;
   readonly chainId: string;
   readonly chainLogo: string;
@@ -12,7 +12,7 @@ export interface NftBalanceDocument extends DocumentDto {
   readonly saleTokenPrice: number;
   readonly saleTokenSymbol: string;
   readonly nftCollectionAddress: string;
-  readonly nftCollectionLogo?: string;
+  readonly nftCollectionLogo: string;
   readonly nftCollectionName: string;
   readonly nftCollectionSymbol: string;
 }

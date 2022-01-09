@@ -5,6 +5,7 @@ export interface ClientStateDto {
     readonly lastTimestamp?: number;
     readonly selectedCurrency: CurrencyDto;
     readonly watchedWallets: { address: string }[];
+    readonly hiddenChains: string[];
   };
   // [key: string]: any;
 }

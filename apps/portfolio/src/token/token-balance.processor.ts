@@ -1,90 +1,57 @@
 import {
-  ChainId,
   chains,
-  ClientStateChangedEvent,
   CoingeckoService,
   CoinPrice,
-  CurrencyDto,
   EventService,
-  logger,
   moralis,
   MoralisService,
   TokenMetadata,
 } from '@app/sdk';
-import { Process, Processor } from '@nestjs/bull';
-import { Job } from 'bull';
-import { validate } from 'bycontract';
+import { Processor } from '@nestjs/bull';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import * as Rx from 'rxjs';
+import { AbstractProcessor, BaseContext } from '../abstract.processor';
 import { TOKEN_BALANCES, TOKEN_BALANCE_MILESTONES } from '../collectionNames';
 import { TOKEN_BALANCE_QUEUE } from '../queues';
-import { logErrors } from '../util/logErrors';
 import { TokenBalanceDocument } from './documents/token-balance.document';
 
 @Processor(TOKEN_BALANCE_QUEUE)
-export class TokenBalanceProcessor {
+export class TokenBalanceProcessor extends AbstractProcessor<Context> {
   constructor(
     private coingeckoService: CoingeckoService,
     private eventService: EventService,
     private moralisService: MoralisService,
-  ) { }
-
-  @Process()
-  async handleClientStateChangedEvent(job: Job<ClientStateChangedEvent>) {
-    try {
-      await Rx.firstValueFrom(
-        this.validateEvent(job.data).pipe(
-          this.emitMilestones(),
-          this.addTokenBalances(),
-          this.emitMilestones(),
-          this.addCoinPrices(),
-          this.emitMilestones(),
-          this.addTokenMetadatas(),
-          this.emitMilestones(),
-          this.mapTokenBalanceDocuments(),
-          this.emitMilestones(),
-          this.emitTokenBalanceDocuments(),
-          this.removeMilestones(),
-          logErrors(),
-        ),
-      );
-    } catch (error) {
-      logger.error(error, error.stack);
-    }
+  ) {
+    super();
   }
 
-  private validateEvent(event: ClientStateChangedEvent) {
-    const clientId = validate(event.clientId, 'string');
-
-    const selectedCurrency = validate(
-      event.state?.client.selectedCurrency,
-      'object',
-    );
-
-    const watchedWallets = validate(
-      event.state?.client.watchedWallets,
-      'Array.<object>',
-    );
-
-    return Rx.from([
-      {
-        clientId,
-        selectedCurrency,
-        watchedAddresses: watchedWallets
-          .filter((it) => it.hidden !== true)
-          .map((it: { address: string }) => it.address),
-      },
-    ]);
+  pipe(source: Rx.Observable<Context>): Rx.Observable<Context> {
+    return source
+      .pipe(
+        this.emitMilestones(),
+        this.addTokenBalances(),
+        this.emitMilestones(),
+        this.addCoinPrices(),
+        this.emitMilestones(),
+      )
+      .pipe(
+        this.addTokenMetadatas(),
+        this.emitMilestones(),
+        this.mapTokenBalanceDocuments(),
+        this.emitMilestones(),
+        this.emitTokenBalanceDocuments(),
+        this.removeMilestones(),
+      );
   }
 
   private addTokenBalances() {
     return Rx.mergeMap(async (context: Context) => {
       const promises = [];
 
-      for (const chain of _.keys(chains)) {
+      for (const chainId of context.chainIds) {
         for (const wallet of context.watchedAddresses) {
-          promises.push(this.moralisService.tokensOf(chain as ChainId, wallet));
+          promises.push(this.moralisService.tokensOf(chainId, wallet));
         }
       }
 
@@ -283,12 +250,9 @@ export class TokenBalanceProcessor {
   }
 }
 
-interface Context {
-  readonly clientId: string;
+interface Context extends BaseContext {
   readonly coinPrices?: CoinPrice[];
   readonly documents?: TokenBalanceDocument[];
-  readonly selectedCurrency: CurrencyDto;
   readonly tokenBalances?: moralis.TokenBalance[];
   readonly tokenMetadatas?: TokenMetadata[];
-  readonly watchedAddresses: string;
 }

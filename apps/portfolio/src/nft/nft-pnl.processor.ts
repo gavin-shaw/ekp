@@ -19,6 +19,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import * as Rx from 'rxjs';
 import { AbstractProcessor, BaseContext } from '../abstract.processor';
+import { NFT_PNL_EVENTS, NFT_PNL_SUMMARIES } from '../collectionNames';
 import { NFT_PNL_QUEUE } from '../queues';
 import { defaultLogo } from '../util/constants';
 import { nftContractId, tokenContractId } from '../util/ids';
@@ -205,7 +206,7 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
       const layers = [
         {
           id: 'nft-pnl-events-layer',
-          collectionName: 'nft_pnl_events',
+          collectionName: NFT_PNL_EVENTS,
           set: context.documents,
         },
       ];
@@ -219,7 +220,7 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
       const layers = [
         {
           id: 'nft-pnl-summaries-layer',
-          collectionName: 'nft_pnl_summaries',
+          collectionName: NFT_PNL_SUMMARIES,
           set: context.summaryDocuments,
         },
       ];
@@ -230,51 +231,57 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
 
   private mapPnlSummaryDocuments() {
     return Rx.map((context: Context) => {
-      const documentsByContractId = _.groupBy(context.documents, 'contractId');
+      const documentsByContractId = _.groupBy(
+        context.documents,
+        'nftCollectionId',
+      );
 
       const summaryDocuments = _.entries(documentsByContractId)
         .map(([contractId, documents]) => {
-          const chainMetadata = chains[documents[0].chain.id];
+          const chainMetadata = chains[documents[0].chainId];
 
-          const costBasis = _.sumBy(documents, (it) => it.costBasis || 0);
-          const realizedGain = _.sumBy(documents, (it) => it.realizedGain || 0);
+          const costBasis = _.sumBy(documents, (it) => it.costBasisFiat || 0);
+          const realizedGain = _.sumBy(
+            documents,
+            (it) => it.realizedGainFiat || 0,
+          );
           const realizedValue = _.sumBy(
             documents,
-            (it) => it.realizedValue || 0,
+            (it) => it.realizedValueFiat || 0,
           );
 
           const nftMetadata = context.nftMetadatas.find(
             (it) =>
               it.chainId === chainMetadata.id &&
-              it.contractAddress === documents[0].nftCollection.contractAddress,
+              it.contractAddress === documents[0].nftCollectionAddress,
           );
 
           if (!nftMetadata) {
             return undefined;
           }
 
-          return <NftPnlSummaryDocument>{
+          const document: NftPnlSummaryDocument = {
             id: contractId,
-            chain: {
-              id: chainMetadata.id,
-              logo: chainMetadata.logo,
-              name: chainMetadata.name,
-            },
-            costBasis,
+            chainId: chainMetadata.id,
+            chainLogo: chainMetadata.logo,
+            chainName: chainMetadata.name,
+            chainSymbol: chainMetadata.token.symbol,
+            costBasisFiat: costBasis,
             fiatSymbol: context.selectedCurrency.symbol,
             links: {
-              details: `nfts/realizedpnl/${nftMetadata.chainId}/${nftMetadata.contractAddress}`,
+              explorer: `nfts/realizedpnl/${nftMetadata.chainId}/${nftMetadata.contractAddress}`,
             },
-            nftCollection: {
-              logo: nftMetadata.logo,
-              name: nftMetadata.name,
-              symbol: nftMetadata.symbol,
-            },
-            realizedGain,
-            realizedGainPc: 0, // TODO: calc realized gain
-            realizedValue,
-            unrealizedCost: 0, // TODO: calc cost basis
+            nftCollectionId: contractId,
+            nftCollectionLogo: nftMetadata.logo,
+            nftCollectionName: nftMetadata.name,
+            nftCollectionSymbol: nftMetadata.symbol,
+            realizedGainFiat: realizedValue - costBasis,
+            realizedGainPc: (realizedValue - costBasis) / costBasis,
+            realizedValueFiat: realizedValue,
+            unrealizedCostFiat: 0, // TODO: not sure if this sum will be correct, not using it yet anyway
           };
+
+          return document;
         })
         .filter((it) => !!it);
 
@@ -576,40 +583,43 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
             unrealizedCost = _.sum(_.values(costBasisMap[contractId]));
           }
 
-          return <NftPnlEventDocument>{
+          const document: NftPnlEventDocument = {
             id: transfer.transaction_hash,
             blockNumber: Number(transfer.block_number),
             blockTimestamp: moment(transfer.block_timestamp).unix(),
-            chain: {
-              id: chainMetadata.id,
-              logo: chainMetadata.logo,
-              name: chainMetadata.name,
-            },
-            contractAddress: transfer.token_address,
-            contractId,
-            costBasis,
+            chainId: chainMetadata.id,
+            chainLogo: chainMetadata.logo,
+            chainName: chainMetadata.name,
+            costBasisFiat: costBasis,
             description: _.truncate(description, { length: 24 }),
             fromAddress: transfer.from_address,
-            gasValue,
+            gasNativeToken: gasValue.tokenAmount,
+            gasFiat: gasValue.fiatAmount,
             icon, // TODO: add BUY / SELL icon
             links: {
               explorer: `${chainMetadata.explorer}tx/${transfer.transaction_hash}`,
             },
-            nftCollection: {
-              contractId,
-              contractAddress: nftMetadata.contractAddress,
-              logo: nftMetadata.logo,
-              name: nftMetadata.name,
-              symbol: nftMetadata.symbol,
-            },
-            realizedGain,
+            nativeTokenPrice: gasValue.tokenPrice,
+            nativeTokenSymbol: gasValue.tokenSymbol,
+            nftCollectionAddress: transfer.token_address,
+            nftCollectionId: contractId,
+            nftCollectionLogo: nftMetadata.logo,
+            nftCollectionName: nftMetadata.name,
+            nftCollectionSymbol: nftMetadata.symbol,
+            nftLogo: undefined, // TODO: how to get this?
+            nftPriceToken: tokenValue.tokenAmount,
+            nftPriceFiat: tokenValue.fiatAmount,
+            realizedGainFiat: realizedGain,
             realizedGainPc,
-            realizedValue,
+            realizedValueFiat: realizedValue,
+            saleTokenPrice: tokenValue.tokenPrice,
+            saleTokenSymbol: tokenValue.tokenSymbol,
             toAddress: transfer.to_address,
             tokenId: transfer.token_id,
-            tokenValue,
-            unrealizedCost,
+            unrealizedCostFiat: unrealizedCost,
           };
+
+          return document;
         })
         .filter((it) => !!it)
         .value();
@@ -622,7 +632,7 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
     return Rx.mergeMap(async (context: Context) => {
       const promises = [];
 
-      for (const chain of Object.keys(chains)) {
+      for (const chain of context.chainIds) {
         for (const wallet of context.watchedAddresses) {
           promises.push(
             this.moralisService.nftTransfersOf(chain as ChainId, wallet),

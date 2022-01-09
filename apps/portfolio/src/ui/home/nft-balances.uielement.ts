@@ -3,8 +3,9 @@ import {
   Container,
   Datatable,
   DatatableColumn,
-  formatCurrency,
   formatAge,
+  formatCurrency,
+  formatTemplate,
   Image,
   MilestoneWrapper,
   Row,
@@ -14,10 +15,8 @@ import {
   UiElement,
   WalletSelector,
 } from '@app/sdk/ui';
-import {
-  NFT_BALANCES,
-  NFT_BALANCE_MILESTONES,
-} from '../../collectionNames';
+import { NFT_BALANCES, NFT_BALANCE_MILESTONES } from '../../collectionNames';
+import { formatToken } from '../../../../../libs/sdk/src/ui/rpc/format-token.rpc';
 
 export default function element(): UiElement {
   return Container({
@@ -49,7 +48,10 @@ function summaryRow(): UiElement {
             rows: [
               {
                 label: 'Total Value',
-                value: formatCurrency(sum(`$.${NFT_BALANCES}..balanceFiat`), `$.${NFT_BALANCES}..fiatSymbol`),
+                value: formatCurrency(
+                  sum(`$.${NFT_BALANCES}..balanceFiat`),
+                  `$.${NFT_BALANCES}..fiatSymbol`,
+                ),
               },
             ],
           }),
@@ -88,22 +90,14 @@ function tableColumns(): DatatableColumn[] {
       cell: Tile({
         left: Image({ src: '$.nftCollectionLogo', size: 28 }),
         title: '$.nftCollectionName',
-        subTitle: {
-          method: 'template',
-          params: [
-            '{{ price }} {{ symbol }} - {{ balance }} nfts',
-            {
-              balance: '$.balanceNfts',
-              price: {
-                method: 'formatToken',
-                params: [
-                  '$.nftPrice'
-                ]
-              },
-              symbol: '$.saleTokenSymbol',
-            }
-          ]
-        },
+        subTitle: formatTemplate(
+          '{{ price }} {{ symbol }} - {{ balance }} nfts',
+          {
+            balance: '$.balanceNfts',
+            price: formatToken('$.nftPrice'),
+            symbol: '$.saleTokenSymbol',
+          },
+        ),
       }),
     },
     {

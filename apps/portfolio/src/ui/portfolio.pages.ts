@@ -2,7 +2,8 @@ import homeElement from './home/home.uielement';
 import tokensRealizedPnlDetail from './tokens/realizedpnl/realized-pnl-detail.element';
 import nftsRealizedPnlDetail from './nfts/realizedpnl/realized-pnl-detail.element';
 import tokenBalances from './home/token-balances.uielement';
-import { Container } from '@app/sdk/ui';
+import nftBalances from './home/nft-balances.uielement';
+import nftPnlSummaries from './home/nft-pnl-summaries.uielement';
 
 export default function pages() {
   return [
@@ -12,7 +13,11 @@ export default function pages() {
     },
     {
       id: 'portfolio/nfts/balances',
-      element: Container(),
+      element: nftBalances(),
+    },
+    {
+      id: 'portfolio/nfts/pnl',
+      element: nftPnlSummaries(),
     },
     // {
     //   id: 'tokens/realizedpnl/:chainId/:tokenAddress',

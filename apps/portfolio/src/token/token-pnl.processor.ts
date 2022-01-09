@@ -1,10 +1,8 @@
 import {
   ChainId,
   chains,
-  ClientStateChangedEvent,
   CoingeckoService,
   CoinPrice,
-  CurrencyDto,
   EventService,
   formatters,
   logger,
@@ -12,70 +10,44 @@ import {
   MoralisService,
   TokenMetadata,
 } from '@app/sdk';
-import { Process, Processor } from '@nestjs/bull';
-import { Job } from 'bull';
-import { validate } from 'bycontract';
+import { Processor } from '@nestjs/bull';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
 import * as Rx from 'rxjs';
+import { AbstractProcessor, BaseContext } from '../abstract.processor';
 import { TOKEN_PNL_QUEUE } from '../queues';
 import { defaultLogo } from '../util/constants';
 import { TokenPnlEventDocument, TokenPnlSummaryDocument } from './documents';
-import { logErrors } from '../util/logErrors';
 
-@Processor(TOKEN_PNL_QUEUE)
-export class TokenPnlProcessor {
+// @Processor(TOKEN_PNL_QUEUE)
+export class TokenPnlProcessor extends AbstractProcessor<Context> {
   constructor(
     private coingeckoService: CoingeckoService,
     private eventService: EventService,
     private moralisService: MoralisService,
-  ) {}
+  ) {
+    super();
+  }
 
-  @Process()
-  async handleClientStateChangedEvent(job: Job<ClientStateChangedEvent>) {
-    // TODO: use rxjs in a more idiomatic way
-    await Rx.lastValueFrom(
-      this.validateEvent(job.data).pipe(
+  pipe(source: Rx.Observable<Context>): Rx.Observable<Context> {
+    return source
+      .pipe(
         this.emitMilestones(),
         this.addTransfers(),
         this.addTransactions(),
         this.emitMilestones(),
         this.addTokenMetadatas(),
         this.emitMilestones(),
+      )
+      .pipe(
         this.addCoinPrices(),
         this.emitMilestones(),
         this.mapPnlEventDocuments(),
         this.emitPnlEventDocuments(),
         this.mapPnlSummaryDocuments(),
         this.emitPnlSummaries(),
-        logErrors(),
-      ),
-    );
-  }
-
-  private validateEvent(event: ClientStateChangedEvent) {
-    const clientId = validate(event.clientId, 'string');
-
-    const selectedCurrency = validate(
-      event.state?.client.selectedCurrency,
-      'object',
-    );
-
-    const watchedWallets = validate(
-      event.state?.client.watchedWallets,
-      'Array.<object>',
-    );
-
-    return Rx.from([
-      {
-        clientId,
-        selectedCurrency,
-        watchedAddresses: watchedWallets.map((it: { address: string }) =>
-          it.address.toLowerCase(),
-        ),
-      },
-    ]);
+      );
   }
 
   private emitMilestones() {
@@ -514,14 +486,11 @@ export class TokenPnlProcessor {
   }
 }
 
-interface Context {
-  readonly clientId: string;
+interface Context extends BaseContext {
   readonly coinPrices?: CoinPrice[];
   readonly documents?: TokenPnlEventDocument[];
-  readonly selectedCurrency: CurrencyDto;
   readonly summaryDocuments?: TokenPnlSummaryDocument[];
   readonly tokenMetadatas?: TokenMetadata[];
   readonly transactions?: moralis.Transaction[];
   readonly transfers?: moralis.TokenTransfer[];
-  readonly watchedAddresses: string[];
 }

@@ -1,18 +1,22 @@
 export default function menus() {
   return [
     {
-      header: 'Tokens'
+      header: 'Balances',
     },
     {
-      title: 'Balances',
-      navLink: 'portfolio/tokens/balances'
+      title: 'Tokens',
+      navLink: 'portfolio/tokens/balances',
     },
     {
-      header: 'NFTs'
+      title: 'NFTs',
+      navLink: 'portfolio/nfts/balances',
     },
     {
-      title: 'Balances',
-      navLink: 'portfolio/nfts/balances'
-    }
+      header: 'Realized Gain',
+    },
+    {
+      title: 'NFTs',
+      navLink: 'portfolio/nfts/pnl',
+    },
   ];
 }
