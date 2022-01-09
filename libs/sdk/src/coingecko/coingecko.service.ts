@@ -235,6 +235,7 @@ export class CoingeckoService {
 
   async onModuleInit() {
     this.allCoins = await this.fetchGeckoCoins();
+    logger.log('Coingecko service initialized');
   }
 
   private async fetchGeckoCoins(): Promise<GeckoCoin[]> {

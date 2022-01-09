@@ -13,6 +13,7 @@ import {
   UiElement,
   WalletSelector,
 } from '@app/sdk/ui';
+import { formatToken } from '@app/sdk/ui/rpc/format-token.rpc';
 import {
   TOKEN_BALANCES,
   TOKEN_BALANCE_MILESTONES,
@@ -22,7 +23,7 @@ export default function element(): UiElement {
   return Container({
     children: [
       Row({
-        children: [WalletSelector()],
+        children: [Col({ children: [WalletSelector()] })],
       }),
       Row({
         children: [
@@ -42,13 +43,13 @@ function summaryRow(): UiElement {
   return Row({
     children: [
       Col({
-        md: 4,
+        className: 'col-md-6',
         children: [
           SummaryStats({
             rows: [
               {
                 label: 'Total Value',
-                value: formatCurrency(sum(`$.${TOKEN_BALANCES}..balanceFiat`)),
+                value: formatCurrency(sum(`$.${TOKEN_BALANCES}..balanceFiat`), `$.${TOKEN_BALANCES}..fiatSymbol`),
               },
             ],
           }),
@@ -84,10 +85,10 @@ function tableColumns(): DatatableColumn[] {
       filterable: true,
       name: 'token',
       sortable: true,
-      value: 'tokenSymbol',
+      value: '$.tokenSymbol',
       cell: Tile({
         left: Image({ src: '$.tokenLogo', size: 28 }),
-        subTitle: formatCurrency('$.tokenPrice'),
+        subTitle: formatCurrency('$.tokenPrice', '$.fiatSymbol'),
         title: '$.tokenSymbol',
       }),
     },
@@ -99,15 +100,14 @@ function tableColumns(): DatatableColumn[] {
       value: '$.balanceFiat',
       cell: Tile({
         align: 'right',
-        left: Image({ src: '$.tokenLogo', size: 28 }),
-        subTitle: formatCurrency('$.tokenPrice'),
+        subTitle: formatToken('$.balanceToken'),
         title: Tile({
           right: Image({
             src: '$.chainLogo',
             size: 12,
             tooltip: '$.chainName',
           }),
-          title: formatCurrency('$.balanceFiat'),
+          title: formatCurrency('$.balanceFiat', '$.fiatSymbol'),
         }),
       }),
     },

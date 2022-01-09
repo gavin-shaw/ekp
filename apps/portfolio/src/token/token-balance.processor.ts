@@ -17,7 +17,7 @@ import { validate } from 'bycontract';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import * as Rx from 'rxjs';
-import { TOKEN_BALANCE_MILESTONES } from '../collectionNames';
+import { TOKEN_BALANCES, TOKEN_BALANCE_MILESTONES } from '../collectionNames';
 import { TOKEN_BALANCE_QUEUE } from '../queues';
 import { logErrors } from '../util/logErrors';
 import { TokenBalanceDocument } from './documents/token-balance.document';
@@ -28,14 +28,13 @@ export class TokenBalanceProcessor {
     private coingeckoService: CoingeckoService,
     private eventService: EventService,
     private moralisService: MoralisService,
-  ) {}
+  ) { }
 
   @Process()
   async handleClientStateChangedEvent(job: Job<ClientStateChangedEvent>) {
     try {
       await Rx.firstValueFrom(
         this.validateEvent(job.data).pipe(
-          Rx.tap((it) => console.log(it)),
           this.emitMilestones(),
           this.addTokenBalances(),
           this.emitMilestones(),
@@ -190,23 +189,22 @@ export class TokenBalanceProcessor {
 
           return <TokenBalanceDocument>{
             id,
-            chain: {
-              id: chainMetadata.id,
-              logo: chainMetadata.logo,
-              name: chainMetadata.name,
-            },
+            balanceFiat: coinPrice.price * balance,
+            balanceToken: balance,
+            chainId: chainMetadata.id,
+            chainLogo: chainMetadata.logo,
+            chainName: chainMetadata.name,
+            coinId: tokenMetadata.coinId,
+            fiatSymbol: context.selectedCurrency.symbol,
             links: {
               swap: `${chainMetadata.swap}?inputCurrency=${tokens[0].token_address}`,
               explorer: `${chainMetadata.explorer}token/${tokens[0].token_address}`,
             },
-            token: tokenMetadata,
-            tokenValue: {
-              tokenAmount: balance,
-              tokenSymbol: tokenMetadata.symbol,
-              tokenPrice: coinPrice.price,
-              fiatAmount: coinPrice.price * balance,
-              fiatSymbol: context.selectedCurrency.symbol,
-            },
+            tokenAddress: tokenMetadata.address,
+            tokenLogo: tokenMetadata.logo,
+            tokenDecimals: tokenMetadata.decimals,
+            tokenSymbol: tokenMetadata.symbol,
+            tokenPrice: coinPrice.price,
           };
         })
         .filter((it) => !!it);
@@ -223,7 +221,7 @@ export class TokenBalanceProcessor {
       const addLayers = [
         {
           id: `token-balances-layer`,
-          collectionName: 'token_balances',
+          collectionName: TOKEN_BALANCES,
           set: context.documents,
         },
       ];

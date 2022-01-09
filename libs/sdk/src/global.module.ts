@@ -19,7 +19,7 @@ import { EthersService } from './ethers/ethers.service';
     CacheModule.registerAsync({ useClass: EkConfigService }),
     BullModule.forRootAsync({ useClass: EkConfigService }),
     EventEmitterModule.forRoot(),
-    MongooseModule.forRootAsync({ useClass: EkConfigService }),
+    // MongooseModule.forRootAsync({ useClass: EkConfigService }),
     RedisModule.forRootAsync(EkConfigService.createRedisAsyncOptions()),
   ],
   providers: [

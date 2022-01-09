@@ -31,8 +31,8 @@ export class EkConfigService
     this.moralisServerUrl = this.required('MORALIS_SERVER_URL');
     this.moralisAppId = this.required('MORALIS_APP_ID');
     // this.moralisApiKey = this.required('MORALIS_API_KEY');
-    this.mongoHost = this.required('MONGO_HOST');
-    this.redisHost = this.required('REDIS_HOST');
+    this.mongoHost = this.optional('MONGO_HOST');
+    this.redisHost = this.optional('REDIS_HOST');
     this.mongoPort = this.optional('MONGO_PORT', 27017);
     this.redisPort = this.optional('REDIS_PORT', 6379);
     this.mongoUser = this.optional('MONGO_USER', undefined);
@@ -102,12 +102,13 @@ export class EkConfigService
   private required<T>(name: string): T {
     const value = this.configService.get(name);
     if (value === undefined || value === null) {
+      console.error(`Environment variable ${name} is required and missing`)
       throw new Error(`Environment variable ${name} is required and missing`);
     }
     return value;
   }
 
-  private optional<T>(name: string, defaultValue: T): T {
+  private optional<T>(name: string, defaultValue?: T): T {
     const value = this.configService.get(name);
     if (value === undefined || value === null) {
       return defaultValue;

@@ -40,14 +40,14 @@ export class SocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     this.subscribeClient.subscribe(ADD_LAYERS, (err, count) => {
       if (err) {
-        throw err;
+        logger.error(err);
       }
       logger.log(`SocketsGateway subscribed to the "add-layers" redis message`);
     });
 
     this.subscribeClient.subscribe(REMOVE_LAYERS, (err, count) => {
       if (err) {
-        throw err;
+        logger.error(err);
       }
       logger.log(
         `SocketsGateway subscribed to the "remove-layers" redis message`,

@@ -34,6 +34,7 @@ export class MoralisService {
       serverUrl: this.configService.moralisServerUrl,
       appId: this.configService.moralisAppId,
     });
+    logger.log('Moralis service initialized');
   }
 
   private limiter: Bottleneck;

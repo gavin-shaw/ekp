@@ -20,6 +20,10 @@ export async function runCluster(primaryModule: any, workerModule: any) {
 
 class Cluster {
   static register(workers: number, callback: () => Promise<void>): void {
+    const cpus = os.cpus().length;
+
+    if (workers > cpus) workers = cpus;
+
     if (cluster.default.isPrimary) {
       //ensure workers exit cleanly
       process.on('SIGINT', function () {
@@ -30,10 +34,6 @@ class Cluster {
         // exit the master process
         process.exit(0);
       });
-
-      const cpus = os.cpus().length;
-
-      if (workers > cpus) workers = cpus;
 
       for (let i = 0; i < workers; i++) {
         cluster.default.fork();
@@ -47,6 +47,7 @@ class Cluster {
         console.log(`Worker ${worker.process.pid} died. Restarting`);
         cluster.default.fork();
       });
+
     }
     callback();
   }
