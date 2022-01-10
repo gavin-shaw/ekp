@@ -88,7 +88,6 @@ export class CoingeckoService {
     const url = `${BASE_URL}/coins/${coinId}/history?date=${date}`;
     const cacheKey = `coingecko.historicPriceOf['${coinId}']['${fiatId}']['${date}']`;
 
-    const cachedValues = this.cache.get(cacheKey);
     return this.cache.wrap(
       cacheKey,
       () =>
@@ -96,26 +95,33 @@ export class CoingeckoService {
           this.limiter.wrap(async () => {
             logger.debug('GET ' + url);
 
-            const response = await axios.get(url);
+            try {
+              const response = await axios.get(url);
 
-            if (!response?.data) {
-              throw new Error('Failed to fetch currency rates from coingecko');
+              if (!response?.data) {
+                throw new Error(
+                  'Failed to fetch currency rates from coingecko',
+                );
+              }
+
+              if (!response.data?.market_data?.current_price[fiatId]) {
+                return null;
+              }
+
+              const id = `${coinId}_${fiatId}_${date}`;
+
+              const price = response.data.market_data.current_price[fiatId];
+
+              return {
+                id,
+                coinId,
+                fiatId,
+                price,
+              };
+            } catch (error) {
+              console.error(error.response.status);
+              throw error;
             }
-
-            if (!response.data?.market_data?.current_price[fiatId]) {
-              return null;
-            }
-
-            const id = `${coinId}_${fiatId}_${date}`;
-
-            const price = response.data.market_data.current_price[fiatId];
-
-            return {
-              id,
-              coinId,
-              fiatId,
-              price,
-            };
           }),
           {
             onRetry: (error) =>
