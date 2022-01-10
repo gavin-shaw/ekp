@@ -3,7 +3,7 @@ import { UiElement } from '../ui.element';
 
 export function Row(props?: RowProps): UiElement {
   return {
-    type: 'Row',
+    _type: 'Row',
     props,
   };
 }

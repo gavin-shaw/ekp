@@ -3,7 +3,7 @@ import { UiElement } from '../ui.element';
 
 export function Container(props: ContainerProps = {}): UiElement {
   return {
-    type: 'Container',
+    _type: 'Container',
     props,
   };
 }

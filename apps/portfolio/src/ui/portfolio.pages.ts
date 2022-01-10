@@ -1,9 +1,8 @@
-import homeElement from './home/home.uielement';
-import tokensRealizedPnlDetail from './tokens/realizedpnl/realized-pnl-detail.element';
-import nftsRealizedPnlDetail from './nfts/realizedpnl/realized-pnl-detail.element';
 import tokenBalances from './home/token-balances.uielement';
 import nftBalances from './home/nft-balances.uielement';
 import nftPnlSummaries from './home/nft-pnl-summaries.uielement';
+import tokenPnlSummaries from './home/token-pnl-summaries.uielement';
+import nftPnlDetails from './home/nft-pnl-details.uielement';
 
 export default function pages() {
   return [
@@ -16,16 +15,16 @@ export default function pages() {
       element: nftBalances(),
     },
     {
+      id: 'portfolio/tokens/pnl',
+      element: tokenPnlSummaries(),
+    },
+    {
       id: 'portfolio/nfts/pnl',
       element: nftPnlSummaries(),
     },
-    // {
-    //   id: 'tokens/realizedpnl/:chainId/:tokenAddress',
-    //   element: tokensRealizedPnlDetail(),
-    // },
-    // {
-    //   id: 'nfts/realizedpnl/:chainId/:tokenAddress',
-    //   element: nftsRealizedPnlDetail(),
-    // },
+    {
+      id: 'portfolio/nfts/pnl/:chainId/:tokenAddress',
+      element: nftPnlDetails(),
+    },
   ];
 }

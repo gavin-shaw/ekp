@@ -17,7 +17,10 @@ import {
   UiElement,
   WalletSelector,
 } from '@app/sdk/ui';
-import { NFT_PNL_MILESTONES, NFT_PNL_SUMMARIES } from '../../collectionNames';
+import {
+  TOKEN_PNL_MILESTONES,
+  TOKEN_PNL_SUMMARIES,
+} from '../../collectionNames';
 
 export default function element(): UiElement {
   return Container({
@@ -30,8 +33,8 @@ export default function element(): UiElement {
           Col({
             children: [
               PageHeaderTile({
-                title: 'NFT P & L',
-                icon: 'cil-color-palette',
+                title: 'Token P & L',
+                icon: 'cil-money',
               }),
             ],
           }),
@@ -40,7 +43,7 @@ export default function element(): UiElement {
       Row({
         children: [
           MilestoneWrapper({
-            milestones: `$.${NFT_PNL_MILESTONES}`,
+            milestones: `$.${TOKEN_PNL_MILESTONES}`,
             child: Container({
               children: [summaryRow(), tableRow()],
             }),
@@ -62,22 +65,22 @@ function summaryRow(): UiElement {
               {
                 label: 'Cost Basis',
                 value: formatCurrency(
-                  sum(`$.${NFT_PNL_SUMMARIES}..costBasisFiat`),
-                  `$.${NFT_PNL_SUMMARIES}..fiatSymbol`,
+                  sum(`$.${TOKEN_PNL_SUMMARIES}..costBasisFiat`),
+                  `$.${TOKEN_PNL_SUMMARIES}..fiatSymbol`,
                 ),
               },
               {
                 label: 'Realized Value',
                 value: formatCurrency(
-                  sum(`$.${NFT_PNL_SUMMARIES}..realizedValueFiat`),
-                  `$.${NFT_PNL_SUMMARIES}..fiatSymbol`,
+                  sum(`$.${TOKEN_PNL_SUMMARIES}..realizedValueFiat`),
+                  `$.${TOKEN_PNL_SUMMARIES}..fiatSymbol`,
                 ),
               },
               {
                 label: 'Realized Gain',
                 value: formatCurrency(
-                  sum(`$.${NFT_PNL_SUMMARIES}..realizedGainFiat`),
-                  `$.${NFT_PNL_SUMMARIES}..fiatSymbol`,
+                  sum(`$.${TOKEN_PNL_SUMMARIES}..realizedGainFiat`),
+                  `$.${TOKEN_PNL_SUMMARIES}..fiatSymbol`,
                 ),
               },
             ],
@@ -95,7 +98,7 @@ function tableRow(): UiElement {
         children: [
           Datatable({
             columns: tableColumns(),
-            data: `$.${NFT_PNL_SUMMARIES}.*`,
+            data: `$.${TOKEN_PNL_SUMMARIES}.*`,
             defaultSortAsc: false,
             defaultSortFieldId: 'realizedGain',
             filterable: false,
@@ -111,16 +114,15 @@ function tableRow(): UiElement {
 function tableColumns(): DatatableColumn[] {
   return [
     {
-      id: 'collection',
-      name: 'collection',
+      id: 'token',
       sortable: true,
-      value: '$.nftCollectionName',
+      value: '$.tokenSymbol',
       cell: Tile({
-        left: Image({ src: '$.nftCollectionLogo', size: 28 }),
+        left: Image({ src: '$.tokenLogo', size: 28 }),
         subTitle: formatTemplate('Cost {{ cost }}', {
           cost: formatCurrency('$.costBasisFiat', '$.fiatSymbol'),
         }),
-        title: '$.nftCollectionName',
+        title: '$.tokenSymbol',
       }),
     },
     {

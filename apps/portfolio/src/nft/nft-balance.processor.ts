@@ -40,11 +40,11 @@ export class NftBalanceProcessor extends AbstractProcessor<Context> {
         this.emitMilestones(),
         this.addCoinPrices(),
         this.emitMilestones(),
-        this.addNftLogos(),
+        this.addNftPrices(),
       )
       .pipe(
         this.emitMilestones(),
-        this.addNftPrices(),
+        this.addNftLogos(),
         this.emitMilestones(),
         this.mapNftBalanceDocuments(),
         this.emitNftBalanceDocuments(),
@@ -77,35 +77,85 @@ export class NftBalanceProcessor extends AbstractProcessor<Context> {
 
   private addNftPrices() {
     return Rx.mergeMap(async (context: Context) => {
+      const now = moment().unix();
+
       const nftPrices = await _.chain(context.nftOwners)
-        .filter((nftOwner) => nftOwner.chain_id === 'eth')
         .map((nftOwner) =>
           this.moralisService
             .nftContractTransfersOf(
               nftOwner.chain_id as ChainId,
               nftOwner.token_address,
             )
-            .then((latestTransfers) => {
-              let minPrice = 0;
-              if (
-                !!Array.isArray(latestTransfers) &&
-                latestTransfers.length > 0
-              ) {
-                minPrice = _.min(
-                  latestTransfers
-                    .filter((it) => !!it.value && it.value !== '0')
-                    .map((it) => Number(ethers.utils.formatEther(it.value))),
-                );
-              }
+            .then((moralisTransfers) => {
+              return _.chain(moralisTransfers)
+                .filter(
+                  (transfer) => !!transfer.value && transfer.value !== '0',
+                )
+                .map((moralisTransfer) => {
+                  const transfer: NftTransfer = {
+                    amount: Number(moralisTransfer.amount),
+                    blockHash: moralisTransfer.amount,
+                    blockNumber: Number(moralisTransfer.block_number),
+                    blockTimestamp: moment(
+                      moralisTransfer.block_timestamp,
+                    ).unix(),
+                    fromAddress: moralisTransfer.from_address,
+                    logIndex: Number(moralisTransfer.log_index),
+                    toAddress: moralisTransfer.to_address,
+                    tokenAddress: moralisTransfer.token_address,
+                    tokenId: Number(moralisTransfer.token_id),
+                    transactionHash: moralisTransfer.transaction_hash,
+                    transactionIndex: Number(moralisTransfer.transaction_index),
+                    value: Number(
+                      ethers.utils.formatEther(moralisTransfer.value),
+                    ),
+                  };
 
-              const nftPrice: NftPrice = {
-                chainId: nftOwner.chain_id,
-                contractAddress: nftOwner.token_address,
-                price: minPrice,
-                updated: moment(latestTransfers[0].block_timestamp).unix(),
-              };
+                  return transfer;
+                })
+                .thru((transfers) => {
+                  if (transfers.length === 0) {
+                    return {
+                      chainId: nftOwner.chain_id,
+                      contractAddress: nftOwner.token_address,
+                      price: 0,
+                      updated: undefined,
+                    };
+                  }
 
-              return nftPrice;
+                  const updated = _.chain(transfers)
+                    .map((it) => it.blockTimestamp)
+                    .max()
+                    .value();
+
+                  const last24HourTransfers = _.chain(transfers)
+                    .filter((transfer) => now - transfer.blockTimestamp < 86400)
+                    .value();
+
+                  let price = 0;
+
+                  if (last24HourTransfers.length > 0) {
+                    price = _.chain(last24HourTransfers)
+                      .sumBy((transfer) => transfer.value / transfer.amount)
+                      .thru((sum) => sum / transfers.length)
+                      .value();
+                  } else {
+                    price = _.chain(transfers)
+                      .sumBy((transfer) => transfer.value / transfer.amount)
+                      .thru((sum) => sum / transfers.length)
+                      .value();
+                  }
+
+                  const nftPrice: NftPrice = {
+                    chainId: nftOwner.chain_id,
+                    contractAddress: nftOwner.token_address,
+                    price,
+                    updated,
+                  };
+
+                  return nftPrice;
+                })
+                .value();
             }),
         )
         .thru((promises) => Promise.all(promises))
@@ -134,7 +184,7 @@ export class NftBalanceProcessor extends AbstractProcessor<Context> {
 
       return <Context>{
         ...context,
-        nftOwners,
+        nftOwners: nftOwners.filter((it) => !!it.name),
       };
     });
   }
@@ -356,6 +406,21 @@ interface NftLogo {
   readonly chainId: string;
   readonly contractAddress: string;
   readonly imageUrl: string;
+}
+
+interface NftTransfer {
+  amount?: number;
+  blockHash: string;
+  blockNumber: number;
+  blockTimestamp: number;
+  fromAddress?: string;
+  logIndex: number;
+  toAddress: string;
+  tokenAddress: string;
+  tokenId: number;
+  transactionHash: string;
+  transactionIndex?: number;
+  value?: number;
 }
 
 interface NftPrice {

@@ -3,6 +3,7 @@ export * from './ChainMetadata';
 export * from './chains';
 export * from './default-logger';
 export * as formatters from './formatters';
+export * from './getMethodName';
 export * from './NftCollectionMetadata';
 export * from './TokenMetadata';
 export * from './TokenValue';

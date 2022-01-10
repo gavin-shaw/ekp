@@ -4,7 +4,7 @@ import { UiElement } from '../ui.element';
 
 export function Col(props?: ColProps): UiElement {
   return {
-    type: 'Col',
+    _type: 'Col',
     props,
   };
 }

@@ -6,6 +6,7 @@ import {
   EthersService,
   EthersTransaction,
   EventService,
+  getMethodName,
   moralis,
   MoralisService,
   NftCollectionMetadata,
@@ -19,7 +20,11 @@ import _ from 'lodash';
 import moment from 'moment';
 import * as Rx from 'rxjs';
 import { AbstractProcessor, BaseContext } from '../abstract.processor';
-import { NFT_PNL_EVENTS, NFT_PNL_SUMMARIES } from '../collectionNames';
+import {
+  NFT_PNL_EVENTS,
+  NFT_PNL_MILESTONES,
+  NFT_PNL_SUMMARIES,
+} from '../collectionNames';
 import { NFT_PNL_QUEUE } from '../queues';
 import { defaultLogo } from '../util/constants';
 import { nftContractId, tokenContractId } from '../util/ids';
@@ -41,19 +46,86 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
   pipe(source: Rx.Observable<Context>): Rx.Observable<Context> {
     return source
       .pipe(
+        this.emitMilestones(),
         this.addNftTransfers(),
+        this.emitMilestones(),
         this.addTokenTransfers(),
+        this.emitMilestones(),
         this.addTransactions(),
+        this.emitMilestones(),
         this.addTokenMetadatas(),
-        this.addNftMetadata(),
-        this.addCoinPrices(),
+        this.emitMilestones(),
       )
       .pipe(
+        this.addNftMetadata(),
+        this.emitMilestones(),
+        this.addCoinPrices(),
+        this.emitMilestones(),
         this.mapPnlEventDocuments(),
         this.emitPnlEventDocuments(),
         this.mapPnlSummaryDocuments(),
         this.emitPnlSummaryDocuments(),
+        this.removeMilestones(),
       );
+  }
+
+  private emitMilestones() {
+    return Rx.tap((context: Context) => {
+      const milestones = [
+        {
+          id: '1-nft-transfers',
+          status: !context.nftTransfers ? 'progressing' : 'complete',
+          label: !context.nftTransfers
+            ? 'Fetching your nft transfers'
+            : `Fetched ${context.nftTransfers.length} nft transfers`,
+        },
+        {
+          id: '2-token-transfers',
+          status: !context.tokenTransfers ? 'progressing' : 'complete',
+          label: !context.tokenTransfers
+            ? 'Fetching your token transfers'
+            : `Fetched ${context.tokenTransfers.length} token transfers`,
+        },
+        {
+          id: '3-transactions',
+          status: !context.transactions ? 'progressing' : 'complete',
+          label: !context.transactions
+            ? 'Fetching your transactions'
+            : `Fetched ${context.transactions.length} transactions`,
+        },
+        {
+          id: '4-token-metadatas',
+          status: !context.tokenMetadatas ? 'pending' : 'complete',
+          label: !context.tokenMetadatas
+            ? 'Fetching token metadata'
+            : `Fetched metadata for ${context.tokenMetadatas.length} tokens`,
+        },
+        {
+          id: '5-nft-metadatas',
+          status: !context.nftMetadatas ? 'pending' : 'complete',
+          label: !context.nftMetadatas
+            ? 'Fetching nft metadata'
+            : `Fetched metadata for ${context.nftMetadatas.length} nfts`,
+        },
+        {
+          id: '6-token-prices',
+          status: !context.coinPrices ? 'progressing' : 'complete',
+          label: !context.coinPrices
+            ? 'Fetching historic token prices'
+            : `Fetched pricing for ${context.coinPrices.length} tokens`,
+        },
+      ];
+
+      const layers = [
+        {
+          id: NFT_PNL_MILESTONES,
+          collectionName: NFT_PNL_MILESTONES,
+          set: milestones,
+        },
+      ];
+
+      this.eventService.addLayers(context.clientId, layers);
+    });
   }
 
   addTokenMetadatas() {
@@ -269,7 +341,7 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
             costBasisFiat: costBasis,
             fiatSymbol: context.selectedCurrency.symbol,
             links: {
-              explorer: `nfts/realizedpnl/${nftMetadata.chainId}/${nftMetadata.contractAddress}`,
+              details: `portfolio/nfts/pnl/${nftMetadata.chainId}/${nftMetadata.contractAddress}`,
             },
             nftCollectionId: contractId,
             nftCollectionLogo: nftMetadata.logo,
@@ -539,8 +611,8 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
           let realizedGainPc = undefined;
           let realizedValue = undefined;
           let unrealizedCost = 0;
-          let icon = undefined;
-          let description = 'Unknown, tell us on discord!';
+          let icon = 'cil-face-dead';
+          let description = getMethodName(transaction?.data) ?? 'Unknown';
 
           if (context.watchedAddresses.includes(transfer.from_address)) {
             description = `Sell Token #${transfer.token_id}`;
@@ -593,9 +665,9 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
             costBasisFiat: costBasis,
             description: _.truncate(description, { length: 24 }),
             fromAddress: transfer.from_address,
-            gasNativeToken: gasValue.tokenAmount,
             gasFiat: gasValue.fiatAmount,
-            icon, // TODO: add BUY / SELL icon
+            gasNativeToken: gasValue.tokenAmount,
+            icon,
             links: {
               explorer: `${chainMetadata.explorer}tx/${transfer.transaction_hash}`,
             },
@@ -648,6 +720,16 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
         ...context,
         nftTransfers: transfers,
       };
+    });
+  }
+
+  private removeMilestones() {
+    return Rx.tap((context: Context) => {
+      const removeMilestonesQuery = {
+        id: NFT_PNL_MILESTONES,
+      };
+
+      this.eventService.removeLayers(context.clientId, removeMilestonesQuery);
     });
   }
 }

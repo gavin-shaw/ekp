@@ -1,10 +1,10 @@
 import { DefaultProps } from '../default.props';
-import { RpcOrPrimitive } from '../rpc.types';
+import { Rpc, RpcOrPrimitive } from '../rpc.types';
 import { UiElement } from '../ui.element';
 
 export function Datatable(props: DatatableProps): UiElement {
   return {
-    type: 'Datatable',
+    _type: 'Datatable',
     props,
   };
 }
@@ -16,11 +16,14 @@ export interface DatatableProps extends DefaultProps {
   defaultSortFieldId?: RpcOrPrimitive;
   filterable?: RpcOrPrimitive;
   pagination?: RpcOrPrimitive;
+  paginationPerPage?: RpcOrPrimitive;
+  onRowClicked?: Rpc;
 }
 
 export interface DatatableColumn {
   id: RpcOrPrimitive;
   filterable?: RpcOrPrimitive;
+  grow?: Rpc | number;
   name?: RpcOrPrimitive;
   right?: RpcOrPrimitive;
   sortable?: RpcOrPrimitive;

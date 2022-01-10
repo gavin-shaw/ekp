@@ -1,23 +1,31 @@
-import { DocumentDto, TokenMetadata, TokenValue } from '@app/sdk';
+import { DocumentDto } from '@app/sdk';
 
 export interface TokenPnlEventDocument extends DocumentDto {
+  readonly amountToken: number;
+  readonly amountFiat: number;
   readonly blockNumber: number;
   readonly blockTimestamp: number;
-  readonly chain: {
-    readonly id: string;
-    readonly logo: string;
-    readonly name: string;
-  };
-  readonly costBasis: number;
+  readonly chainId: string;
+  readonly chainLogo: string;
+  readonly chainName: string;
+  readonly costBasisFiat: number;
   readonly description: string;
-  readonly gasValue: TokenValue;
+  readonly fiatSymbol: string;
+  readonly gasNativeToken: number;
+  readonly gasFiat: number;
+  readonly icon: string;
   readonly links: {
     readonly explorer: string;
   };
-  readonly realizedGain: number;
+  readonly nativeTokenPrice: number;
+  readonly nativeTokenSymbol: string;
+  readonly realizedGainFiat: number;
   readonly realizedGainPc: number;
-  readonly realizedValue: number;
-  readonly token: TokenMetadata;
-  readonly tokenValue: TokenValue;
-  readonly unrealizedCost: number;
+  readonly realizedValueFiat: number;
+  readonly tokenAddress: string;
+  readonly tokenLogo: string;
+  readonly tokenName: string;
+  readonly tokenPrice: number;
+  readonly tokenSymbol: string;
+  readonly unrealizedCostFiat: number;
 }

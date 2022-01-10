@@ -6,8 +6,11 @@ import {
   formatAge,
   formatCurrency,
   formatTemplate,
+  formatToken,
   Image,
   MilestoneWrapper,
+  navigate,
+  PageHeaderTile,
   Row,
   sum,
   SummaryStats,
@@ -16,7 +19,6 @@ import {
   WalletSelector,
 } from '@app/sdk/ui';
 import { NFT_BALANCES, NFT_BALANCE_MILESTONES } from '../../collectionNames';
-import { formatToken } from '../../../../../libs/sdk/src/ui/rpc/format-token.rpc';
 
 export default function element(): UiElement {
   return Container({
@@ -24,6 +26,19 @@ export default function element(): UiElement {
       Row({
         children: [Col({ children: [WalletSelector()] })],
       }),
+      Row({
+        children: [
+          Col({
+            children: [
+              PageHeaderTile({
+                title: 'NFT Balances',
+                icon: 'cil-color-palette',
+              }),
+            ],
+          }),
+        ],
+      }),
+
       Row({
         children: [
           MilestoneWrapper({
@@ -73,6 +88,7 @@ function tableRow(): UiElement {
             defaultSortFieldId: 'value',
             filterable: false,
             pagination: false,
+            onRowClicked: navigate('$.links.explorer', true, true),
           }),
         ],
       }),
@@ -105,6 +121,7 @@ function tableColumns(): DatatableColumn[] {
       right: true,
       sortable: true,
       value: '$.balanceFiat',
+      grow: 0,
       cell: Tile({
         align: 'right',
         subTitle: formatAge('$.updated'),

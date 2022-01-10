@@ -1,6 +1,6 @@
 import { DefaultProps } from './default.props';
 
 export interface UiElement {
-  type: string;
+  _type: string;
   props?: DefaultProps;
 }

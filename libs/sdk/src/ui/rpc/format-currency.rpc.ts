@@ -1,9 +1,9 @@
-import { RpcOrPrimitive } from '../rpc.types';
+import { Rpc, RpcOrPrimitive } from '../rpc.types';
 
 export function formatCurrency(
   value: RpcOrPrimitive,
   fiatSymbol: RpcOrPrimitive,
-): RpcOrPrimitive {
+): Rpc {
   return {
     method: 'formatCurrency',
     params: [value, fiatSymbol],

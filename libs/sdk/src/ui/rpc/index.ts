@@ -4,4 +4,5 @@ export * from './format-percent.rpc';
 export * from './format-template.rpc';
 export * from './format-token.rpc';
 export * from './json-array.rpc';
+export * from './navigate.rpc';
 export * from './sum.rpc';

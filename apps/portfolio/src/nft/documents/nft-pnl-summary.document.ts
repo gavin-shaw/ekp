@@ -8,7 +8,7 @@ export interface NftPnlSummaryDocument extends DocumentDto {
   readonly costBasisFiat: number;
   readonly fiatSymbol: string;
   readonly links: {
-    readonly explorer: string;
+    readonly details: string;
   };
   readonly nftCollectionId: string;
   readonly nftCollectionLogo: string;

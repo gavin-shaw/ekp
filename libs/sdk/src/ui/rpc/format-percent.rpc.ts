@@ -1,6 +1,6 @@
-import { RpcOrPrimitive } from '../rpc.types';
+import { Rpc, RpcOrPrimitive } from '../rpc.types';
 
-export function formatPercent(value: RpcOrPrimitive): RpcOrPrimitive {
+export function formatPercent(value: RpcOrPrimitive): Rpc {
   return {
     method: 'formatPercent',
     params: [value],

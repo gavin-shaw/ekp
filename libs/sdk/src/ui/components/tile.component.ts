@@ -1,18 +1,19 @@
 import { DefaultProps } from '../default.props';
-import { RpcOrPrimitive } from '../rpc.types';
+import { Rpc } from '../rpc.types';
 import { UiElement } from '../ui.element';
 
-export function Tile(props: TileProps): UiElement {
+export function Tile(props?: TileProps): UiElement {
   return {
-    type: 'Tile',
-    props,
+    _type: 'Tile',
+    props: props ?? {},
   };
 }
 
 export interface TileProps extends DefaultProps {
   align?: 'left' | 'right';
-  left?: UiElement;
-  right?: UiElement;
-  subTitle?: UiElement | RpcOrPrimitive;
-  title?: UiElement | RpcOrPrimitive;
+  left?: Rpc | string | UiElement;
+  right?: Rpc | string | UiElement;
+  size?: Rpc | 'sm' | 'lg';
+  subTitle?: Rpc | UiElement | string;
+  title?: Rpc | UiElement | string;
 }

@@ -1,6 +1,6 @@
-import { RpcOrPrimitive } from '../rpc.types';
+import { Rpc, RpcOrPrimitive } from '../rpc.types';
 
-export function sum(values: RpcOrPrimitive): RpcOrPrimitive {
+export function sum(values: RpcOrPrimitive): Rpc {
   return {
     method: 'sum',
     params: [values],

@@ -45,7 +45,7 @@ export class MoralisService {
   ): Promise<TokenMetadata> {
     validate([chainId, contractAddress], ['string', 'string']);
 
-    const cacheKey = `moralis.tokenMetadataOf_['${chainId}']['${contractAddress}']`;
+    const cacheKey = `moralis.tokenMetadataOf__['${chainId}']['${contractAddress}']`;
     const debugMessage = `Web3API > getTokenMetadata('${chainId}', '${contractAddress}')`;
 
     return this.cache.wrap(
@@ -76,7 +76,7 @@ export class MoralisService {
           },
         ),
       {
-        ttl: 3600000,
+        ttl: 3600,
       },
     );
   }
@@ -87,7 +87,7 @@ export class MoralisService {
   ): Promise<string> {
     validate([chainId, ownerAddress], ['string', 'string']);
 
-    const cacheKey = `moralis.nativeBalance['${chainId}']['${ownerAddress}']`;
+    const cacheKey = `moralis.nativeBalance_['${chainId}']['${ownerAddress}']`;
     const debugMessage = `Web3API > getNativeBalance('${chainId}', '${ownerAddress}')`;
 
     return this.cache.wrap(
@@ -111,7 +111,7 @@ export class MoralisService {
           },
         ),
       {
-        ttl: 5000,
+        ttl: 60,
       },
     );
   }
@@ -123,7 +123,7 @@ export class MoralisService {
   ): Promise<TokenBalance[]> {
     validate([chainId, ownerAddress], ['string', 'string']);
 
-    const cacheKey = `moralis.tokensByOwner['${chainId}']['${ownerAddress}']`;
+    const cacheKey = `moralis.tokensByOwner_['${chainId}']['${ownerAddress}']`;
     const debugMessage = `Web3API > getTokenBalances('${chainId}', '${ownerAddress}')`;
 
     const tokens: TokenBalance[] = await this.cache.wrap(
@@ -152,7 +152,7 @@ export class MoralisService {
           },
         ),
       {
-        ttl: 5000,
+        ttl: 60,
       },
     );
 
@@ -183,7 +183,7 @@ export class MoralisService {
   async nftsOf(chainId: ChainList, ownerAddress: string): Promise<NftOwner[]> {
     validate([chainId, ownerAddress], ['string', 'string']);
 
-    const cacheKey = `moralis.nftsByOwner['${chainId}']['${ownerAddress}']`;
+    const cacheKey = `moralis.nftsByOwner_['${chainId}']['${ownerAddress}']`;
     const debugMessage = `Web3API > getNFTs('${chainId}', '${ownerAddress}')`;
 
     return this.cache.wrap(
@@ -211,7 +211,7 @@ export class MoralisService {
           },
         ),
       {
-        ttl: 5000,
+        ttl: 60,
       },
     );
   }
@@ -222,7 +222,7 @@ export class MoralisService {
   ): Promise<NftContractMetadata> {
     validate([chainId, contractAddress], ['string', 'string']);
 
-    const cacheKey = `moralis.metadata['${chainId}']['${contractAddress}']`;
+    const cacheKey = `moralis.metadata_['${chainId}']['${contractAddress}']`;
 
     const debugMessage = `Web3API > getNFTMetadata('${chainId}', '${contractAddress}')`;
 
@@ -248,7 +248,7 @@ export class MoralisService {
               logger.warn(`Retry due to ${error.message}: ${debugMessage}`),
           },
         ),
-      { ttl: 3600000 },
+      { ttl: 3600 },
     );
   }
 
@@ -259,7 +259,7 @@ export class MoralisService {
   ): Promise<TokenTransfer[]> {
     validate([chainId, ownerAddress, offset], ['string', 'string', 'number']);
 
-    const cacheKey = `moralis.transfersOf['${chainId}']['${ownerAddress}'][${offset}]`;
+    const cacheKey = `moralis.transfersOf_['${chainId}']['${ownerAddress}'][${offset}]`;
     const debugMessage = `Web3API > getTokenTransfers('${chainId}', '${ownerAddress}', ${offset})`;
 
     return this.cache.wrap(
@@ -291,7 +291,7 @@ export class MoralisService {
           },
         ),
       {
-        ttl: 3600000,
+        ttl: 300,
       },
     );
   }
@@ -304,7 +304,7 @@ export class MoralisService {
 
     const transactions = [];
 
-    const cacheKey = `moralis.allTransactionsOf['${chainId}']['${ownerAddress}']`;
+    const cacheKey = `moralis.allTransactionsOf_['${chainId}']['${ownerAddress}']`;
 
     return this.cache.wrap(
       cacheKey,
@@ -328,7 +328,7 @@ export class MoralisService {
         return transactions;
       },
       {
-        ttl: 3600000,
+        ttl: 300,
       },
     );
   }
@@ -341,7 +341,7 @@ export class MoralisService {
 
     const transfers = [];
 
-    const cacheKey = `moralis.allTokenTransfersOf['${chainId}']['${ownerAddress}']`;
+    const cacheKey = `moralis.allTokenTransfersOf_['${chainId}']['${ownerAddress}']`;
 
     return this.cache.wrap(
       cacheKey,
@@ -363,7 +363,7 @@ export class MoralisService {
         return transfers;
       },
       {
-        ttl: 3600000,
+        ttl: 300,
       },
     );
   }
@@ -375,7 +375,7 @@ export class MoralisService {
   ): Promise<Transaction[]> {
     validate([chainId, ownerAddress, offset], ['string', 'string', 'number']);
 
-    const cacheKey = `moralis.transactionsOf['${chainId}']['${ownerAddress}'][${offset}]`;
+    const cacheKey = `moralis.transactionsOf_['${chainId}']['${ownerAddress}'][${offset}]`;
     const debugMessage = `Web3API > getTransactions('${chainId}', '${ownerAddress}', ${offset})`;
 
     return this.cache.wrap(
@@ -407,7 +407,7 @@ export class MoralisService {
           },
         ),
       {
-        ttl: 3600000,
+        ttl: 3600,
       },
     );
   }
@@ -422,7 +422,7 @@ export class MoralisService {
       ['string', 'string', 'number'],
     );
 
-    const cacheKey = `moralis.nftContractTransfersOf['${chainId}']['${contractAddress}'][${offset}]`;
+    const cacheKey = `moralis.nftContractTransfersOf__['${chainId}']['${contractAddress}'][${offset}]`;
     const debugMessage = `Web3API > getContractNFTTransfers('${chainId}', '${contractAddress}', ${offset})`;
 
     return this.cache.wrap(
@@ -455,7 +455,7 @@ export class MoralisService {
           },
         ),
       {
-        ttl: 900000,
+        ttl: 300,
       },
     );
   }
@@ -466,7 +466,7 @@ export class MoralisService {
   ): Promise<NftTransfer[]> {
     validate([chainId, ownerAddress], ['string', 'string']);
 
-    const cacheKey = `moralis.nftTransfersOf_a['${chainId}']['${ownerAddress}']`;
+    const cacheKey = `moralis.nftTransfersOf__['${chainId}']['${ownerAddress}']`;
     const debugMessage = `Web3API > getNFTTransfers('${chainId}', '${ownerAddress}'`;
 
     // // TODO: once moralis has fixed ERC20 contracts appearing in the NFT list, can remove this
@@ -502,7 +502,7 @@ export class MoralisService {
           },
         ),
       {
-        ttl: 900000,
+        ttl: 300,
       },
     );
   }

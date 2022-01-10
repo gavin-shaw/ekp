@@ -6,6 +6,7 @@ import {
   formatCurrency,
   Image,
   MilestoneWrapper,
+  PageHeaderTile,
   Row,
   sum,
   SummaryStats,
@@ -24,6 +25,18 @@ export default function element(): UiElement {
     children: [
       Row({
         children: [Col({ children: [WalletSelector()] })],
+      }),
+      Row({
+        children: [
+          Col({
+            children: [
+              PageHeaderTile({
+                title: 'Token Balances',
+                icon: 'cil-money',
+              }),
+            ],
+          }),
+        ],
       }),
       Row({
         children: [

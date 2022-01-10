@@ -4,7 +4,7 @@ import { UiElement } from '../ui.element';
 
 export function MilestoneWrapper(props: MilestoneWrapperProps): UiElement {
   return {
-    type: 'MilestoneWrapper',
+    _type: 'MilestoneWrapper',
     props,
   };
 }

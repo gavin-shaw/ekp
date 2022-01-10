@@ -16,11 +16,17 @@ import _ from 'lodash';
 import moment from 'moment';
 import * as Rx from 'rxjs';
 import { AbstractProcessor, BaseContext } from '../abstract.processor';
+import {
+  TOKEN_PNL_EVENTS,
+  TOKEN_PNL_MILESTONES,
+  TOKEN_PNL_SUMMARIES,
+} from '../collectionNames';
 import { TOKEN_PNL_QUEUE } from '../queues';
 import { defaultLogo } from '../util/constants';
+import { tokenContractId } from '../util/ids';
 import { TokenPnlEventDocument, TokenPnlSummaryDocument } from './documents';
 
-// @Processor(TOKEN_PNL_QUEUE)
+@Processor(TOKEN_PNL_QUEUE)
 export class TokenPnlProcessor extends AbstractProcessor<Context> {
   constructor(
     private coingeckoService: CoingeckoService,
@@ -47,6 +53,7 @@ export class TokenPnlProcessor extends AbstractProcessor<Context> {
         this.emitPnlEventDocuments(),
         this.mapPnlSummaryDocuments(),
         this.emitPnlSummaries(),
+        this.removeMilestones(),
       );
   }
 
@@ -78,8 +85,8 @@ export class TokenPnlProcessor extends AbstractProcessor<Context> {
 
       const layers = [
         {
-          id: 'token_pnl_milestones',
-          collectionName: 'token_pnl_milestones',
+          id: TOKEN_PNL_MILESTONES,
+          collectionName: TOKEN_PNL_MILESTONES,
           set: milestones,
         },
       ];
@@ -258,41 +265,38 @@ export class TokenPnlProcessor extends AbstractProcessor<Context> {
             tokenCostBases[tokenId] = previousCostBasis;
           }
 
-          return <TokenPnlEventDocument>{
+          const document: TokenPnlEventDocument = {
             id: transaction.hash,
+            amountToken: value,
+            amountFiat: valueFiat,
             blockNumber: Number(transaction.block_number),
             blockTimestamp: moment(transaction.block_timestamp).unix(),
-            chain: {
-              id: chain.id,
-              logo: chain.logo,
-              name: chain.name,
-            },
-            costBasis: costBasis.fiat,
+            chainId: chain.id,
+            chainLogo: chain.logo,
+            chainName: chain.name,
+            costBasisFiat: costBasis?.fiat ?? 0,
             description,
-            gasValue: {
-              tokenAmount: gas,
-              fiatAmount: gasFiat,
-              fiatSymbol: context.selectedCurrency.symbol,
-              tokenPrice: nativePrice.price,
-              tokenSymbol: chain.token.symbol,
-            },
+            fiatSymbol: context.selectedCurrency.symbol,
+            gasNativeToken: gas,
+            gasFiat: gasFiat,
             icon,
             links: {
               explorer: `${chain.explorer}tx/${transaction.hash}`,
             },
-            realizedGain,
+            nativeTokenPrice: nativePrice.price,
+            nativeTokenSymbol: chain.token.symbol,
+            realizedGainFiat: realizedGain,
             realizedGainPc,
-            realizedValue,
-            token,
-            tokenValue: {
-              tokenAmount: value,
-              fiatAmount: valueFiat,
-              fiatSymbol: context.selectedCurrency.symbol,
-              tokenPrice: tokenPrice.price,
-              tokenSymbol: token.symbol,
-            },
-            unrealizedCost,
+            realizedValueFiat: realizedValue,
+            tokenAddress: token.address,
+            tokenLogo: token.logo,
+            tokenName: token.name,
+            tokenPrice: tokenPrice?.price,
+            tokenSymbol: token.symbol,
+            unrealizedCostFiat: unrealizedCost,
           };
+
+          return document;
         })
         .filter((it) => !!it)
         .value();
@@ -308,14 +312,15 @@ export class TokenPnlProcessor extends AbstractProcessor<Context> {
     return Rx.map((context: Context) => {
       const summaryDocuments = _.chain(context.documents)
         .groupBy(
-          (it) => `${it.chain.id}_${it.token.address}`, // TODO: make this chain / token concat DRY, I use it in multiple places
+          (it) => tokenContractId(it.chainId, it.tokenAddress), // TODO: make this chain / token concat DRY, I use it in multiple places
         )
         .values()
         .map((events) => {
-          const token = events[0].token;
-          const chain = events[0].chain;
+          const tokenAddress = events[0].tokenAddress;
+          const chainId = events[0].chainId;
+          const tokenId = tokenContractId(chainId, tokenAddress);
           const costBasis = _.chain(events)
-            .reduce((prev, curr) => prev + curr.costBasis, 0)
+            .reduce((prev, curr) => prev + curr.costBasisFiat, 0)
             .value();
 
           const realizedGain = _.sumBy(events, 'realizedGain');
@@ -323,19 +328,26 @@ export class TokenPnlProcessor extends AbstractProcessor<Context> {
             _.sumBy(events, 'realizedGainPc') / events.length;
           const realizedValue = _.sumBy(events, 'realizedValue');
 
-          return <TokenPnlSummaryDocument>{
-            id: `${chain.id}_${token.address}`,
-            chain,
-            costBasis,
+          const document: TokenPnlSummaryDocument = {
+            id: tokenId,
+            chainId: events[0].chainId,
+            chainLogo: events[0].chainLogo,
+            chainName: events[0].chainName,
+            costBasisFiat: costBasis,
             fiatSymbol: context.selectedCurrency.symbol,
             links: {
-              details: `tokens/realizedpnl/${chain.id}/${token.address}`,
+              details: `portfolio/tokens/pnl/${chainId}/${tokenAddress}`,
             },
-            realizedGain,
+            realizedGainFiat: realizedGain,
             realizedGainPc,
-            realizedValue,
-            token,
+            realizedValueFiat: realizedValue,
+            tokenLogo: events[0].tokenLogo,
+            tokenName: events[0].tokenName,
+            tokenSymbol: events[0].tokenSymbol,
+            unrealizedCostFiat: 0, // TODO: implement this
           };
+
+          return document;
         })
         .value();
 
@@ -385,7 +397,7 @@ export class TokenPnlProcessor extends AbstractProcessor<Context> {
       const layers = [
         {
           id: 'token-pnl-events-layer',
-          collectionName: 'token_pnl_events',
+          collectionName: TOKEN_PNL_EVENTS,
           set: context.documents,
         },
       ];
@@ -399,7 +411,7 @@ export class TokenPnlProcessor extends AbstractProcessor<Context> {
       const layers = [
         {
           id: 'token-pnl-summaries-layer',
-          collectionName: 'token_pnl_summaries',
+          collectionName: TOKEN_PNL_SUMMARIES,
           set: context.summaryDocuments,
         },
       ];
@@ -482,6 +494,16 @@ export class TokenPnlProcessor extends AbstractProcessor<Context> {
         ...context,
         transactions,
       };
+    });
+  }
+
+  private removeMilestones() {
+    return Rx.tap((context: Context) => {
+      const removeMilestonesQuery = {
+        id: TOKEN_PNL_MILESTONES,
+      };
+
+      this.eventService.removeLayers(context.clientId, removeMilestonesQuery);
     });
   }
 }
