@@ -3,11 +3,13 @@ import {
   chains as allChains,
   ClientStateChangedEvent,
   CurrencyDto,
+  logger,
 } from '@app/sdk';
 import { Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { validate } from 'bycontract';
 import _ from 'lodash';
+import moment from 'moment';
 import * as Rx from 'rxjs';
 import { ChainMetadata } from '../../../libs/sdk/src/util/ChainMetadata';
 import { logErrors } from './util/logErrors';
@@ -54,7 +56,15 @@ export abstract class AbstractProcessor<T extends BaseContext> {
 
     const pipedObservable = this.pipe(validatedContext);
 
+    logger.log(`Handling job ${job.name}`);
+
+    const started = moment().unix();
+
     await Rx.firstValueFrom(pipedObservable.pipe(logErrors()));
+
+    logger.log(
+      `Job complete ${job.name} in ${moment().unix() - started} seconds`,
+    );
   }
 
   abstract pipe(source: Rx.Observable<T>): Rx.Observable<T>;
