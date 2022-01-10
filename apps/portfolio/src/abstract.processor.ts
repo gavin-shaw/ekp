@@ -56,14 +56,14 @@ export abstract class AbstractProcessor<T extends BaseContext> {
 
     const pipedObservable = this.pipe(validatedContext);
 
-    logger.log(`Handling job ${job.name}`);
+    logger.log(`Handling job ${job.queue.name}`);
 
     const started = moment().unix();
 
     await Rx.firstValueFrom(pipedObservable.pipe(logErrors()));
 
     logger.log(
-      `Job complete ${job.name} in ${moment().unix() - started} seconds`,
+      `Job complete ${job.queue.name} in ${moment().unix() - started} seconds`,
     );
   }
 

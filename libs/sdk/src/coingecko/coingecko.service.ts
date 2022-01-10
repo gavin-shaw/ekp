@@ -162,34 +162,41 @@ export class CoingeckoService {
       () =>
         retry(
           this.limiter.wrap(async () => {
-            logger.debug('GET ' + url);
+            try {
+              logger.debug('GET ' + url);
 
-            const response = await axios.get(url);
+              const response = await axios.get(url);
 
-            if (!response?.data) {
-              throw new Error('Failed to fetch currency rates from coingecko');
+              if (!response?.data) {
+                throw new Error(
+                  'Failed to fetch currency rates from coingecko',
+                );
+              }
+
+              const prices: number[][] = response.data?.prices;
+
+              if (!prices) {
+                return cachedValues ?? [];
+              }
+
+              const newCoinPrices = _.chain(prices)
+                .map(
+                  ([timestamp, price]) =>
+                    <CoinPrice>{
+                      id: `${coinId}_${fiatId}_${Math.floor(timestamp / 1000)}`,
+                      coinId,
+                      fiatId,
+                      timestamp: Math.floor(timestamp / 1000),
+                      price,
+                    },
+                )
+                .value();
+
+              return [...(cachedValues ?? []), ...newCoinPrices];
+            } catch (error) {
+              console.error(error.response.status);
+              throw error;
             }
-
-            const prices: number[][] = response.data?.prices;
-
-            if (!prices) {
-              return cachedValues ?? [];
-            }
-
-            const newCoinPrices = _.chain(prices)
-              .map(
-                ([timestamp, price]) =>
-                  <CoinPrice>{
-                    id: `${coinId}_${fiatId}_${Math.floor(timestamp / 1000)}`,
-                    coinId,
-                    fiatId,
-                    timestamp: Math.floor(timestamp / 1000),
-                    price,
-                  },
-              )
-              .value();
-
-            return [...(cachedValues ?? []), ...newCoinPrices];
           }),
           {
             onRetry: (error) =>
