@@ -119,7 +119,10 @@ export class CoingeckoService {
                 price,
               };
             } catch (error) {
-              console.error(error.response.status);
+              if (error.response.status === 404) {
+                return null;
+              }
+
               throw error;
             }
           }),
@@ -194,7 +197,9 @@ export class CoingeckoService {
 
               return [...(cachedValues ?? []), ...newCoinPrices];
             } catch (error) {
-              console.error(error.response.status);
+              if (error.response.status === 404) {
+                return [];
+              }
               throw error;
             }
           }),
