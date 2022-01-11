@@ -157,7 +157,7 @@ export class NftBalanceProcessor extends AbstractProcessor<Context> {
                 tokenId: Number(nftTransfer.token_id),
                 transactionHash: nftTransfer.transaction_hash,
                 transactionIndex: Number(nftTransfer.transaction_index),
-                value: Number(ethers.utils.formatEther(nftTransfer.value)),
+                value: Number(ethers.utils.formatEther(nftTransfer.value ?? 0)),
               };
             })
             .thru((promises) => Promise.all(promises))

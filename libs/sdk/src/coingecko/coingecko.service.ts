@@ -59,15 +59,23 @@ export class CoingeckoService {
       () =>
         retry(
           this.limiter.wrap(async () => {
-            logger.debug('GET ' + url);
+            try {
+              logger.debug('GET ' + url);
 
-            const response = await axios.get(url);
+              const response = await axios.get(url);
 
-            if (!response?.data) {
-              throw new Error('Failed to fetch token image for: ' + coinId);
+              if (!response?.data) {
+                throw new Error('Failed to fetch token image for: ' + coinId);
+              }
+
+              return response.data?.image?.small;
+            } catch (error) {
+              if (error.response.status === 404) {
+                return null;
+              }
+
+              throw error;
             }
-
-            return response.data?.image?.small;
           }),
           {
             onRetry: (error) =>
