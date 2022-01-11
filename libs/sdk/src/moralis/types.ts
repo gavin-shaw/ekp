@@ -2,6 +2,10 @@ import { components } from 'moralis/types/generated/web3Api';
 import { ChainId } from '@app/sdk';
 
 export type ChainList = components['schemas']['chainList'];
+export type ERC20Price = components['schemas']['erc20Price'] & {
+  chain_id: string;
+  token_address: string;
+};
 export type NativeBalance = components['schemas']['nativeBalance'];
 export type NftContractMetadata =
   components['schemas']['nftContractMetadata'] & { chain_id: string };

@@ -16,8 +16,10 @@ import {
   TokenBalance,
   TokenTransfer,
   Transaction,
+  ERC20Price,
 } from './types';
 import { TokenMetadata } from '../util/TokenMetadata';
+import { moralis } from '.';
 
 @Injectable()
 export class MoralisService {
@@ -38,6 +40,45 @@ export class MoralisService {
   }
 
   private limiter: Bottleneck;
+
+  async tokenPriceOf(
+    chainId: ChainId,
+    tokenAddress: string,
+    blockNumber: number,
+  ): Promise<ERC20Price> {
+    validate(
+      [chainId, tokenAddress, blockNumber],
+      ['string', 'string', 'number'],
+    );
+
+    const cacheKey = `moralis.tokenPriceOf['${chainId}']['${tokenAddress}'][${blockNumber}]`;
+    const debugMessage = `Web3API > getTokenPrice('${chainId}', '${tokenAddress}', ${blockNumber})`;
+
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            logger.debug(debugMessage);
+
+            const result = await Moralis.Web3API.token.getTokenPrice({
+              chain: chainId,
+              address: tokenAddress,
+              to_block: blockNumber,
+            });
+
+            return result;
+          }),
+          {
+            onRetry: (error) =>
+              logger.warn(`Retry due to ${error.message}: ${debugMessage}`),
+          },
+        ),
+      {
+        ttl: 0,
+      },
+    );
+  }
 
   async tokenMetadataOf(
     chainId: ChainId,
@@ -76,7 +117,7 @@ export class MoralisService {
           },
         ),
       {
-        ttl: 3600,
+        ttl: 0,
       },
     );
   }
@@ -417,10 +458,7 @@ export class MoralisService {
     contractAddress: string,
     limit = 500,
   ): Promise<NftTransfer[]> {
-    validate(
-      [chainId, contractAddress, limit],
-      ['string', 'string', 'number'],
-    );
+    validate([chainId, contractAddress, limit], ['string', 'string', 'number']);
 
     const cacheKey = `moralis.nftContractTransfersOf__['${chainId}']['${contractAddress}'][${limit}]`;
     const debugMessage = `Web3API > getContractNFTTransfers('${chainId}', '${contractAddress}', ${limit})`;

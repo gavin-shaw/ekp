@@ -121,7 +121,7 @@ function tableColumns(): DatatableColumn[] {
       right: true,
       sortable: true,
       value: '$.balanceFiat',
-      grow: 0,
+      width: '120px',
       cell: Tile({
         align: 'right',
         subTitle: formatAge('$.updated'),

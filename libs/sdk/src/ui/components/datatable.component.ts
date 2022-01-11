@@ -27,6 +27,7 @@ export interface DatatableColumn {
   name?: RpcOrPrimitive;
   right?: RpcOrPrimitive;
   sortable?: RpcOrPrimitive;
+  width?: Rpc | number | string;
   value?: RpcOrPrimitive;
   cell?: UiElement;
 }

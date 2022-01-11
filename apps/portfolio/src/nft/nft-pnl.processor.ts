@@ -509,7 +509,7 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
 
           const nativePrice =
             coinPriceMap[
-            `${chainMetadata.token.coinId}_${transactionStartOfDay}`
+              `${chainMetadata.token.coinId}_${transactionStartOfDay}`
             ];
 
           if (!nativePrice) {
@@ -518,11 +518,11 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
 
           let tokenAmount = !!transfer.value
             ? Number(
-              ethers.utils.formatUnits(
-                transfer.value,
-                chainMetadata.token.decimals,
-              ),
-            )
+                ethers.utils.formatUnits(
+                  transfer.value,
+                  chainMetadata.token.decimals,
+                ),
+              )
             : 0;
 
           let tokenPrice = nativePrice.price;
@@ -538,7 +538,7 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
 
             const tokenMetadata =
               tokenMetadataMap[
-              tokenContractId(tokenTransfer.chain_id, tokenTransfer.address)
+                tokenContractId(tokenTransfer.chain_id, tokenTransfer.address)
               ];
 
             if (!tokenMetadata) {
@@ -547,11 +547,11 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
 
             tokenAmount = !!tokenTransfer.value
               ? Number(
-                ethers.utils.formatUnits(
-                  tokenTransfer.value,
-                  tokenMetadata.decimals,
-                ),
-              )
+                  ethers.utils.formatUnits(
+                    tokenTransfer.value,
+                    tokenMetadata.decimals,
+                  ),
+                )
               : 0;
 
             tokenPrice =
@@ -582,10 +582,10 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
 
           const gasAmount = !!transaction.receipt.gasUsed
             ? Number(
-              ethers.utils.formatEther(
-                transaction.receipt.gasUsed.mul(transaction.gasPrice),
-              ),
-            )
+                ethers.utils.formatEther(
+                  transaction.receipt.gasUsed.mul(transaction.gasPrice),
+                ),
+              )
             : undefined;
 
           const gasValue: TokenValue = {
