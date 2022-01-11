@@ -1,7 +1,6 @@
 import {
   chains,
   CoingeckoService,
-  CoinPrice,
   EventService,
   moralis,
   MoralisService,
@@ -14,6 +13,7 @@ import * as Rx from 'rxjs';
 import { AbstractProcessor, BaseContext } from '../abstract.processor';
 import { TOKEN_BALANCES, TOKEN_BALANCE_MILESTONES } from '../collectionNames';
 import { TOKEN_BALANCE_QUEUE } from '../queues';
+import { tokenContractId } from '../util/ids';
 import { TokenBalanceDocument } from './documents/token-balance.document';
 
 @Processor(TOKEN_BALANCE_QUEUE)
@@ -66,25 +66,65 @@ export class TokenBalanceProcessor extends AbstractProcessor<Context> {
 
   private addCoinPrices() {
     return Rx.mergeMap(async (context: Context) => {
-      const coinPrices = await _.chain(context.tokenBalances)
-        .map((tokenBalance) =>
-          this.coingeckoService.coinIdOf(
+      const chainCoinIds = _.chain(chains)
+        .values()
+        .map((chain) => chain.token.coinId)
+        .value();
+
+      const chainCoinPrices = await this.coingeckoService.latestPricesOf(
+        chainCoinIds,
+        context.selectedCurrency.id,
+      );
+
+      const chainCoinPriceMap: Record<string, number> = _.chain(chainCoinPrices)
+        .groupBy((coinPrice) => {
+          return _.chain(chains)
+            .values()
+            .filter((it) => it.token.coinId === coinPrice.coinId)
+            .map((it) => it.id)
+            .first()
+            .value();
+        })
+        .mapValues((prices) => prices[0].price)
+        .value();
+
+      const tokenPrices = await _.chain(context.tokenBalances)
+        .filter((it) => !!it)
+        .map(async (tokenBalance) => {
+          const latestPrice = await this.moralisService.latestTokenPriceOf(
             tokenBalance.chain_id,
             tokenBalance.token_address,
-          ),
-        )
-        .filter((it) => !!it)
-        .thru((coinIds) =>
-          this.coingeckoService.latestPricesOf(
-            coinIds,
-            context.selectedCurrency.id,
-          ),
-        )
+          );
+
+          if (!latestPrice) {
+            return <TokenPrice>{
+              chainId: tokenBalance.chain_id,
+              tokenAddress: tokenBalance.token_address,
+              price: 0,
+            };
+          }
+
+          const tokenPrice = Number(
+            ethers.utils.formatUnits(
+              latestPrice.nativePrice.value,
+              latestPrice.nativePrice.decimals,
+            ),
+          );
+
+          const nativePrice = chainCoinPriceMap[tokenBalance.chain_id];
+
+          return <TokenPrice>{
+            chainId: tokenBalance.chain_id,
+            tokenAddress: tokenBalance.token_address,
+            price: tokenPrice * nativePrice,
+          };
+        })
+        .thru((promises) => Promise.all(promises))
         .value();
 
       return <Context>{
         ...context,
-        coinPrices,
+        tokenPrices,
       };
     });
   }
@@ -146,17 +186,19 @@ export class TokenBalanceProcessor extends AbstractProcessor<Context> {
             return undefined;
           }
 
-          const coinPrice = context.coinPrices.find(
-            (it) => it.coinId.toLowerCase() === tokenMetadata.coinId,
+          const tokenPrice = context.tokenPrices.find(
+            (tokenPrice) =>
+              tokenContractId(tokenPrice.chainId, tokenPrice.tokenAddress) ===
+              tokenContractId(tokenMetadata.chainId, tokenMetadata.address),
           );
 
-          if (!coinPrice) {
+          if (!tokenPrice) {
             return undefined;
           }
 
           return <TokenBalanceDocument>{
             id,
-            balanceFiat: coinPrice.price * balance,
+            balanceFiat: tokenPrice.price * balance,
             balanceToken: balance,
             chainId: chainMetadata.id,
             chainLogo: chainMetadata.logo,
@@ -171,7 +213,7 @@ export class TokenBalanceProcessor extends AbstractProcessor<Context> {
             tokenLogo: tokenMetadata.logo,
             tokenDecimals: tokenMetadata.decimals,
             tokenSymbol: tokenMetadata.symbol,
-            tokenPrice: coinPrice.price,
+            tokenPrice: tokenPrice.price,
           };
         })
         .filter((it) => !!it);
@@ -218,10 +260,10 @@ export class TokenBalanceProcessor extends AbstractProcessor<Context> {
         },
         {
           id: '2-prices',
-          status: !context.coinPrices ? 'progressing' : 'complete',
-          label: !context.coinPrices
+          status: !context.tokenPrices ? 'progressing' : 'complete',
+          label: !context.tokenPrices
             ? 'Fetching token prices'
-            : `Fetched pricing for ${context.coinPrices.length} tokens`,
+            : `Fetched pricing for ${context.tokenPrices.length} tokens`,
         },
         {
           id: '3-metadata',
@@ -251,8 +293,14 @@ export class TokenBalanceProcessor extends AbstractProcessor<Context> {
 }
 
 interface Context extends BaseContext {
-  readonly coinPrices?: CoinPrice[];
+  readonly tokenPrices?: TokenPrice[];
   readonly documents?: TokenBalanceDocument[];
   readonly tokenBalances?: moralis.TokenBalance[];
   readonly tokenMetadatas?: TokenMetadata[];
+}
+
+interface TokenPrice {
+  readonly chainId: string;
+  readonly tokenAddress: string;
+  readonly price: number;
 }

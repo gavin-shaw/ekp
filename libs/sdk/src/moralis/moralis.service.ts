@@ -41,6 +41,53 @@ export class MoralisService {
 
   private limiter: Bottleneck;
 
+  async latestTokenPriceOf(
+    chainId: ChainId,
+    tokenAddress: string,
+  ): Promise<ERC20Price> {
+    validate([chainId, tokenAddress], ['string', 'string']);
+
+    const cacheKey = `moralis.latestTokenPriceOf['${chainId}']['${tokenAddress}']`;
+    const debugMessage = `Web3API > getTokenPrice('${chainId}', '${tokenAddress}')`;
+
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            logger.debug(debugMessage);
+
+            try {
+              const result = await Moralis.Web3API.token.getTokenPrice({
+                chain: chainId,
+                address: tokenAddress,
+              });
+
+              return result;
+            } catch (error) {
+              if (error.code === 141) {
+                return null;
+              }
+
+              throw error;
+            }
+          }),
+          {
+            onRetry: (error: any) => {
+              console.error(error);
+
+              return logger.warn(
+                `Retry due to ${error.message}: ${debugMessage}`,
+              );
+            },
+          },
+        ),
+      {
+        ttl: 3600,
+      },
+    );
+  }
+
   async tokenPriceOf(
     chainId: ChainId,
     tokenAddress: string,

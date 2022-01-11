@@ -9,5 +9,5 @@ export function nftContractId(chainId: string, contractAddress: string) {
 export function tokenContractId(chainId: string, contractAddress: string) {
   validate([chainId, contractAddress], ['string', 'string']);
 
-  return `${chainId}_${contractAddress}`;
+  return `${chainId}_${contractAddress?.toLowerCase()}`;
 }
