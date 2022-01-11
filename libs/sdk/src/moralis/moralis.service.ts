@@ -415,15 +415,15 @@ export class MoralisService {
   async nftContractTransfersOf(
     chainId: ChainList,
     contractAddress: string,
-    offset = 0,
+    limit = 500,
   ): Promise<NftTransfer[]> {
     validate(
-      [chainId, contractAddress, offset],
+      [chainId, contractAddress, limit],
       ['string', 'string', 'number'],
     );
 
-    const cacheKey = `moralis.nftContractTransfersOf__['${chainId}']['${contractAddress}'][${offset}]`;
-    const debugMessage = `Web3API > getContractNFTTransfers('${chainId}', '${contractAddress}', ${offset})`;
+    const cacheKey = `moralis.nftContractTransfersOf__['${chainId}']['${contractAddress}'][${limit}]`;
+    const debugMessage = `Web3API > getContractNFTTransfers('${chainId}', '${contractAddress}', ${limit})`;
 
     return this.cache.wrap(
       cacheKey,
@@ -436,7 +436,7 @@ export class MoralisService {
               await Moralis.Web3API.token.getContractNFTTransfers({
                 address: contractAddress,
                 chain: chainId,
-                offset,
+                limit,
               });
 
             if (!Array.isArray(response?.result)) {
