@@ -8,6 +8,7 @@ export * from './NftCollectionMetadata';
 export * from './TokenMetadata';
 export * from './TokenValue';
 export * from './util';
+export * from './abstract.processor';
 
 import erc20abi from './erc20.json';
 export { erc20abi };

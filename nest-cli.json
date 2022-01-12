@@ -27,6 +27,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/portfolio/tsconfig.app.json"
       }
+    },
+    "critterz": {
+      "type": "application",
+      "root": "apps/critterz",
+      "entryFile": "main",
+      "sourceRoot": "apps/critterz/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/critterz/tsconfig.app.json"
+      }
     }
   },
   "compilerOptions": {

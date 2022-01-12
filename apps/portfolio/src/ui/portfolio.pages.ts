@@ -1,8 +1,8 @@
-import tokenBalances from './home/token-balances.uielement';
-import nftBalances from './home/nft-balances.uielement';
-import nftPnlSummaries from './home/nft-pnl-summaries.uielement';
-import tokenPnlSummaries from './home/token-pnl-summaries.uielement';
-import nftPnlDetails from './home/nft-pnl-details.uielement';
+import tokenBalances from './elements/token-balances.uielement';
+import nftBalances from './elements/nft-balances.uielement';
+import nftPnlSummaries from './elements/nft-pnl-summaries.uielement';
+import tokenPnlSummaries from './elements/token-pnl-summaries.uielement';
+import nftPnlDetails from './elements/nft-pnl-details.uielement';
 
 export default function pages() {
   return [

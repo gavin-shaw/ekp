@@ -1,16 +1,17 @@
-import { SocketModule } from '@app/sdk';
+import { GlobalModule } from '@app/sdk';
 import { BullModule, BullModuleOptions } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
-import { QueueService } from './queue.service';
+import { RentalCheckerProcessor } from './rental-checker/rental-checker.processor';
+import { UiProcessor } from './ui/ui.processor';
 import { QUEUE_NAMES } from './util/queue.names';
 
 @Module({
   imports: [
-    SocketModule,
+    GlobalModule,
     BullModule.registerQueue(
       ...QUEUE_NAMES.map((name: string) => <BullModuleOptions>{ name }),
     ),
   ],
-  providers: [QueueService],
+  providers: [UiProcessor, RentalCheckerProcessor],
 })
-export class PrimaryModule {}
+export class WorkerModule {}

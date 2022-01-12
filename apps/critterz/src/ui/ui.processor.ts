@@ -8,8 +8,8 @@ import { Process, Processor } from '@nestjs/bull';
 import { Job } from 'bull';
 import { validate } from 'bycontract';
 import { UI_QUEUE } from '../util/queue.names';
-import pages from './portfolio.pages';
-import menus from './portfolio.menus';
+import menus from './critterz.menus';
+import pages from './critterz.pages';
 
 @Processor(UI_QUEUE)
 export class UiProcessor {
@@ -31,12 +31,12 @@ export class UiProcessor {
 
     const layers = <LayerDto[]>[
       {
-        id: 'menu-layer',
+        id: 'critterz-menu-layer',
         collectionName: 'menus',
         set: menus(),
       },
       {
-        id: 'pages-layer',
+        id: 'critterz-pages-layer',
         collectionName: 'pages',
         set: pages(),
       },

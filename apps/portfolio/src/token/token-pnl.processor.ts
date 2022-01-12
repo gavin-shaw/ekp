@@ -1,4 +1,6 @@
 import {
+  AbstractProcessor,
+  BaseContext,
   ChainId,
   chains,
   CoingeckoService,
@@ -10,18 +12,15 @@ import {
   MoralisService,
   TokenMetadata,
 } from '@app/sdk';
-import { Processor } from '@nestjs/bull';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
 import * as Rx from 'rxjs';
-import { AbstractProcessor, BaseContext } from '../abstract.processor';
 import {
   TOKEN_PNL_EVENTS,
   TOKEN_PNL_MILESTONES,
   TOKEN_PNL_SUMMARIES,
-} from '../collectionNames';
-import { TOKEN_PNL_QUEUE } from '../queues';
+} from '../util/collectionNames';
 import { defaultLogo } from '../util/constants';
 import { tokenContractId } from '../util/ids';
 import { TokenPnlEventDocument, TokenPnlSummaryDocument } from './documents';

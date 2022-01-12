@@ -1,4 +1,6 @@
 import {
+  AbstractProcessor,
+  BaseContext,
   chains,
   CoingeckoService,
   EventService,
@@ -10,10 +12,12 @@ import { Processor } from '@nestjs/bull';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import * as Rx from 'rxjs';
-import { AbstractProcessor, BaseContext } from '../abstract.processor';
-import { TOKEN_BALANCES, TOKEN_BALANCE_MILESTONES } from '../collectionNames';
-import { TOKEN_BALANCE_QUEUE } from '../queues';
+import {
+  TOKEN_BALANCES,
+  TOKEN_BALANCE_MILESTONES,
+} from '../util/collectionNames';
 import { tokenContractId } from '../util/ids';
+import { TOKEN_BALANCE_QUEUE } from '../util/queue.names';
 import { TokenBalanceDocument } from './documents/token-balance.document';
 
 @Processor(TOKEN_BALANCE_QUEUE)

@@ -1,4 +1,6 @@
 import {
+  AbstractProcessor,
+  BaseContext,
   ChainId,
   chains,
   CoingeckoService,
@@ -15,10 +17,9 @@ import { BigNumber, ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
 import * as Rx from 'rxjs';
-import { AbstractProcessor, BaseContext } from '../abstract.processor';
-import { NFT_BALANCES, NFT_BALANCE_MILESTONES } from '../collectionNames';
-import { NFT_BALANCE_QUEUE } from '../queues';
+import { NFT_BALANCES, NFT_BALANCE_MILESTONES } from '../util/collectionNames';
 import { defaultLogo } from '../util/constants';
+import { NFT_BALANCE_QUEUE } from '../util/queue.names';
 import { NftBalanceDocument } from './documents/nft-balance.document';
 
 @Processor(NFT_BALANCE_QUEUE)

@@ -1,4 +1,6 @@
 import {
+  AbstractProcessor,
+  BaseContext,
   ChainId,
   chains,
   CoingeckoService,
@@ -13,18 +15,15 @@ import {
   TokenMetadata,
   TokenValue,
 } from '@app/sdk';
-import { Processor } from '@nestjs/bull';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import moment from 'moment';
 import * as Rx from 'rxjs';
-import { AbstractProcessor, BaseContext } from '../abstract.processor';
 import {
   NFT_PNL_EVENTS,
   NFT_PNL_MILESTONES,
   NFT_PNL_SUMMARIES,
-} from '../collectionNames';
-import { NFT_PNL_QUEUE } from '../queues';
+} from '../util/collectionNames';
 import { defaultLogo } from '../util/constants';
 import { nftContractId, tokenContractId } from '../util/ids';
 import { NftPnlEventDocument } from './documents/nft-pnl-event.document';
