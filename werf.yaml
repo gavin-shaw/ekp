@@ -4,3 +4,7 @@ project: ekp
 image: portfolio
 dockerfile: Dockerfile.portfolio
 context: .
+---
+image: portfolio
+dockerfile: Dockerfile.critterz
+context: .

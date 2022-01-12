@@ -8,18 +8,10 @@ export default function menus() {
       navLink: 'critterz/rental-checker',
       icon: 'cil-money',
     },
-    // {
-    //   header: 'P & L',
-    // },
-    // {
-    //   title: 'Tokens',
-    //   navLink: 'portfolio/tokens/pnl',
-    //   icon: 'cil-money',
-    // },
-    // {
-    //   title: 'NFTs',
-    //   navLink: 'portfolio/nfts/pnl',
-    //   icon: 'cil-color-palette',
-    // },
+    {
+      title: 'My sCritterz',
+      navLink: 'critterz/my-scritterz',
+      icon: 'cil-money',
+    },
   ];
 }

@@ -9,6 +9,6 @@ RUN yarn install --immutable --immutable-cache --check-cache
 
 COPY . /app 
 
-RUN yarn build portfolio
+RUN yarn build critterz
 
-CMD ["node","dist/apps/portfolio/main"]
+CMD ["node","dist/apps/critterz/main"]
