@@ -1,4 +1,5 @@
 export const UI_QUEUE = 'UI';
 export const RENTAL_CHECK_QUEUE = 'RENTAL_CHECK';
+export const PRICES_QUEUE = 'PRICES_QUEUE';
 
-export const QUEUE_NAMES = [UI_QUEUE, RENTAL_CHECK_QUEUE];
+export const QUEUE_NAMES = [UI_QUEUE, RENTAL_CHECK_QUEUE, PRICES_QUEUE];

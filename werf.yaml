@@ -5,6 +5,6 @@ image: portfolio
 dockerfile: Dockerfile.portfolio
 context: .
 ---
-image: portfolio
+image: critterz
 dockerfile: Dockerfile.critterz
 context: .

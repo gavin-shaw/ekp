@@ -4,13 +4,13 @@ import {
   EthersService,
   EventService,
   MoralisService,
+  OpenseaService,
 } from '@app/sdk';
 import { Processor } from '@nestjs/bull';
 import { ethers } from 'ethers';
 import _ from 'lodash';
 import * as Rx from 'rxjs';
 import { Observable } from 'rxjs';
-import { OpenseaService } from '../../../../libs/sdk/src/opensea/opensea.service';
 import scritterzAbi from '../abi/scritterz.abi.json';
 import {
   RENTAL_CHECKER_DOCUMENT,

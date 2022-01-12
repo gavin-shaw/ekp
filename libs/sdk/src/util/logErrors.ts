@@ -1,5 +1,5 @@
-import { logger } from '@app/sdk';
 import * as Rx from 'rxjs';
+import { logger } from './default-logger';
 
 export function logErrors() {
   return Rx.catchError((error) => {

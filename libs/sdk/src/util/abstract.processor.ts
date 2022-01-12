@@ -1,18 +1,16 @@
-import {
-  ChainId,
-  chains as allChains,
-  ClientStateChangedEvent,
-  CurrencyDto,
-  logger,
-} from '@app/sdk';
 import { Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { validate } from 'bycontract';
 import _ from 'lodash';
 import moment from 'moment';
 import * as Rx from 'rxjs';
+import { ClientStateChangedEvent } from '../socket/events/client-state-changed.event';
 import { ChainMetadata } from './ChainMetadata';
 import { logErrors } from './logErrors';
+import { chains as allChains } from './chains';
+import { logger } from './default-logger';
+import { ChainId } from './ChainId';
+import { CurrencyDto } from '../socket/dtos/currency.dto';
 
 export abstract class AbstractProcessor<T extends BaseContext> {
   protected validateEvent(event: ClientStateChangedEvent): Rx.Observable<T> {

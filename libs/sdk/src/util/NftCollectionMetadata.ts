@@ -1,4 +1,4 @@
-import { ChainId } from '@app/sdk';
+import { ChainId } from './ChainId';
 
 export interface NftCollectionMetadata {
   readonly chainId: ChainId;
