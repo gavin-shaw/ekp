@@ -108,17 +108,29 @@ export class MoralisService {
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
 
-            const result = await Moralis.Web3API.token.getTokenPrice({
-              chain: chainId,
-              address: tokenAddress,
-              to_block: blockNumber,
-            });
+            try {
+              const result = await Moralis.Web3API.token.getTokenPrice({
+                chain: chainId,
+                address: tokenAddress,
+                to_block: blockNumber,
+              });
 
-            return result;
+              return result;
+            } catch (error) {
+              if (error.code === 141) {
+                return null;
+              }
+
+              throw error;
+            }
           }),
           {
-            onRetry: (error) =>
-              logger.warn(`Retry due to ${error.message}: ${debugMessage}`),
+            onRetry: (error) => {
+              console.error(error);
+              return logger.warn(
+                `Retry due to ${error.message}: ${debugMessage}`,
+              );
+            },
           },
         ),
       {
@@ -540,7 +552,7 @@ export class MoralisService {
           },
         ),
       {
-        ttl: 300,
+        ttl: 1800,
       },
     );
   }

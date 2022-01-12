@@ -2,7 +2,6 @@ import {
   ChainId,
   chains,
   CoingeckoService,
-  CoinPrice,
   EthersService,
   EthersTransaction,
   EventService,
@@ -31,7 +30,7 @@ import { nftContractId, tokenContractId } from '../util/ids';
 import { NftPnlEventDocument } from './documents/nft-pnl-event.document';
 import { NftPnlSummaryDocument } from './documents/nft-pnl-summary.document';
 
-@Processor(NFT_PNL_QUEUE)
+// @Processor(NFT_PNL_QUEUE)
 export class NftPnlProcessor extends AbstractProcessor<Context> {
   constructor(
     private coingeckoService: CoingeckoService,
@@ -58,8 +57,6 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
       )
       .pipe(
         this.addNftMetadata(),
-        this.emitMilestones(),
-        this.addCoinPrices(),
         this.emitMilestones(),
         this.mapPnlEventDocuments(),
         this.emitPnlEventDocuments(),
@@ -108,11 +105,11 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
             : `Fetched metadata for ${context.nftMetadatas.length} nfts`,
         },
         {
-          id: '6-token-prices',
-          status: !context.coinPrices ? 'progressing' : 'complete',
-          label: !context.coinPrices
-            ? 'Fetching historic token prices'
-            : `Fetched pricing for ${context.coinPrices.length} tokens`,
+          id: '6-mapping',
+          status: !context.documents ? 'pending' : 'complete',
+          label: !context.documents
+            ? 'Processing data'
+            : `Processed ${context.documents} P & L events`,
         },
       ];
 
@@ -187,37 +184,6 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
       return <Context>{
         ...context,
         tokenTransfers,
-      };
-    });
-  }
-
-  private addCoinPrices() {
-    return Rx.mergeMap(async (context: Context) => {
-      const chainCoinIds = _.chain(chains)
-        .values()
-        .map((it) => it.token.coinId)
-        .value();
-
-      const coinIds = _.chain(context.tokenTransfers)
-        .map((it) => this.coingeckoService.coinIdOf(it.chain_id, it.address))
-        .filter((it) => !!it)
-        .uniq()
-        .value();
-
-      const coinPrices = await _.chain(coinIds)
-        .union(chainCoinIds)
-        .map((coinId) =>
-          this.coingeckoService.dailyPricesOf(
-            coinId,
-            context.selectedCurrency.id,
-          ),
-        )
-        .thru((it) => Promise.all<CoinPrice[]>(it))
-        .value();
-
-      return <Context>{
-        ...context,
-        coinPrices: _.flatten(coinPrices),
       };
     });
   }
@@ -313,10 +279,6 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
           const chainMetadata = chains[documents[0].chainId];
 
           const costBasis = _.sumBy(documents, (it) => it.costBasisFiat || 0);
-          const realizedGain = _.sumBy(
-            documents,
-            (it) => it.realizedGainFiat || 0,
-          );
           const realizedValue = _.sumBy(
             documents,
             (it) => it.realizedValueFiat || 0,
@@ -446,14 +408,17 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
   }
 
   private mapPnlEventDocuments() {
-    return Rx.map((context: Context) => {
-      const coinPriceMap = _.chain(context.coinPrices)
-        .groupBy((it) => `${it.coinId}_${it.timestamp}`)
-        .mapValues((it) => it[0])
-        .value();
+    return Rx.mergeMap(async (context: Context) => {
+      const nativeTokenPrices = await this.coingeckoService.nativeCoinPrices(
+        context.selectedCurrency.id,
+      );
 
-      const costBasisMap: {
+      const nftCosts: {
         [contractId: string]: { [tokenId: number]: number };
+      } = {};
+
+      const contractRealizedGain: {
+        [contractId: string]: number;
       } = {};
 
       const transactionMap = _.chain(context.transactions)
@@ -471,9 +436,9 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
         .mapValues((it) => it[0])
         .value();
 
-      const documents = _.chain(context.nftTransfers)
+      const documents = await _.chain(context.nftTransfers)
         .sortBy((it) => Number(it.block_number))
-        .map((transfer) => {
+        .map(async (transfer) => {
           if (
             context.watchedAddresses.includes(transfer.from_address) &&
             context.watchedAddresses.includes(transfer.to_address)
@@ -496,27 +461,11 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
             return undefined;
           }
 
-          const transactionStartOfDay = moment(transfer.block_timestamp)
-            .utc()
-            .startOf('day')
-            .unix();
-
-          if (!transactionStartOfDay) {
-            return undefined;
-          }
-
           const chainMetadata = chains[transfer.chain_id];
 
-          const nativePrice =
-            coinPriceMap[
-              `${chainMetadata.token.coinId}_${transactionStartOfDay}`
-            ];
+          const nativePrice = nativeTokenPrices[transfer.chain_id];
 
-          if (!nativePrice) {
-            return undefined;
-          }
-
-          let tokenAmount = !!transfer.value
+          let nativeAmount = !!transfer.value
             ? Number(
                 ethers.utils.formatUnits(
                   transfer.value,
@@ -525,44 +474,41 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
               )
             : 0;
 
-          let tokenPrice = nativePrice.price;
+          const nativeSymbol = chainMetadata.token.symbol;
 
-          let tokenSymbol = chainMetadata.token.symbol;
-
-          if (!tokenAmount) {
+          if (!nativeAmount) {
             const tokenTransfer = tokenTransferMap[transfer.transaction_hash];
 
-            if (!tokenTransfer) {
-              return undefined;
+            if (!!tokenTransfer) {
+              const tokenMetadata =
+                tokenMetadataMap[
+                  tokenContractId(tokenTransfer.chain_id, tokenTransfer.address)
+                ];
+
+              if (!!tokenMetadata) {
+                const tokenPrice = await this.moralisService.tokenPriceOf(
+                  tokenMetadata.chainId as ChainId,
+                  tokenMetadata.address,
+                  Number(tokenTransfer.block_number),
+                );
+
+                if (!!tokenPrice) {
+                  nativeAmount =
+                    Number(
+                      ethers.utils.formatUnits(
+                        tokenTransfer.value,
+                        tokenMetadata.decimals,
+                      ),
+                    ) *
+                    Number(
+                      ethers.utils.formatUnits(
+                        tokenPrice.nativePrice.value,
+                        tokenPrice.nativePrice.decimals,
+                      ),
+                    );
+                }
+              }
             }
-
-            const tokenMetadata =
-              tokenMetadataMap[
-                tokenContractId(tokenTransfer.chain_id, tokenTransfer.address)
-              ];
-
-            if (!tokenMetadata) {
-              return undefined;
-            }
-
-            tokenAmount = !!tokenTransfer.value
-              ? Number(
-                  ethers.utils.formatUnits(
-                    tokenTransfer.value,
-                    tokenMetadata.decimals,
-                  ),
-                )
-              : 0;
-
-            tokenPrice =
-              coinPriceMap[`${tokenMetadata.coinId}_${transactionStartOfDay}`]
-                ?.price;
-
-            if (!tokenPrice) {
-              return undefined;
-            }
-
-            tokenSymbol = tokenMetadata.symbol;
           }
 
           const nftMetadata = context.nftMetadatas.find(
@@ -590,19 +536,19 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
 
           const gasValue: TokenValue = {
             tokenAmount: gasAmount,
-            tokenPrice: nativePrice.price,
+            tokenPrice: nativePrice,
             tokenSymbol: chainMetadata.token.symbol,
             fiatSymbol: context.selectedCurrency.symbol,
-            fiatAmount: nativePrice.price * gasAmount,
+            fiatAmount: nativePrice * gasAmount,
           };
 
-          const fiatAmount = tokenAmount * tokenPrice;
+          const fiatAmount = nativeAmount * nativePrice;
 
           const tokenValue: Partial<TokenValue> = {
-            tokenAmount,
+            tokenAmount: nativeAmount,
             fiatSymbol: context.selectedCurrency.symbol,
-            tokenPrice,
-            tokenSymbol,
+            tokenPrice: nativePrice,
+            tokenSymbol: nativeSymbol,
             fiatAmount,
           };
 
@@ -613,27 +559,28 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
           let unrealizedCost = 0;
           let icon = 'cil-face-dead';
           let description = getMethodName(transaction?.data) ?? 'Unknown';
+          let amountFiat = 0;
 
           if (context.watchedAddresses.includes(transfer.from_address)) {
             description = `Sell Token #${transfer.token_id}`;
 
             icon = 'cil-arrow-circle-top';
 
-            let prevCostBasis = 0;
+            let nftCost = 0;
 
-            if (!!costBasisMap[contractId]) {
-              prevCostBasis = costBasisMap[contractId][transfer.token_id] || 0;
-            } else {
-              costBasisMap[contractId] = {};
+            if (!!nftCosts[contractId]) {
+              nftCost = nftCosts[contractId][transfer.token_id] || 0;
+              delete nftCosts[contractId][transfer.token_id];
             }
 
-            costBasisMap[contractId][transfer.token_id] = 0;
-
             realizedValue = fiatAmount;
-            realizedGain = realizedValue - prevCostBasis;
+            amountFiat = fiatAmount;
+            realizedGain = realizedValue - nftCost;
+            contractRealizedGain[contractId] =
+              (contractRealizedGain[contractId] || 0) + realizedGain;
 
-            if (!!prevCostBasis) {
-              realizedGainPc = realizedGain / prevCostBasis;
+            if (!!nftCost) {
+              realizedGainPc = realizedGain / nftCost;
             }
           }
 
@@ -642,21 +589,23 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
 
             icon = 'cil-arrow-circle-bottom';
 
-            costBasis = fiatAmount;
+            costBasis = fiatAmount + gasValue.fiatAmount;
+            amountFiat = -1 * costBasis;
 
-            if (!costBasisMap[contractId]) {
-              costBasisMap[contractId] = {};
+            if (!nftCosts[contractId]) {
+              nftCosts[contractId] = {};
             }
 
-            costBasisMap[contractId][transfer.token_id] = costBasis;
+            nftCosts[contractId][transfer.token_id] = costBasis;
           }
 
-          if (!!costBasisMap[contractId]) {
-            unrealizedCost = _.sum(_.values(costBasisMap[contractId]));
+          if (!!nftCosts[contractId]) {
+            unrealizedCost = _.sum(_.values(nftCosts[contractId]));
           }
 
           const document: NftPnlEventDocument = {
             id: transfer.transaction_hash,
+            amountFiat: amountFiat,
             blockNumber: Number(transfer.block_number),
             blockTimestamp: moment(transfer.block_timestamp).unix(),
             chainId: chainMetadata.id,
@@ -664,6 +613,7 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
             chainName: chainMetadata.name,
             costBasisFiat: costBasis,
             description: _.truncate(description, { length: 24 }),
+            fiatSymbol: context.selectedCurrency.symbol,
             fromAddress: transfer.from_address,
             gasFiat: gasValue.fiatAmount,
             gasNativeToken: gasValue.tokenAmount,
@@ -689,14 +639,15 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
             toAddress: transfer.to_address,
             tokenId: transfer.token_id,
             unrealizedCostFiat: unrealizedCost,
+            totalRealizedGainFiat: contractRealizedGain[contractId] || 0,
           };
 
           return document;
         })
-        .filter((it) => !!it)
+        .thru((promises) => Promise.all(promises))
         .value();
 
-      return <Context>{ ...context, documents };
+      return <Context>{ ...context, documents: documents.filter((it) => !!it) };
     });
   }
 
@@ -735,12 +686,11 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
 }
 
 interface Context extends BaseContext {
-  readonly coinPrices?: CoinPrice[];
   readonly documents?: NftPnlEventDocument[];
   readonly nftMetadatas?: NftCollectionMetadata[];
-  readonly tokenMetadatas?: TokenMetadata[];
-  readonly summaryDocuments?: NftPnlSummaryDocument[];
-  readonly transactions?: EthersTransaction[];
   readonly nftTransfers?: moralis.NftTransfer[];
+  readonly summaryDocuments?: NftPnlSummaryDocument[];
+  readonly tokenMetadatas?: TokenMetadata[];
   readonly tokenTransfers?: moralis.TokenTransfer[];
+  readonly transactions?: EthersTransaction[];
 }

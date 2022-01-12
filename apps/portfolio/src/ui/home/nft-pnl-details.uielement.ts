@@ -5,7 +5,6 @@ import {
   DatatableColumn,
   formatAge,
   formatCurrency,
-  formatPercent,
   formatTemplate,
   Icon,
   jsonArray,
@@ -69,13 +68,6 @@ function summaryRow(): UiElement {
                   `$..fiatSymbol`,
                 ),
               },
-              {
-                label: 'Realized Gain',
-                value: formatCurrency(
-                  sum(`$..realizedGainFiat`),
-                  `$..fiatSymbol`,
-                ),
-              },
             ],
           }),
         ],
@@ -115,21 +107,30 @@ function tableColumns(): DatatableColumn[] {
           left: Icon({ name: '$.icon', size: 'md' }),
           title: '$.description',
         }),
-        subTitle: formatTemplate('{{ age }} - Cost {{ costBasis }}', {
+        subTitle: formatTemplate('{{ age }}', {
           age: formatAge('$.blockTimestamp'),
           costBasis: formatCurrency('$.costBasisFiat', '$.fiatSymbol'),
         }),
       }),
     },
     {
-      id: 'realizedGain',
+      id: 'amount',
       right: true,
-      sortable: true,
-      value: '$.realizedGainFiat',
+      grow: 0,
+      value: '$.amountFiat',
       cell: Tile({
         align: 'right',
-        subTitle: formatPercent('$.realizedGainPc'),
-        title: formatCurrency('$.realizedGainFiat', '$.fiatSymbol'),
+        title: formatCurrency('$.amountFiat', '$.fiatSymbol'),
+      }),
+    },
+    {
+      id: 'realized',
+      right: true,
+      grow: 0,
+      value: '$.totalRealizedGainFiat',
+      cell: Tile({
+        align: 'right',
+        title: formatCurrency('$.totalRealizedGainFiat', '$.fiatSymbol'),
       }),
     },
   ];

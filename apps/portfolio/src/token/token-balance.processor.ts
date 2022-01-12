@@ -32,7 +32,7 @@ export class TokenBalanceProcessor extends AbstractProcessor<Context> {
         this.emitMilestones(),
         this.addTokenBalances(),
         this.emitMilestones(),
-        this.addCoinPrices(),
+        this.addTokenPrices(),
         this.emitMilestones(),
       )
       .pipe(
@@ -64,29 +64,11 @@ export class TokenBalanceProcessor extends AbstractProcessor<Context> {
     });
   }
 
-  private addCoinPrices() {
+  private addTokenPrices() {
     return Rx.mergeMap(async (context: Context) => {
-      const chainCoinIds = _.chain(chains)
-        .values()
-        .map((chain) => chain.token.coinId)
-        .value();
-
-      const chainCoinPrices = await this.coingeckoService.latestPricesOf(
-        chainCoinIds,
+      const nativeTokenPrices = await this.coingeckoService.nativeCoinPrices(
         context.selectedCurrency.id,
       );
-
-      const chainCoinPriceMap: Record<string, number> = _.chain(chainCoinPrices)
-        .groupBy((coinPrice) => {
-          return _.chain(chains)
-            .values()
-            .filter((it) => it.token.coinId === coinPrice.coinId)
-            .map((it) => it.id)
-            .first()
-            .value();
-        })
-        .mapValues((prices) => prices[0].price)
-        .value();
 
       const tokenPrices = await _.chain(context.tokenBalances)
         .filter((it) => !!it)
@@ -111,7 +93,7 @@ export class TokenBalanceProcessor extends AbstractProcessor<Context> {
             ),
           );
 
-          const nativePrice = chainCoinPriceMap[tokenBalance.chain_id];
+          const nativePrice = nativeTokenPrices[tokenBalance.chain_id];
 
           return <TokenPrice>{
             chainId: tokenBalance.chain_id,

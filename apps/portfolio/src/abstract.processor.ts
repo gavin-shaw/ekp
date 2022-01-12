@@ -45,7 +45,7 @@ export abstract class AbstractProcessor<T extends BaseContext> {
         selectedCurrency,
         watchedAddresses: watchedWallets
           .filter((it: { hidden: boolean }) => it.hidden !== true)
-          .map((it: { address: string }) => it.address),
+          .map((it: { address: string }) => it.address.toLowerCase()),
       },
     ]);
   }

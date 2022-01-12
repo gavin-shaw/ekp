@@ -7,7 +7,7 @@ import { Cache } from 'cache-manager';
 import _ from 'lodash';
 import moment from 'moment';
 import { LimiterService } from '../limiter.service';
-import { ChainId, logger } from '../util';
+import { ChainId, chains, logger } from '../util';
 import { CoinPrice } from './model/coin-price';
 const BASE_URL = 'https://api.coingecko.com/api/v3';
 
@@ -220,6 +220,29 @@ export class CoingeckoService {
         ttl: 0,
       },
     );
+  }
+
+  async nativeCoinPrices(fiatId: string): Promise<Record<string, number>> {
+    validate([fiatId], ['string']);
+
+    const chainCoinIds = _.chain(chains)
+      .values()
+      .map((chain) => chain.token.coinId)
+      .value();
+
+    const chainCoinPrices = await this.latestPricesOf(chainCoinIds, fiatId);
+
+    return _.chain(chainCoinPrices)
+      .groupBy((coinPrice) => {
+        return _.chain(chains)
+          .values()
+          .filter((it) => it.token.coinId === coinPrice.coinId)
+          .map((it) => it.id)
+          .first()
+          .value();
+      })
+      .mapValues((prices) => prices[0].price)
+      .value();
   }
 
   async latestPricesOf(

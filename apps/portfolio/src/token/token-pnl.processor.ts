@@ -26,7 +26,7 @@ import { defaultLogo } from '../util/constants';
 import { tokenContractId } from '../util/ids';
 import { TokenPnlEventDocument, TokenPnlSummaryDocument } from './documents';
 
-@Processor(TOKEN_PNL_QUEUE)
+// @Processor(TOKEN_PNL_QUEUE)
 export class TokenPnlProcessor extends AbstractProcessor<Context> {
   constructor(
     private coingeckoService: CoingeckoService,

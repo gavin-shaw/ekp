@@ -1,6 +1,7 @@
 import { DocumentDto } from '@app/sdk';
 
 export interface NftPnlEventDocument extends DocumentDto {
+  readonly amountFiat: number;
   readonly blockNumber: number;
   readonly blockTimestamp: number;
   readonly chainId: string;
@@ -9,6 +10,7 @@ export interface NftPnlEventDocument extends DocumentDto {
   readonly costBasisFiat: number;
   readonly description: string;
   readonly fromAddress: string;
+  readonly fiatSymbol: string;
   readonly gasNativeToken: number;
   readonly gasFiat: number;
   readonly icon: string;
@@ -33,4 +35,5 @@ export interface NftPnlEventDocument extends DocumentDto {
   readonly toAddress: string;
   readonly tokenId: string;
   readonly unrealizedCostFiat: number;
+  readonly totalRealizedGainFiat: number;
 }
