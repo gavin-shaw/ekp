@@ -1,4 +1,4 @@
-import { ChainId, DocumentDto, TokenMetadata } from '@app/sdk';
+import { DocumentDto } from '@app/sdk';
 
 export interface TokenBalanceDocument extends DocumentDto {
   readonly balanceFiat: number;
