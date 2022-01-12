@@ -230,9 +230,13 @@ function sellerIsNotOwner(): UiElement {
       }),
       Row({
         children: [
-          Span({
-            content:
-              'Be careful, this means that at the end of the lock expiration below, the critter may be revoked and you will lose access to it',
+          Col({
+            children: [
+              Span({
+                content:
+                  'Be careful, this means that at the end of the lock expiration below, the critter may be revoked and you will lose access to it',
+              }),
+            ],
           }),
         ],
       }),

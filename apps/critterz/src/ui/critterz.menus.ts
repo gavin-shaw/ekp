@@ -8,10 +8,10 @@ export default function menus() {
       navLink: 'critterz/rental-checker',
       icon: 'cil-money',
     },
-    {
-      title: 'My sCritterz',
-      navLink: 'critterz/my-scritterz',
-      icon: 'cil-money',
-    },
+    // {
+    //   title: 'My sCritterz',
+    //   navLink: 'critterz/my-scritterz',
+    //   icon: 'cil-money',
+    // },
   ];
 }

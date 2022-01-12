@@ -118,7 +118,10 @@ export class RentalCheckerProcessor extends AbstractProcessor<Context> {
         tokenId,
       );
 
-      const notForSale = !(openseaAsset?.sellOrders?.length > 0);
+      const sellOrders =
+        openseaAsset.orders?.filter((it: any) => it.side === 1) ?? [];
+
+      const notForSale = sellOrders.length === 0;
 
       let sellerAddress = 'Unknown';
       let sellerAddressMasked = 'Unknown';
@@ -126,15 +129,13 @@ export class RentalCheckerProcessor extends AbstractProcessor<Context> {
       let estimatedCostTotal = undefined;
 
       if (!notForSale) {
-        const sellOrder = openseaAsset.sellOrders[0];
+        const sellOrder = sellOrders[0];
 
-        ethCost = Number(
-          ethers.utils.formatEther(sellOrder.currentPrice.toString()),
-        );
+        ethCost = Number(ethers.utils.formatEther(sellOrder.base_price));
 
         estimatedCostTotal = ethCost + gasCost;
 
-        sellerAddress = sellOrder.maker;
+        sellerAddress = sellOrder.maker.address;
         sellerAddressMasked = sellerAddress
           .substring(sellerAddress.length - 6)
           .toUpperCase();
