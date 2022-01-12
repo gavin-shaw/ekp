@@ -9,7 +9,7 @@ spec:
   revisionHistoryLimit: 3
   strategy:
     type: RollingUpdate
-  replicas: 3
+  replicas: 1
   template:
     metadata:
       labels:
