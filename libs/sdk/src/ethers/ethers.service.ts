@@ -36,6 +36,26 @@ export class EthersService {
     },
   };
 
+  getProvider(chainId: string): ethers.providers.Provider {
+    return this.providers[chainId]?.provider;
+  }
+
+  async wrapProviderCall<T>(
+    chainId: string,
+    call: (provider: ethers.providers.Provider) => Promise<T>,
+  ) {
+    validate([chainId, call], ['string', 'function']);
+
+    const limiter = this.providers[chainId].limiter;
+
+    const provider: ethers.providers.Provider =
+      this.providers[chainId]?.provider;
+
+    return await limiter.schedule(async () => {
+      return await call(provider);
+    });
+  }
+
   async transactionReceiptOf(
     chainId: string,
     transactionHash: string,

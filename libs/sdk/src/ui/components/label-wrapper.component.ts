@@ -12,5 +12,5 @@ export function LabelWrapper(props: LabelWrapperProps): UiElement {
 export interface LabelWrapperProps extends DefaultProps {
   label: Rpc | string;
   child: UiElement;
-  validationText?: Rpc | string;
+  feedbackText?: Rpc | string;
 }

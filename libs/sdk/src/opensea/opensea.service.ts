@@ -4,6 +4,10 @@ import axios from 'axios';
 import Bottleneck from 'bottleneck';
 import { validate } from 'bycontract';
 import { Cache } from 'cache-manager';
+import { Network, OpenSeaPort } from 'opensea-js';
+import { OpenSeaAsset } from 'opensea-js/lib/types';
+import { EkConfigService } from '../config/ek-config.service';
+import { EthersService } from '../ethers/ethers.service';
 import { LimiterService } from '../limiter.service';
 import { logger } from '../util';
 import { AssetContract } from './model';
@@ -12,14 +16,23 @@ const BASE_URL = 'https://api.opensea.io/api/v1';
 
 @Injectable()
 export class OpenseaService {
+  seaport: OpenSeaPort;
+  limiter: Bottleneck;
+
   constructor(
+    configService: EkConfigService,
+    ethersService: EthersService,
     @Inject(CACHE_MANAGER) private cache: Cache,
     limiterService: LimiterService,
   ) {
-    this.limiter = limiterService.createLimiter('opensea-limiter', 2);
-  }
+    this.limiter = limiterService.createLimiter('opensea-limiter', 3);
+    const provider = ethersService.getProvider('eth');
 
-  limiter: Bottleneck;
+    this.seaport = new OpenSeaPort(provider, {
+      networkName: Network.Main,
+      apiKey: configService.openseaApiKey,
+    });
+  }
 
   async metadataOf(contractAddress: string): Promise<AssetContract> {
     validate([contractAddress], ['string']);
@@ -45,6 +58,41 @@ export class OpenseaService {
           },
         ),
       { ttl: 3600000 },
+    );
+  }
+
+  async assetOf(tokenAddress: string, tokenId: string): Promise<OpenSeaAsset> {
+    validate([tokenAddress], ['string']);
+
+    const cacheKey = `opensea.asset['${tokenAddress}', '${tokenId}]`;
+    const debugMessage = `Opensea > getAsset('${tokenAddress}', '${tokenId}')`;
+
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            try {
+              logger.debug(debugMessage);
+
+              return await this.seaport.api.getAsset({ tokenAddress, tokenId });
+            } catch (error) {
+              if (error.message?.includes('404')) {
+                return null;
+              }
+              throw error;
+            }
+          }),
+          {
+            onRetry: (error) => {
+              console.error(error);
+              return logger.warn(
+                `Retry due to ${error.message}: ${debugMessage}`,
+              );
+            },
+          },
+        ),
+      { ttl: 10 },
     );
   }
 

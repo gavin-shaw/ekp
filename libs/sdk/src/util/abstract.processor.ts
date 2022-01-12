@@ -28,6 +28,8 @@ export abstract class AbstractProcessor<T extends BaseContext> {
       'Array.<object>',
     );
 
+    const forms = event.state.forms;
+
     const hiddenChains =
       validate(event.state?.client.hiddenChains, 'Array.<string>=') ?? [];
 
@@ -43,6 +45,7 @@ export abstract class AbstractProcessor<T extends BaseContext> {
         chains,
         clientId,
         selectedCurrency,
+        forms,
         watchedAddresses: watchedWallets
           .filter((it: { hidden: boolean }) => it.hidden !== true)
           .map((it: { address: string }) => it.address.toLowerCase()),
@@ -76,4 +79,5 @@ export interface BaseContext {
   readonly clientId: string;
   readonly selectedCurrency: CurrencyDto;
   readonly watchedAddresses: string[];
+  readonly forms?: Record<string, any>;
 }

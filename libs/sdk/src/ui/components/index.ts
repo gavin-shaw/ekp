@@ -2,6 +2,8 @@ export * from './card.component';
 export * from './col.component';
 export * from './container.component';
 export * from './datatable.component';
+export * from './form.component';
+export * from './fragment.component';
 export * from './icon.component';
 export * from './image.component';
 export * from './input.component';

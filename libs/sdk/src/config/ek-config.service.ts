@@ -39,6 +39,7 @@ export class EkConfigService
     this.mongoPassword = this.optional('MONGO_PASSWORD', undefined);
     this.redisUser = this.optional('REDIS_USER', undefined);
     this.redisPassword = this.optional('REDIS_PASSWORD', undefined);
+    this.openseaApiKey = this.optional('OPENSEA_API_KEY', undefined);
   }
 
   readonly pluginId: string;
@@ -54,6 +55,7 @@ export class EkConfigService
   readonly redisPort: number;
   readonly redisUser: string;
   readonly redisPassword: string;
+  readonly openseaApiKey: string;
 
   static createRedisAsyncOptions(): RedisModuleAsyncOptions {
     return {
@@ -102,7 +104,7 @@ export class EkConfigService
   private required<T>(name: string): T {
     const value = this.configService.get(name);
     if (value === undefined || value === null) {
-      console.error(`Environment variable ${name} is required and missing`)
+      console.error(`Environment variable ${name} is required and missing`);
       throw new Error(`Environment variable ${name} is required and missing`);
     }
     return value;

@@ -7,19 +7,18 @@ import Moralis from 'moralis/node';
 import { EkConfigService } from '../config/ek-config.service';
 import { LimiterService } from '../limiter.service';
 import { ChainId, chains, logger } from '../util';
+import { TokenMetadata } from '../util/TokenMetadata';
 import {
   ChainList,
+  ERC20Price,
   NativeBalance,
-  NftOwner,
   NftContractMetadata,
+  NftOwner,
   NftTransfer,
   TokenBalance,
   TokenTransfer,
   Transaction,
-  ERC20Price,
 } from './types';
-import { TokenMetadata } from '../util/TokenMetadata';
-import { moralis } from '.';
 
 @Injectable()
 export class MoralisService {
@@ -84,6 +83,54 @@ export class MoralisService {
         ),
       {
         ttl: 3600,
+      },
+    );
+  }
+
+  async nftTransfersOfTokenId(
+    chainId: ChainId,
+    tokenAddress: string,
+    tokenId: string,
+  ): Promise<NftTransfer[]> {
+    validate([chainId, tokenAddress, tokenId], ['string', 'string', 'string']);
+
+    const cacheKey = `moralis.nftTransfersOfTokenId['${chainId}']['${tokenAddress}'][${tokenId}]`;
+    const debugMessage = `Web3API > getWalletTokenIdTransfers('${chainId}', '${tokenAddress}', ${tokenId})`;
+
+    return this.cache.wrap(
+      cacheKey,
+      () =>
+        retry(
+          this.limiter.wrap(async () => {
+            logger.debug(debugMessage);
+
+            const response =
+              await Moralis.Web3API.token.getWalletTokenIdTransfers({
+                chain: chainId,
+                address: tokenAddress,
+                token_id: tokenId,
+              });
+
+            if (!Array.isArray(response?.result)) {
+              return [];
+            }
+
+            return response.result.map((it) => ({
+              ...it,
+              chain_id: chainId,
+            }));
+          }),
+          {
+            onRetry: (error) => {
+              console.error(error);
+              return logger.warn(
+                `Retry due to ${error.message}: ${debugMessage}`,
+              );
+            },
+          },
+        ),
+      {
+        ttl: 5,
       },
     );
   }
