@@ -18,7 +18,10 @@ import {
   UiElement,
   WalletSelector,
 } from '@app/sdk/ui';
-import { NFT_BALANCES, NFT_BALANCE_MILESTONES } from '../../util/collectionNames';
+import {
+  NFT_BALANCES,
+  NFT_BALANCE_MILESTONES,
+} from '../../util/collectionNames';
 
 export default function element(): UiElement {
   return Container({

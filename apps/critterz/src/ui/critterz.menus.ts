@@ -21,7 +21,13 @@ export default function menus() {
       id: 'critterz-rental-checker',
       title: 'Rental Checker',
       navLink: 'critterz/rental-checker',
-      icon: 'cil-money',
+      icon: 'cil-search',
+    },
+    {
+      id: 'critterz-rented-critterz',
+      title: 'Rented Critterz',
+      navLink: 'critterz/rented-critterz',
+      icon: 'cil-paw',
     },
   ];
 }

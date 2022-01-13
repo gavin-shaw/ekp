@@ -12,6 +12,7 @@ import {
   LabelWrapper,
   Link,
   MilestoneWrapper,
+  PageHeaderTile,
   Row,
   Span,
   UiElement,
@@ -24,6 +25,18 @@ import {
 export default function element(): UiElement {
   return Container({
     children: [
+      Row({
+        children: [
+          Col({
+            children: [
+              PageHeaderTile({
+                title: 'Rental Checker',
+                icon: 'cil-search',
+              }),
+            ],
+          }),
+        ],
+      }),
       tokenIdForm(),
       MilestoneWrapper({
         milestones: `$.${RENTAL_CHECKER_MILESTONES}`,

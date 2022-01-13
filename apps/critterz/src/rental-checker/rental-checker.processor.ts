@@ -11,16 +11,15 @@ import { ethers } from 'ethers';
 import _ from 'lodash';
 import * as Rx from 'rxjs';
 import { Observable } from 'rxjs';
-import scritterzAbi from '../abi/scritterz.abi.json';
 import {
+  NULL_ADDRESS,
   RENTAL_CHECKER_DOCUMENT,
   RENTAL_CHECKER_MILESTONES,
-} from '../util/collectionNames';
-import { RENTAL_CHECK_QUEUE } from '../util/queue.names';
+  RENTAL_CHECK_QUEUE,
+  scritterzAbi,
+  SCRITTERZ_CONTRACT_ADDRESS,
+} from '../util';
 import { RentalCheckerDocument } from './rental-checker.document';
-
-const SCRITTERZ_CONTRACT_ADDRESS = '0x47f75e8dd28df8d6e7c39ccda47026b0dca99043';
-const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 @Processor(RENTAL_CHECK_QUEUE)
 export class RentalCheckerProcessor extends AbstractProcessor<Context> {
