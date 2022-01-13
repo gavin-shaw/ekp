@@ -6,7 +6,6 @@ import {
   CoingeckoService,
   CoinPrice,
   EthersService,
-  EventService,
   LayerDto,
   moralis,
   MoralisService,
@@ -27,7 +26,6 @@ export class NftBalanceProcessor extends AbstractProcessor<Context> {
   constructor(
     private coingeckoService: CoingeckoService,
     private ethersService: EthersService,
-    private eventService: EventService,
     private moralisService: MoralisService,
     private openseaService: OpenseaService,
   ) {
@@ -378,7 +376,7 @@ export class NftBalanceProcessor extends AbstractProcessor<Context> {
     });
   }
 
-  private emitMilestones() {
+  protected emitMilestones() {
     return Rx.tap((context: Context) => {
       const documents = [
         {
@@ -428,7 +426,7 @@ export class NftBalanceProcessor extends AbstractProcessor<Context> {
     });
   }
 
-  private removeMilestones() {
+  protected removeMilestones() {
     return Rx.tap((context: Context) => {
       const removeMilestonesQuery = {
         id: NFT_BALANCE_MILESTONES,

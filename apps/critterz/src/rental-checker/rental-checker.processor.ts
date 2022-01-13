@@ -2,7 +2,6 @@ import {
   AbstractProcessor,
   BaseContext,
   EthersService,
-  EventService,
   MoralisService,
   OpenseaService,
 } from '@app/sdk';
@@ -24,7 +23,6 @@ import { RentalCheckerDocument } from './rental-checker.document';
 @Processor(RENTAL_CHECK_QUEUE)
 export class RentalCheckerProcessor extends AbstractProcessor<Context> {
   constructor(
-    private eventService: EventService,
     private ethersService: EthersService,
     private moralisService: MoralisService,
     private openseaService: OpenseaService,
@@ -41,7 +39,7 @@ export class RentalCheckerProcessor extends AbstractProcessor<Context> {
     );
   }
 
-  private removeMilestones() {
+  protected removeMilestones() {
     return Rx.tap((context: Context) => {
       const removeMilestonesQuery = {
         id: RENTAL_CHECKER_MILESTONES,
@@ -51,7 +49,7 @@ export class RentalCheckerProcessor extends AbstractProcessor<Context> {
     });
   }
 
-  private emitMilestones() {
+  protected emitMilestones() {
     return Rx.tap((context: Context) => {
       const documents = [
         {

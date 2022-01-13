@@ -3,7 +3,8 @@ import {
   BaseContext,
   CoingeckoService,
   EthersService,
-  EventService,
+  MilestoneConfig,
+  milestoneConfig,
   moralis,
   MoralisService,
   OpenseaService,
@@ -27,7 +28,6 @@ import { RentedCritterDocument } from './rented-critter.document';
 @Processor(RENTED_CRITTERZ_QUEUE)
 export class RentedCritterzProcessor extends AbstractProcessor<Context> {
   constructor(
-    private eventService: EventService,
     private coingeckoService: CoingeckoService,
     private moralisService: MoralisService,
     private openseaService: OpenseaService,
@@ -40,6 +40,7 @@ export class RentedCritterzProcessor extends AbstractProcessor<Context> {
     return source.pipe(
       this.emitMilestones(),
       this.addNftOwners(),
+      this.emitMilestones(),
       this.mapDocuments(),
       this.emitDocuments(),
       this.removeMilestones(),
@@ -103,16 +104,6 @@ export class RentedCritterzProcessor extends AbstractProcessor<Context> {
     });
   }
 
-  private removeMilestones() {
-    return Rx.tap((context: Context) => {
-      const removeMilestonesQuery = {
-        id: RENTED_CRITTERZ_MILESTONES,
-      };
-
-      this.eventService.removeLayers(context.clientId, removeMilestonesQuery);
-    });
-  }
-
   private addNftOwners() {
     return Rx.mergeMap(async (context: Context) => {
       const nftOwners = await _.chain(context.watchedAddresses)
@@ -129,26 +120,22 @@ export class RentedCritterzProcessor extends AbstractProcessor<Context> {
     });
   }
 
-  private emitMilestones() {
-    return Rx.tap((context: Context) => {
-      const documents = [
-        {
-          id: '1-nfts',
-          status: 'progressing',
-          label: 'Fetching your nfts',
-        },
-      ];
-
-      const layers = [
-        {
-          id: RENTED_CRITTERZ_MILESTONES,
-          collectionName: RENTED_CRITTERZ_MILESTONES,
-          set: documents,
-        },
-      ];
-
-      this.eventService.addLayers(context.clientId, layers);
-    });
+  protected getMilestoneConfig(): MilestoneConfig<Context> {
+    return milestoneConfig<Context>(
+      RENTED_CRITTERZ_MILESTONES,
+      (context) => !context.documents?.length,
+      {
+        items: (context) => context.nftOwners,
+        progressing: () => 'Fetching your eth nfts',
+        complete: (nftOwners) => `Fetched ${nftOwners.length} eth nfts`,
+      },
+      {
+        items: (context) => context.documents,
+        progressing: () => 'Fetching critterz details',
+        complete: (nftOwners) =>
+          `Fetched details for ${nftOwners.length} critterz`,
+      },
+    );
   }
 
   private emitDocuments() {

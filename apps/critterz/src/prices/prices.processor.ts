@@ -2,7 +2,6 @@ import {
   AbstractProcessor,
   BaseContext,
   CoingeckoService,
-  EventService,
   MoralisService,
   OpenseaService,
 } from '@app/sdk';
@@ -10,18 +9,14 @@ import { Processor } from '@nestjs/bull';
 import { ethers } from 'ethers';
 import * as Rx from 'rxjs';
 import { Observable } from 'rxjs';
+import { BLOCK_CONTRACT_ADDRESS } from '../util';
 import { PRICES_DOCUMENT } from '../util/collectionNames';
 import { PRICES_QUEUE } from '../util/queue.names';
 import { PricesDocument } from './prices.document';
 
-const SCRITTERZ_CONTRACT_ADDRESS = '0x47f75e8dd28df8d6e7c39ccda47026b0dca99043';
-const BLOCK_CONTRACT_ADDRESS = '0x807a0774236a0fbe9e7f8e7df49edfed0e6777ea';
-const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
-
 @Processor(PRICES_QUEUE)
 export class PricesProcessor extends AbstractProcessor<Context> {
   constructor(
-    private eventService: EventService,
     private coingeckoService: CoingeckoService,
     private moralisService: MoralisService,
     private openseaService: OpenseaService,

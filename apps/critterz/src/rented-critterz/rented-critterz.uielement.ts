@@ -50,8 +50,8 @@ function tableRow(): UiElement {
           Datatable({
             columns: tableColumns(),
             data: `$.${RENTED_CRITTER_DOCUMENT}.*`,
-            defaultSortAsc: false,
-            defaultSortFieldId: 'value',
+            defaultSortAsc: true,
+            defaultSortFieldId: 'expiresIn',
             filterable: false,
             pagination: false,
           }),
@@ -91,7 +91,7 @@ function tableColumns(): DatatableColumn[] {
       label: formatDatetime('$.expiryDate'),
     },
     {
-      id: 'renter',
+      id: 'rentedBy',
       sortable: true,
       value: '$.renterAddress',
       cell: Link({
@@ -103,7 +103,7 @@ function tableColumns(): DatatableColumn[] {
       }),
     },
     {
-      id: 'owner',
+      id: 'ownedBy',
       sortable: true,
       value: '$.ownerAddress',
       cell: Link({

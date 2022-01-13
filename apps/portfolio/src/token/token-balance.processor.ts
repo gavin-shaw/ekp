@@ -3,7 +3,6 @@ import {
   BaseContext,
   chains,
   CoingeckoService,
-  EventService,
   moralis,
   MoralisService,
   TokenMetadata,
@@ -24,7 +23,6 @@ import { TokenBalanceDocument } from './documents/token-balance.document';
 export class TokenBalanceProcessor extends AbstractProcessor<Context> {
   constructor(
     private coingeckoService: CoingeckoService,
-    private eventService: EventService,
     private moralisService: MoralisService,
   ) {
     super();
@@ -148,6 +146,16 @@ export class TokenBalanceProcessor extends AbstractProcessor<Context> {
     });
   }
 
+  protected removeMilestones() {
+    return Rx.tap((context: Context) => {
+      const removeMilestonesQuery = {
+        id: TOKEN_BALANCE_MILESTONES,
+      };
+
+      this.eventService.removeLayers(context.clientId, removeMilestonesQuery);
+    });
+  }
+
   private mapTokenBalanceDocuments() {
     return Rx.map((context: Context) => {
       const tokensById = _.groupBy(
@@ -224,17 +232,8 @@ export class TokenBalanceProcessor extends AbstractProcessor<Context> {
     });
   }
 
-  private removeMilestones() {
-    return Rx.tap((context: Context) => {
-      const removeMilestonesQuery = {
-        id: TOKEN_BALANCE_MILESTONES,
-      };
-
-      this.eventService.removeLayers(context.clientId, removeMilestonesQuery);
-    });
-  }
-
-  private emitMilestones() {
+  // TODO: move to generic implementation
+  protected emitMilestones() {
     return Rx.tap((context: Context) => {
       const documents = [
         {
