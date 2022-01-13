@@ -1,4 +1,4 @@
-import { formatCurrency } from '@app/sdk/ui';
+import { formatCurrency, PriceLink } from '@app/sdk/ui';
 import { PRICES_DOCUMENT } from '../util/collectionNames';
 
 export default function menus() {
@@ -6,25 +6,21 @@ export default function menus() {
     {
       header: 'Critterz',
     },
-    // {
-    //   component: PriceLink({
-    //     price: formatCurrency(
-    //       `$.${PRICES_DOCUMENT}[0].blockPrice`,
-    //       `$.${PRICES_DOCUMENT}[0].fiatSymbol`,
-    //     ),
-    //     href: `https://www.dextools.io/app/ether/pair-explorer/0xe93527d1f8c586353b13826c501fa5a69bce2b0e`,
-    //     label: '$BLOCK',
-    //   }),
-    // },
+    {
+      id: 'critterz-prices',
+      component: PriceLink({
+        price: formatCurrency(
+          `$.${PRICES_DOCUMENT}[0].blockPrice`,
+          `$.${PRICES_DOCUMENT}[0].fiatSymbol`,
+        ),
+        href: `https://www.dextools.io/app/ether/pair-explorer/0xe93527d1f8c586353b13826c501fa5a69bce2b0e`,
+        label: 'BLOCK PRICE',
+      }),
+    },
     {
       title: 'Rental Checker',
       navLink: 'critterz/rental-checker',
       icon: 'cil-money',
     },
-    // {
-    //   title: 'My sCritterz',
-    //   navLink: 'critterz/my-scritterz',
-    //   icon: 'cil-money',
-    // },
   ];
 }

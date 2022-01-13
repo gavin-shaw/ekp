@@ -1,12 +1,13 @@
 import {
   AbstractProcessor,
   BaseContext,
-  EthersService,
+  CoingeckoService,
   EventService,
   MoralisService,
   OpenseaService,
 } from '@app/sdk';
 import { Processor } from '@nestjs/bull';
+import { ethers } from 'ethers';
 import * as Rx from 'rxjs';
 import { Observable } from 'rxjs';
 import { PRICES_DOCUMENT } from '../util/collectionNames';
@@ -21,7 +22,7 @@ const NULL_ADDRESS = '0x0000000000000000000000000000000000000000';
 export class PricesProcessor extends AbstractProcessor<Context> {
   constructor(
     private eventService: EventService,
-    private ethersService: EthersService,
+    private coingeckoService: CoingeckoService,
     private moralisService: MoralisService,
     private openseaService: OpenseaService,
   ) {
@@ -39,8 +40,23 @@ export class PricesProcessor extends AbstractProcessor<Context> {
         BLOCK_CONTRACT_ADDRESS,
       );
 
-      console.log(price);
-      return { ...context, documents: [] };
+      const nativePrices = await this.coingeckoService.nativeCoinPrices(
+        context.selectedCurrency.id,
+      );
+
+      const ethPrice = nativePrices['eth'];
+
+      const blockPrice = Number(
+        ethers.utils.formatEther(price.nativePrice.value),
+      );
+
+      const document: PricesDocument = {
+        id: '0',
+        blockPrice: ethPrice * blockPrice,
+        scritterzPrice: undefined,
+        fiatSymbol: context.selectedCurrency.symbol,
+      };
+      return { ...context, documents: [document] };
     });
   }
 
