@@ -77,14 +77,12 @@ export class NftBalanceProcessor extends AbstractProcessor<Context> {
 
   private addNftPrices() {
     return Rx.mergeMap(async (context: Context) => {
-      const now = moment().unix();
-
       const nftPrices = await _.chain(context.nftOwners)
         .map(async (nftOwner) => {
           const nftTransfers = await this.moralisService.nftContractTransfersOf(
             nftOwner.chain_id as ChainId,
             nftOwner.token_address,
-            20,
+            10,
           );
 
           if (nftTransfers.length === 0) {

@@ -3,6 +3,7 @@ import retry from 'async-retry';
 import Bottleneck from 'bottleneck';
 import { validate } from 'bycontract';
 import { Cache } from 'cache-manager';
+import moment from 'moment';
 import Moralis from 'moralis/node';
 import { EkConfigService } from '../config/ek-config.service';
 import { LimiterService } from '../limiter.service';
@@ -27,7 +28,9 @@ export class MoralisService {
     limiterService: LimiterService,
     private configService: EkConfigService,
   ) {
-    this.limiter = limiterService.createLimiter('moralis-limiter', 10);
+    this.limiter = limiterService.createLimiter('moralis-limiter', {
+      minTime: 100,
+    });
   }
 
   async onModuleInit() {
@@ -58,10 +61,14 @@ export class MoralisService {
             console.log(this.limiter.counts());
 
             try {
+              const start = moment().unix();
+
               const result = await Moralis.Web3API.token.getTokenPrice({
                 chain: chainId,
                 address: tokenAddress,
               });
+
+              console.log(`request time: ${moment().unix() - start}`);
 
               return result;
             } catch (error) {
