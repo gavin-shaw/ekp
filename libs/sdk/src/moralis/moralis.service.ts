@@ -55,6 +55,7 @@ export class MoralisService {
         retry(
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
+            console.log(this.limiter.counts());
 
             try {
               const result = await Moralis.Web3API.token.getTokenPrice({
@@ -82,7 +83,7 @@ export class MoralisService {
           },
         ),
       {
-        ttl: 300,
+        ttl: 1800,
       },
     );
   }
@@ -103,6 +104,7 @@ export class MoralisService {
         retry(
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
+            console.log(this.limiter.counts());
 
             const response =
               await Moralis.Web3API.token.getWalletTokenIdTransfers({
@@ -154,6 +156,7 @@ export class MoralisService {
         retry(
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
+            console.log(this.limiter.counts());
 
             try {
               const result = await Moralis.Web3API.token.getTokenPrice({
@@ -201,6 +204,7 @@ export class MoralisService {
         retry(
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
+            console.log(this.limiter.counts());
 
             const result = await Moralis.Web3API.token.getTokenMetadata({
               addresses: [contractAddress],
@@ -243,6 +247,7 @@ export class MoralisService {
         retry(
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
+            console.log(this.limiter.counts());
 
             const result: NativeBalance =
               await Moralis.Web3API.account.getNativeBalance({
@@ -279,6 +284,7 @@ export class MoralisService {
         retry(
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
+            console.log(this.limiter.counts());
 
             const response = await Moralis.Web3API.account.getTokenBalances({
               address: ownerAddress,
@@ -339,6 +345,7 @@ export class MoralisService {
         retry(
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
+            console.log(this.limiter.counts());
 
             const response = await Moralis.Web3API.account.getNFTs({
               address: ownerAddress,
@@ -379,6 +386,7 @@ export class MoralisService {
         retry(
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
+            console.log(this.limiter.counts());
 
             const nftMetadata = await Moralis.Web3API.token.getNFTMetadata({
               address: contractAddress,
@@ -415,6 +423,7 @@ export class MoralisService {
         retry(
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
+            console.log(this.limiter.counts());
 
             const response = await Moralis.Web3API.account.getTokenTransfers({
               address: ownerAddress,
@@ -531,6 +540,7 @@ export class MoralisService {
         retry(
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
+            console.log(this.limiter.counts());
 
             const response = await Moralis.Web3API.account.getTransactions({
               address: ownerAddress,
@@ -575,6 +585,7 @@ export class MoralisService {
         retry(
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
+            console.log(this.limiter.counts());
 
             const response =
               await Moralis.Web3API.token.getContractNFTTransfers({
@@ -622,6 +633,7 @@ export class MoralisService {
         retry(
           this.limiter.wrap(async () => {
             logger.debug(debugMessage);
+            console.log(this.limiter.counts());
 
             const response = await Moralis.Web3API.account.getNFTTransfers({
               address: ownerAddress,
