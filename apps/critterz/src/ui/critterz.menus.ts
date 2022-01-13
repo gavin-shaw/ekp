@@ -18,6 +18,7 @@ export default function menus() {
       }),
     },
     {
+      id: 'critterz-rental-checker',
       title: 'Rental Checker',
       navLink: 'critterz/rental-checker',
       icon: 'cil-money',
