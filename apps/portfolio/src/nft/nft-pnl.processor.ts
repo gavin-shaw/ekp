@@ -6,7 +6,6 @@ import {
   CoingeckoService,
   EthersService,
   EthersTransaction,
-  EventService,
   getMethodName,
   moralis,
   MoralisService,
@@ -34,7 +33,6 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
   constructor(
     private coingeckoService: CoingeckoService,
     private ethersService: EthersService,
-    private eventService: EventService,
     private moralisService: MoralisService,
     private openseaService: OpenseaService,
   ) {
@@ -65,7 +63,8 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
       );
   }
 
-  private emitMilestones() {
+  // TODO: move this to generic implementation
+  protected emitMilestones() {
     return Rx.tap((context: Context) => {
       const milestones = [
         {
@@ -673,7 +672,8 @@ export class NftPnlProcessor extends AbstractProcessor<Context> {
     });
   }
 
-  private removeMilestones() {
+  // TODO: move this to generic implementation
+  protected removeMilestones() {
     return Rx.tap((context: Context) => {
       const removeMilestonesQuery = {
         id: NFT_PNL_MILESTONES,

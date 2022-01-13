@@ -5,7 +5,6 @@ import {
   chains,
   CoingeckoService,
   CoinPrice,
-  EventService,
   formatters,
   logger,
   moralis,
@@ -29,7 +28,6 @@ import { TokenPnlEventDocument, TokenPnlSummaryDocument } from './documents';
 export class TokenPnlProcessor extends AbstractProcessor<Context> {
   constructor(
     private coingeckoService: CoingeckoService,
-    private eventService: EventService,
     private moralisService: MoralisService,
   ) {
     super();
@@ -56,7 +54,8 @@ export class TokenPnlProcessor extends AbstractProcessor<Context> {
       );
   }
 
-  private emitMilestones() {
+  // TODO: move this to generic implementation
+  protected emitMilestones() {
     return Rx.tap((context: Context) => {
       const milestones = [
         {
@@ -496,7 +495,8 @@ export class TokenPnlProcessor extends AbstractProcessor<Context> {
     });
   }
 
-  private removeMilestones() {
+  // TODO: move this to generic implementation
+  protected removeMilestones() {
     return Rx.tap((context: Context) => {
       const removeMilestonesQuery = {
         id: TOKEN_PNL_MILESTONES,
