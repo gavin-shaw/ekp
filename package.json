@@ -63,7 +63,7 @@
     "lodash": "^4.17.21",
     "moment": "^2.29.1",
     "mongoose": "^6.1.2",
-    "moralis": "0.0.176",
+    "moralis": "0.0.184",
     "morphism": "^1.12.3",
     "nestjs-redis": "git+https://github.com/skunight/nestjs-redis.git",
     "pg": "^8.7.1",
