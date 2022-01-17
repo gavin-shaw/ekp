@@ -7,18 +7,22 @@ import { Cache } from 'cache-manager';
 import { LimiterService } from '../limiter.service';
 import { logger } from '../util';
 import { AssetContract } from './model';
+import { EkConfigService } from '../config/ek-config.service';
 
 const BASE_URL = 'https://api.opensea.io/api/v1';
 
 @Injectable()
 export class OpenseaService {
   limiter: Bottleneck;
+  apiKey: string | undefined;
 
   constructor(
     @Inject(CACHE_MANAGER) private cache: Cache,
     limiterService: LimiterService,
+    configService: EkConfigService,
   ) {
     this.limiter = limiterService.createLimiter('opensea-limiter', 3);
+    this.apiKey = configService.openseaApiKey;
   }
 
   async metadataOf(contractAddress: string): Promise<AssetContract> {
@@ -34,7 +38,9 @@ export class OpenseaService {
           this.limiter.wrap(async () => {
             logger.debug(`GET ${url}`);
 
-            const contractResult = await axios.get(url);
+            const contractResult = await axios.get(url, {
+              headers: { 'X-API-KEY': this.apiKey },
+            });
 
             return contractResult.data?.collection;
           }),
@@ -64,7 +70,9 @@ export class OpenseaService {
             try {
               logger.debug(debugMessage);
 
-              const result = await axios.get(url);
+              const result = await axios.get(url, {
+                headers: { 'X-API-KEY': this.apiKey },
+              });
 
               return result.data;
             } catch (error) {
@@ -100,7 +108,9 @@ export class OpenseaService {
           this.limiter.wrap(async () => {
             logger.debug(`GET ${url}`);
 
-            const statsResult = await axios.get(url);
+            const statsResult = await axios.get(url, {
+              headers: { 'X-API-KEY': this.apiKey },
+            });
 
             return statsResult.data?.stats?.floor_price;
           }),
